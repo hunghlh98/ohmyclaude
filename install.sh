@@ -103,6 +103,43 @@ else
   warn "All agents, skills, and commands are available via the plugin link."
 fi
 
+# ── Install contexts ───────────────────────────────────────────────────────────
+CONTEXTS_DIR="${HOME}/.claude/contexts"
+mkdir -p "$CONTEXTS_DIR"
+for ctx in "${REPO_ROOT}/contexts/"*.md; do
+  cp "$ctx" "$CONTEXTS_DIR/$(basename "$ctx")"
+done
+success "Contexts installed to: ${CONTEXTS_DIR}"
+
+# ── Install shell aliases ──────────────────────────────────────────────────────
+ALIAS_BLOCK="
+# ohmyclaude — context-mode aliases
+alias claude-dev='claude --system-prompt \"\$(cat ~/.claude/contexts/dev.md)\"'
+alias claude-review='claude --system-prompt \"\$(cat ~/.claude/contexts/review.md)\"'
+alias claude-plan='claude --system-prompt \"\$(cat ~/.claude/contexts/plan.md)\"'
+alias claude-debug='claude --system-prompt \"\$(cat ~/.claude/contexts/debug.md)\"'
+alias claude-research='claude --system-prompt \"\$(cat ~/.claude/contexts/research.md)\"'
+# end ohmyclaude"
+
+# Detect shell config file
+if [[ -f "${HOME}/.zshrc" ]]; then
+  SHELL_RC="${HOME}/.zshrc"
+elif [[ -f "${HOME}/.bashrc" ]]; then
+  SHELL_RC="${HOME}/.bashrc"
+elif [[ -f "${HOME}/.bash_profile" ]]; then
+  SHELL_RC="${HOME}/.bash_profile"
+else
+  SHELL_RC="${HOME}/.zshrc"
+fi
+
+# Remove old block if present, then append fresh
+if grep -q "# ohmyclaude — context-mode aliases" "$SHELL_RC" 2>/dev/null; then
+  # Remove existing block
+  sed -i.bak '/# ohmyclaude — context-mode aliases/,/# end ohmyclaude/d' "$SHELL_RC"
+fi
+echo "$ALIAS_BLOCK" >> "$SHELL_RC"
+success "Aliases added to: ${SHELL_RC}"
+
 # ── Post-install ───────────────────────────────────────────────────────────────
 echo ""
 success "ohmyclaude installed successfully!"
@@ -110,11 +147,16 @@ echo ""
 echo "  Profile:  ${PROFILE}"
 echo "  Location: ${PLUGIN_DIR}"
 echo ""
-echo "  Quick start:"
-echo "    /ultrawork <your task>          full pipeline"
-echo "    /plan <task>                    planning only"
-echo "    @hermes plan this for me        invoke orchestrator"
+echo "  Reload your shell, then start Claude in any mode:"
 echo ""
-echo "  Verify with:"
-echo "    claude plugin list"
+echo "    claude-dev       → implementation mode (@hephaestus + @momus)"
+echo "    claude-review    → code & security review (@athena + @argus)"
+echo "    claude-plan      → planning pipeline (@metis → @hermes → @nemesis)"
+echo "    claude-debug     → root cause investigation (@heracles)"
+echo "    claude-research  → exploration mode (@metis + @apollo)"
+echo ""
+echo "  Or use /ultrawork inside any session for the full pipeline."
+echo ""
+echo "  Reload now:"
+echo "    source ${SHELL_RC}"
 echo ""

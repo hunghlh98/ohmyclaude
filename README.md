@@ -76,22 +76,28 @@ Activate automatically by keyword:
 
 ## Contexts
 
-Load a context to set Claude's working mode — behavior, agent delegation, and output format for that session type:
+Launch Claude already in the right working mode. The installer adds shell aliases that inject the context as a system prompt:
 
-| Context | Mode | Activates |
-|---------|------|-----------|
-| `@/contexts/dev.md` | Implementation | Hephaestus + Momus — write code, run tests |
-| `@/contexts/review.md` | Code & security review | Athena + Argus — read-only, findings by severity |
-| `@/contexts/plan.md` | Planning pipeline | Metis → Hermes → Nemesis → Eris |
-| `@/contexts/debug.md` | Root cause investigation | Heracles — reproduce, hypothesize, fix |
-| `@/contexts/research.md` | Exploration | Metis + Apollo — understand before acting |
+```bash
+claude-dev       # implementation — @hephaestus builds, @momus tests
+claude-review    # code & security review — @athena + @argus, read-only
+claude-plan      # planning pipeline — @metis → @hermes → @nemesis → @eris
+claude-debug     # root cause — @heracles investigates and fixes
+claude-research  # exploration — @metis + @apollo, no code until clear
+```
 
-**Usage:**
+Each alias expands to:
+```bash
+claude --system-prompt "$(cat ~/.claude/contexts/<mode>.md)"
 ```
-@/contexts/plan.md      — switch to planning mode for this session
-@/contexts/dev.md       — switch to implementation mode
-@/contexts/review.md    — switch to review mode
-```
+
+| Mode | Primary agents | Use when |
+|------|---------------|----------|
+| `dev` | Hephaestus, Momus, Heracles | Writing or fixing code |
+| `review` | Athena, Argus | Reviewing a PR or diff |
+| `plan` | Metis, Hermes, Nemesis, Eris | Starting a new feature |
+| `debug` | Heracles | Something is broken |
+| `research` | Metis, Apollo | Exploring an unfamiliar codebase |
 
 ## Install
 
