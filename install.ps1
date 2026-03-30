@@ -75,59 +75,11 @@ if (Test-Path $PluginDir) {
 New-Item -ItemType SymbolicLink -Path $PluginDir -Target $RepoRoot | Out-Null
 Write-Success "Linked $RepoRoot -> $PluginDir"
 
+# ── Run postinstall (contexts + aliases + profile setup) ──────────────────────
 if (Get-Command node -ErrorAction SilentlyContinue) {
   node "$RepoRoot\scripts\install-apply.js" --repo "$RepoRoot" --profile $Profile
+  node "$RepoRoot\scripts\postinstall.js"
 } else {
-  Write-Warn "Node.js not found — skipping profile-based setup."
+  Write-Warn "Node.js not found — skipping context/alias setup."
+  Write-Warn "Install Node.js 18+ and re-run to enable context-mode aliases."
 }
-
-# ── Install contexts ───────────────────────────────────────────────────────────
-$ContextsDir = Join-Path $HOME ".claude\contexts"
-New-Item -ItemType Directory -Path $ContextsDir -Force | Out-Null
-Get-ChildItem "$RepoRoot\contexts\*.md" | Copy-Item -Destination $ContextsDir
-Write-Success "Contexts installed to: $ContextsDir"
-
-# ── Install PowerShell profile aliases ─────────────────────────────────────────
-$AliasBlock = @"
-
-# ohmyclaude — context-mode aliases
-function claude-dev      { claude --system-prompt (Get-Content "$ContextsDir\dev.md" -Raw) @args }
-function claude-review   { claude --system-prompt (Get-Content "$ContextsDir\review.md" -Raw) @args }
-function claude-plan     { claude --system-prompt (Get-Content "$ContextsDir\plan.md" -Raw) @args }
-function claude-debug    { claude --system-prompt (Get-Content "$ContextsDir\debug.md" -Raw) @args }
-function claude-research { claude --system-prompt (Get-Content "$ContextsDir\research.md" -Raw) @args }
-# end ohmyclaude
-"@
-
-$ProfilePath = $PROFILE
-if (-not (Test-Path $ProfilePath)) {
-  New-Item -ItemType File -Path $ProfilePath -Force | Out-Null
-}
-
-$ProfileContent = Get-Content $ProfilePath -Raw -ErrorAction SilentlyContinue
-if ($ProfileContent -match "# ohmyclaude — context-mode aliases") {
-  $ProfileContent = $ProfileContent -replace "(?s)# ohmyclaude — context-mode aliases.*?# end ohmyclaude\r?\n?", ""
-  Set-Content $ProfilePath $ProfileContent
-}
-Add-Content $ProfilePath $AliasBlock
-Write-Success "Aliases added to: $ProfilePath"
-
-# ── Post-install ───────────────────────────────────────────────────────────────
-Write-Host ""
-Write-Success "ohmyclaude installed successfully!"
-Write-Host ""
-Write-Host "  Profile:  $Profile"
-Write-Host "  Location: $PluginDir"
-Write-Host ""
-Write-Host "  Reload your shell, then start Claude in any mode:"
-Write-Host ""
-Write-Host "    claude-dev       -> implementation mode (@hephaestus + @momus)"
-Write-Host "    claude-review    -> code & security review (@athena + @argus)"
-Write-Host "    claude-plan      -> planning pipeline (@metis -> @hermes -> @nemesis)"
-Write-Host "    claude-debug     -> root cause investigation (@heracles)"
-Write-Host "    claude-research  -> exploration mode (@metis + @apollo)"
-Write-Host ""
-Write-Host "  Or use /ultrawork inside any session for the full pipeline."
-Write-Host ""
-Write-Host "  Reload now:  . `$PROFILE"
-Write-Host ""

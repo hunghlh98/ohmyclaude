@@ -39,9 +39,9 @@
     "ROADMAP.md"
   ],
   "scripts": {
+    "postinstall": "node scripts/postinstall.js",
     "validate": "node scripts/validate.js",
-    "install:dev": "bash install.sh",
-    "version:check": "node scripts/version-check.js"
+    "install:dev": "bash install.sh"
   },
   "engines": {
     "node": ">=18"
