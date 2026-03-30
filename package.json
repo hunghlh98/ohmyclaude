@@ -1,0 +1,48 @@
+{
+  "name": "ohmyclaude",
+  "version": "0.1.0",
+  "description": "Multi-agent orchestration for Claude Code — 11 specialist agents, /ultrawork pipeline, quality hooks, LSP tooling",
+  "author": "ohmyclaude contributors",
+  "license": "MIT",
+  "homepage": "https://github.com/hunghlh98/ohmyclaude",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hunghlh98/ohmyclaude.git"
+  },
+  "keywords": [
+    "claude-code",
+    "multi-agent",
+    "orchestration",
+    "skills",
+    "hooks",
+    "lsp",
+    "quality"
+  ],
+  "bin": {
+    "ohmyclaude": "./scripts/ohmyclaude.js"
+  },
+  "files": [
+    "agents/",
+    "skills/",
+    "commands/",
+    "hooks/",
+    "rules/",
+    "mcp/",
+    "manifests/",
+    "schemas/",
+    "scripts/",
+    ".claude-plugin/",
+    ".mcp.json",
+    "VERSION",
+    "README.md",
+    "ROADMAP.md"
+  ],
+  "scripts": {
+    "validate": "node scripts/validate.js",
+    "install:dev": "bash install.sh",
+    "version:check": "node scripts/version-check.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

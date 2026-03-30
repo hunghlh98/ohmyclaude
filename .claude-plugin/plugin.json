@@ -1,0 +1,35 @@
+{
+  "name": "ohmyclaude",
+  "version": "0.1.0",
+  "description": "Multi-agent orchestration for Claude Code — 8 specialist agents with mythological names, quality automation hooks, LSP tooling via MCP, and domain skills.",
+  "author": {
+    "name": "ohmyclaude contributors"
+  },
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "agents",
+    "multi-agent",
+    "orchestration",
+    "skills",
+    "hooks",
+    "lsp",
+    "quality",
+    "automation"
+  ],
+  "agents": [
+    "./agents/hermes.md",
+    "./agents/hephaestus.md",
+    "./agents/athena.md",
+    "./agents/apollo.md",
+    "./agents/argus.md",
+    "./agents/heracles.md",
+    "./agents/momus.md",
+    "./agents/mnemosyne.md",
+    "./agents/metis.md",
+    "./agents/nemesis.md",
+    "./agents/eris.md"
+  ],
+  "skills": ["./skills/"],
+  "commands": ["./commands/"]
+}

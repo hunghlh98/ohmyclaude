@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ohmyclaude plugin manifest",
+  "type": "object",
+  "required": ["name", "version", "agents"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Plugin name"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version (x.y.z)"
+    },
+    "description": {
+      "type": "string"
+    },
+    "author": {
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "url": { "type": "string", "format": "uri" },
+            "email": { "type": "string", "format": "email" }
+          },
+          "required": ["name"]
+        }
+      ]
+    },
+    "homepage": { "type": "string", "format": "uri" },
+    "repository": { "type": "string" },
+    "license": { "type": "string" },
+    "keywords": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "agents": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Explicit file paths only — directories not allowed here"
+    },
+    "skills": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Directory or file paths"
+    },
+    "commands": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Directory or file paths"
+    },
+    "features": {
+      "type": "object",
+      "properties": {
+        "agents": { "type": "integer" },
+        "commands": { "type": "integer" },
+        "skills": { "type": "integer" },
+        "configAssets": { "type": "boolean" },
+        "hookEvents": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["PreToolUse", "PostToolUse", "PostToolUseFailure", "PreCompact", "SessionStart", "Stop", "SessionEnd"]
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "not": {
+    "required": ["hooks"],
+    "description": "hooks field must NOT be present — hooks/hooks.json is auto-loaded"
+  }
+}

@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate Plugin
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run plugin validation
+        run: node scripts/validate.js
+
+      - name: Check version consistency
+        run: |
+          FILE_VER="$(cat VERSION | tr -d '[:space:]')"
+          PLUGIN_VER="$(node -e "console.log(require('./.claude-plugin/plugin.json').version)")"
+          PKG_VER="$(node -e "console.log(require('./package.json').version)")"
+          if [ "$FILE_VER" != "$PLUGIN_VER" ] || [ "$FILE_VER" != "$PKG_VER" ]; then
+            echo "Version mismatch: VERSION=$FILE_VER plugin.json=$PLUGIN_VER package.json=$PKG_VER"
+            exit 1
+          fi
+
+      - name: Check no hooks field in plugin.json
+        run: |
+          if node -e "const p = require('./.claude-plugin/plugin.json'); if ('hooks' in p) process.exit(1)"; then
+            echo "OK: no hooks field in plugin.json"
+          else
+            echo "ERROR: plugin.json must not contain a 'hooks' field"
+            exit 1
+          fi
+
+      - name: Verify all agent files in plugin.json exist
+        run: |
+          node -e "
+            const fs = require('fs');
+            const path = require('path');
+            const agents = require('./.claude-plugin/plugin.json').agents;
+            let ok = true;
+            for (const a of agents) {
+              if (!fs.existsSync(path.join(process.cwd(), a))) {
+                console.error('Missing agent file:', a);
+                ok = false;
+              }
+            }
+            if (!ok) process.exit(1);
+          "

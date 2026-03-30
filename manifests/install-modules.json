@@ -1,0 +1,146 @@
+{
+  "$schema": "../schemas/install-modules.schema.json",
+  "version": "0.1.0",
+  "modules": [
+    {
+      "id": "agents-orchestration",
+      "kind": "agents",
+      "description": "Orchestration & planning agents: Metis (clarifier), Hermes (planner), Nemesis (validator), Eris (challenger)",
+      "paths": [
+        "agents/metis.md",
+        "agents/hermes.md",
+        "agents/nemesis.md",
+        "agents/eris.md"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
+      "id": "agents-implementation",
+      "kind": "agents",
+      "description": "Implementation agents: Hephaestus (builder), Heracles (debugger), Momus (test writer)",
+      "paths": [
+        "agents/hephaestus.md",
+        "agents/heracles.md",
+        "agents/momus.md"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
+      "id": "agents-review",
+      "kind": "agents",
+      "description": "Review agents (read-only): Athena (code quality), Apollo (architecture), Argus (security)",
+      "paths": [
+        "agents/athena.md",
+        "agents/apollo.md",
+        "agents/argus.md"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
+      "id": "agents-docs",
+      "kind": "agents",
+      "description": "Documentation agent: Mnemosyne (README, API docs, changelogs)",
+      "paths": [
+        "agents/mnemosyne.md"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
+      "id": "skills-core",
+      "kind": "skills",
+      "description": "Core engineering skills: git-workflow, tdd-patterns, api-design, error-handling, code-review",
+      "paths": [
+        "skills/git-workflow/",
+        "skills/tdd-patterns/",
+        "skills/api-design/",
+        "skills/error-handling/",
+        "skills/code-review/"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
+      "id": "commands-orchestration",
+      "kind": "commands",
+      "description": "Orchestration commands: /ultrawork (full pipeline)",
+      "paths": [
+        "commands/ultrawork.md"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
+      "id": "commands-core",
+      "kind": "commands",
+      "description": "Developer commands: /plan, /review, /commit, /scaffold, /debug",
+      "paths": [
+        "commands/plan.md",
+        "commands/review.md",
+        "commands/commit.md",
+        "commands/scaffold.md",
+        "commands/debug.md"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
+      "id": "hooks-quality",
+      "kind": "hooks",
+      "description": "Quality hooks: block writes with secrets (PreToolUse), run linter after bash (PostToolUse)",
+      "paths": [
+        "hooks/hooks.json",
+        "hooks/scripts/pre-write-check.js",
+        "hooks/scripts/post-bash-lint.js"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
+      "id": "hooks-tracking",
+      "kind": "hooks",
+      "description": "Session tracking: write usage summary on Stop",
+      "paths": [
+        "hooks/scripts/session-summary.js"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": false,
+      "stability": "stable"
+    },
+    {
+      "id": "rules-core",
+      "kind": "rules",
+      "description": "Engineering standards: function size, naming, immutability, error handling, security baseline",
+      "paths": [
+        "rules/engineering-standards.md"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
+      "id": "mcp-lsp",
+      "kind": "mcp",
+      "description": "LSP MCP server: goto-definition, find-references, symbols, diagnostics, rename (v0.2+ — stub in v0.1)",
+      "paths": [
+        "mcp/lsp-server/",
+        ".mcp.json"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": false,
+      "dependencies": ["node >= 18"],
+      "stability": "experimental"
+    }
+  ]
+}

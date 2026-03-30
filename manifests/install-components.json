@@ -1,0 +1,51 @@
+{
+  "$schema": "../schemas/install-components.schema.json",
+  "version": "0.1.0",
+  "components": {
+    "orchestration": {
+      "family": "agent",
+      "description": "Planning and orchestration agents (Metis, Hermes, Nemesis, Eris) + /ultrawork command",
+      "modules": ["agents-orchestration", "commands-orchestration"]
+    },
+    "implementation": {
+      "family": "agent",
+      "description": "Implementation agents (Hephaestus, Heracles, Momus)",
+      "modules": ["agents-implementation"]
+    },
+    "review": {
+      "family": "agent",
+      "description": "Review agents — code quality (Athena), architecture (Apollo), security (Argus)",
+      "modules": ["agents-review"]
+    },
+    "documentation": {
+      "family": "agent",
+      "description": "Documentation writer (Mnemosyne)",
+      "modules": ["agents-docs"]
+    },
+    "skills-core": {
+      "family": "skill",
+      "description": "Core domain skills: git-workflow, tdd-patterns, api-design, error-handling, code-review",
+      "modules": ["skills-core"]
+    },
+    "commands-core": {
+      "family": "command",
+      "description": "Developer slash commands: /plan, /review, /commit, /scaffold, /debug",
+      "modules": ["commands-core"]
+    },
+    "hooks-quality": {
+      "family": "hook",
+      "description": "Quality automation hooks: secret detection (pre-write), lint runner (post-bash)",
+      "modules": ["hooks-quality"]
+    },
+    "hooks-tracking": {
+      "family": "hook",
+      "description": "Session tracking hook: writes usage summary to ~/.claude/ohmyclaude/",
+      "modules": ["hooks-tracking"]
+    },
+    "lsp": {
+      "family": "mcp",
+      "description": "LSP MCP server: goto-definition, find-references, symbols, diagnostics, rename (v0.2+)",
+      "modules": ["mcp-lsp"]
+    }
+  }
+}

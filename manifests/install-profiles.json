@@ -1,0 +1,73 @@
+{
+  "$schema": "../schemas/install-profiles.schema.json",
+  "version": "0.1.0",
+  "profiles": [
+    {
+      "id": "minimal",
+      "name": "Minimal",
+      "description": "Core orchestration and implementation agents only. Good for getting started.",
+      "modules": [
+        "agents-orchestration",
+        "agents-implementation",
+        "commands-orchestration",
+        "commands-core",
+        "hooks-quality",
+        "rules-core"
+      ]
+    },
+    {
+      "id": "developer",
+      "name": "Developer",
+      "description": "Full agent team + all skills + tracking. Recommended for most engineers.",
+      "default": true,
+      "modules": [
+        "agents-orchestration",
+        "agents-implementation",
+        "agents-review",
+        "agents-docs",
+        "skills-core",
+        "commands-orchestration",
+        "commands-core",
+        "hooks-quality",
+        "hooks-tracking",
+        "rules-core"
+      ]
+    },
+    {
+      "id": "security",
+      "name": "Security",
+      "description": "Developer profile + Argus-focused security review emphasis and LSP tooling.",
+      "modules": [
+        "agents-orchestration",
+        "agents-implementation",
+        "agents-review",
+        "agents-docs",
+        "skills-core",
+        "commands-orchestration",
+        "commands-core",
+        "hooks-quality",
+        "hooks-tracking",
+        "rules-core",
+        "mcp-lsp"
+      ]
+    },
+    {
+      "id": "full",
+      "name": "Full",
+      "description": "Everything, including experimental LSP MCP server (requires Node 18+).",
+      "modules": [
+        "agents-orchestration",
+        "agents-implementation",
+        "agents-review",
+        "agents-docs",
+        "skills-core",
+        "commands-orchestration",
+        "commands-core",
+        "hooks-quality",
+        "hooks-tracking",
+        "rules-core",
+        "mcp-lsp"
+      ]
+    }
+  ]
+}

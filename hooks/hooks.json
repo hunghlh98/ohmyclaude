@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-write-check.js\"",
+            "timeout": 5
+          }
+        ],
+        "description": "Block writes that contain hardcoded secrets (API keys, passwords, tokens)"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/post-bash-lint.js\"",
+            "async": true,
+            "timeout": 30
+          }
+        ],
+        "description": "Run project linter after bash commands that modify source files"
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-summary.js\"",
+            "async": true,
+            "timeout": 10
+          }
+        ],
+        "description": "Write a session summary to ~/.claude/ohmyclaude/sessions/ after each response"
+      }
+    ]
+  }
+}

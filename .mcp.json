@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "ohmyclaude-lsp": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/lsp-server/index.js"],
+      "description": "Language server tools: goto-definition, find-references, symbols, diagnostics, rename. Requires language servers installed (typescript-language-server, pyright, gopls, rust-analyzer).",
+      "env": {}
+    },
+    "exa-search": {
+      "type": "http",
+      "url": "https://mcp.exa.ai/mcp",
+      "description": "Web search via Exa. Set EXA_API_KEY environment variable.",
+      "env": {
+        "EXA_API_KEY": "${EXA_API_KEY}"
+      }
+    },
+    "grep-app": {
+      "type": "http",
+      "url": "https://mcp.grep.app",
+      "description": "Search public GitHub repositories via grep.app. No auth required."
+    }
+  }
+}

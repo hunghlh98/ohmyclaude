@@ -1,0 +1,32 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "ohmyclaude",
+  "version": "0.1.0",
+  "plugins": [
+    {
+      "source": "./",
+      "name": "ohmyclaude",
+      "description": "Multi-agent orchestration for Claude Code. 11 specialist agents named after Greek gods — from requirements clarification (Metis) through implementation (Hephaestus) to security review (Argus). One command, /ultrawork, runs the full pipeline automatically.",
+      "author": "ohmyclaude contributors",
+      "homepage": "https://github.com/hunghlh98/ohmyclaude",
+      "repository": "https://github.com/hunghlh98/ohmyclaude",
+      "license": "MIT",
+      "category": "workflow",
+      "tags": [
+        "multi-agent",
+        "orchestration",
+        "code-review",
+        "security",
+        "testing",
+        "tdd",
+        "planning",
+        "debugging",
+        "lsp",
+        "documentation",
+        "quality",
+        "automation"
+      ],
+      "strict": false
+    }
+  ]
+}
