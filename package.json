@@ -28,6 +28,7 @@
     "hooks/",
     "rules/",
     "mcp/",
+    "contexts/",
     "manifests/",
     "schemas/",
     "scripts/",

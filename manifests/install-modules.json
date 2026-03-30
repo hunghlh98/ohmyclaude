@@ -130,6 +130,21 @@
       "stability": "stable"
     },
     {
+      "id": "contexts",
+      "kind": "contexts",
+      "description": "Session mode contexts: dev, review, plan, debug, research — loads the right agents and behavior for each working mode",
+      "paths": [
+        "contexts/dev.md",
+        "contexts/review.md",
+        "contexts/plan.md",
+        "contexts/debug.md",
+        "contexts/research.md"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
       "id": "mcp-lsp",
       "kind": "mcp",
       "description": "LSP MCP server: goto-definition, find-references, symbols, diagnostics, rename (v0.2+ — stub in v0.1)",

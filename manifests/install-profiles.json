@@ -12,7 +12,8 @@
         "commands-orchestration",
         "commands-core",
         "hooks-quality",
-        "rules-core"
+        "rules-core",
+        "contexts"
       ]
     },
     {
@@ -30,7 +31,8 @@
         "commands-core",
         "hooks-quality",
         "hooks-tracking",
-        "rules-core"
+        "rules-core",
+        "contexts"
       ]
     },
     {
