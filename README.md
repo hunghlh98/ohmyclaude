@@ -2,7 +2,7 @@
 
 Multi-agent orchestration for Claude Code. 11 specialist agents named after Greek gods, quality automation hooks, domain skills that activate when you need them, and session contexts that keep Claude in the right working mode.
 
-Inspired by [oh-my-openagent](https://github.com/opencode-ai/oh-my-openagent) — adapted for Claude Code's native plugin format.
+Inspired by [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) and [everything-claude-code](https://github.com/affaan-m/everything-claude-code).
 
 ## Agents
 
