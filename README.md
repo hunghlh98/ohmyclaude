@@ -1,6 +1,6 @@
 # ohmyclaude
 
-Multi-agent orchestration for Claude Code. Eight specialist agents named after Greek gods, quality automation hooks, and domain skills that activate when you need them.
+Multi-agent orchestration for Claude Code. 11 specialist agents named after Greek gods, quality automation hooks, domain skills that activate when you need them, and session contexts that keep Claude in the right working mode.
 
 Inspired by [oh-my-openagent](https://github.com/opencode-ai/oh-my-openagent) — adapted for Claude Code's native plugin format.
 
@@ -73,6 +73,25 @@ Activate automatically by keyword:
 - **api-design** — Triggered by: endpoint, REST, GraphQL, OpenAPI
 - **error-handling** — Triggered by: error, exception, try/catch, Result
 - **code-review** — Triggered by: review, PR comment, quality gate
+
+## Contexts
+
+Load a context to set Claude's working mode — behavior, agent delegation, and output format for that session type:
+
+| Context | Mode | Activates |
+|---------|------|-----------|
+| `@/contexts/dev.md` | Implementation | Hephaestus + Momus — write code, run tests |
+| `@/contexts/review.md` | Code & security review | Athena + Argus — read-only, findings by severity |
+| `@/contexts/plan.md` | Planning pipeline | Metis → Hermes → Nemesis → Eris |
+| `@/contexts/debug.md` | Root cause investigation | Heracles — reproduce, hypothesize, fix |
+| `@/contexts/research.md` | Exploration | Metis + Apollo — understand before acting |
+
+**Usage:**
+```
+@/contexts/plan.md      — switch to planning mode for this session
+@/contexts/dev.md       — switch to implementation mode
+@/contexts/review.md    — switch to review mode
+```
 
 ## Install
 

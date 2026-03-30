@@ -17,7 +17,7 @@ Two categories of files exist in this repo. Know which is which:
 
 | Category | Files | Purpose |
 |----------|-------|---------|
-| **Plugin deliverable** | `agents/`, `skills/`, `commands/`, `hooks/`, `rules/`, `.claude-plugin/`, `.mcp.json`, `mcp/`, `manifests/` | Shipped to end users |
+| **Plugin deliverable** | `agents/`, `skills/`, `commands/`, `hooks/`, `rules/`, `contexts/`, `.claude-plugin/`, `.mcp.json`, `mcp/`, `manifests/` | Shipped to end users |
 | **Repo dev config** | `scripts/`, `tests/`, `.github/`, `CONTRIBUTING.md`, `package.json` | Repo maintenance only |
 
 **`CLAUDE.md` (this file's sibling) is a contributor guide — not end-user content.**
@@ -69,6 +69,57 @@ Don't use `opus` unless the agent genuinely needs deep reasoning. Justify it in 
 ### Read-Only Agents
 
 Review agents (Athena, Apollo, Argus, Metis, Nemesis, Eris) must **never** have `Write`, `Edit`, or `MultiEdit` in their tools list. They observe and advise only.
+
+---
+
+## Documentation Rule
+
+**Any change that affects public behavior must update documentation in the same commit. No exceptions.**
+
+| What changed | What to update |
+|-------------|---------------|
+| New agent added | `README.md` agents table + group, `ROADMAP.md` v0.1 checklist |
+| New skill added | `README.md` skills list with trigger keywords |
+| New command added | `README.md` commands table |
+| New context added | `README.md` contexts table |
+| New hook added | `README.md` hooks list |
+| New install profile | `README.md` install section, `manifests/install-profiles.json` |
+| Any new module | `manifests/install-modules.json` + relevant profile(s) |
+| Version bumped | `VERSION`, `package.json`, `plugin.json`, `marketplace.json` — all 4 |
+| Behavior changed | `README.md` relevant section + context file if mode affected |
+
+**The PR checklist blocks merge if `README.md` is not updated.** If you're unsure whether a change requires a doc update, it does.
+
+---
+
+## Adding a New Context
+
+Create `contexts/<mode-name>.md`:
+
+```markdown
+# <Mode Name> Context
+
+Mode: <short description>
+Agents: @<primary> (primary), @<secondary> (secondary role)
+
+## Behavior
+- <Rule 1>
+- <Rule 2>
+
+## Agent Delegation
+- <Task type> → @<agent>
+
+## Tools to Favor
+- <Tool> — why
+
+## Output Format
+<What the output should look like>
+```
+
+Then update:
+- `README.md` — add row to the Contexts table
+- `manifests/install-modules.json` — add path to `contexts` module paths list
+- `ROADMAP.md` — if it's a new v0.x feature
 
 ---
 
@@ -229,15 +280,27 @@ The release workflow creates the GitHub release automatically on tag push.
 
 Before opening a PR:
 
+**Validation**
 - [ ] `node scripts/validate.js` passes with no errors
 - [ ] New agent files have all required frontmatter (`name`, `description`, `tools`, `model`)
 - [ ] New skill files have a "Use this skill when..." activation line
 - [ ] `plugin.json` uses explicit file paths for agents (no directory refs)
 - [ ] No `hooks` field in `plugin.json`
 - [ ] Version is consistent across all 4 files (if bumped)
-- [ ] `manifests/` updated if new module added
-- [ ] `README.md` updated if public API changes (new agent/command/skill)
-- [ ] Commit message follows Conventional Commits (`feat:`, `fix:`, `chore:`, etc.)
+
+**Manifests**
+- [ ] `manifests/install-modules.json` updated if new module added
+- [ ] `manifests/install-profiles.json` updated if new module should be in a profile
+
+**Documentation — required for every change that affects public behavior**
+- [ ] `README.md` updated (new agent / skill / command / context / hook → add to the relevant table)
+- [ ] `ROADMAP.md` updated if this completes or adds a milestone item
+- [ ] `contexts/` updated if behavior change affects a working mode
+- [ ] `CONTRIBUTING.md` updated if the contribution process itself changes
+
+**Commit**
+- [ ] Commit message follows Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, etc.)
+- [ ] `docs:` commits used when only documentation changes
 
 ---
 

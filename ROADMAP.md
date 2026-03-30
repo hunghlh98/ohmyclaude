@@ -23,11 +23,19 @@
 - [x] code-review
 
 ### Commands
+- [x] /ultrawork — full pipeline, single entry
 - [x] /plan
 - [x] /review
 - [x] /commit
 - [x] /scaffold
 - [x] /debug
+
+### Contexts
+- [x] dev — implementation mode
+- [x] review — code & security review mode
+- [x] plan — planning pipeline mode
+- [x] debug — root cause investigation mode
+- [x] research — exploration mode
 
 ### Hooks
 - [x] pre-write-check (block writes with secrets)
