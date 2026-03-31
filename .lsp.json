@@ -1,0 +1,70 @@
+{
+  "typescript": {
+    "command": "typescript-language-server",
+    "args": ["--stdio"],
+    "extensionToLanguage": {
+      ".ts": "typescript",
+      ".tsx": "typescript",
+      ".js": "javascript",
+      ".jsx": "javascript",
+      ".mjs": "javascript",
+      ".cjs": "javascript"
+    },
+    "restartOnCrash": true
+  },
+  "python": {
+    "command": "pyright-langserver",
+    "args": ["--stdio"],
+    "extensionToLanguage": {
+      ".py": "python",
+      ".pyi": "python"
+    },
+    "restartOnCrash": true
+  },
+  "go": {
+    "command": "gopls",
+    "args": ["serve"],
+    "extensionToLanguage": {
+      ".go": "go"
+    },
+    "restartOnCrash": true
+  },
+  "rust": {
+    "command": "rust-analyzer",
+    "args": [],
+    "extensionToLanguage": {
+      ".rs": "rust"
+    },
+    "restartOnCrash": true
+  },
+  "kotlin": {
+    "command": "kotlin-language-server",
+    "args": [],
+    "extensionToLanguage": {
+      ".kt": "kotlin",
+      ".kts": "kotlin"
+    },
+    "restartOnCrash": true
+  },
+  "cpp": {
+    "command": "clangd",
+    "args": [],
+    "extensionToLanguage": {
+      ".cpp": "cpp",
+      ".cc": "cpp",
+      ".cxx": "cpp",
+      ".c": "c",
+      ".h": "cpp",
+      ".hpp": "cpp"
+    },
+    "restartOnCrash": true
+  },
+  "java": {
+    "command": "jdtls",
+    "args": [],
+    "extensionToLanguage": {
+      ".java": "java"
+    },
+    "restartOnCrash": true
+  }
+}

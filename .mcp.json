@@ -1,11 +1,5 @@
 {
   "mcpServers": {
-    "ohmyclaude-lsp": {
-      "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/lsp-server/index.js"],
-      "description": "Language server tools: goto-definition, find-references, symbols, diagnostics, rename. Requires language servers installed (typescript-language-server, pyright, gopls, rust-analyzer).",
-      "env": {}
-    },
     "exa-search": {
       "type": "http",
       "url": "https://mcp.exa.ai/mcp",
