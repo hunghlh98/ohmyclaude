@@ -16,16 +16,16 @@ Run this once after installing ohmyclaude via the Claude Code marketplace to ena
 ## When to Use
 
 - After `claude plugin install hunghlh98/ohmyclaude` (marketplace install)
-- After updating the plugin to get new/updated contexts
+- After `claude plugin update hunghlh98/ohmyclaude` to get new/updated contexts
 - If your aliases are missing or broken
 
 ## How It Works
 
 ```bash
-node "$CLAUDE_PLUGIN_ROOT/scripts/postinstall.js"
+node ${CLAUDE_PLUGIN_ROOT}/scripts/postinstall.js
 ```
 
-`$CLAUDE_PLUGIN_ROOT` is resolved by Claude Code to the plugin's installation directory.
+`${CLAUDE_PLUGIN_ROOT}` is resolved by Claude Code to the plugin's versioned installation directory.
 
 Then reload your shell:
 ```bash
