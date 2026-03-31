@@ -8,11 +8,19 @@ Multi-agent orchestration for Claude Code — 13 specialist agents, quality hook
 
 ## Install
 
+**Marketplace (recommended):**
+```
+claude plugin install hunghlh98/ohmyclaude
+/setup
+```
+`/setup` runs once after marketplace install — copies contexts and adds shell aliases. (Skippable if npm is available; postinstall runs automatically.)
+
+**Script:**
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/hunghlh98/ohmyclaude/main/install.sh)
 ```
 
-Or clone manually:
+**Clone:**
 ```bash
 git clone https://github.com/hunghlh98/ohmyclaude ~/.claude/plugins/ohmyclaude
 cd ~/.claude/plugins/ohmyclaude && bash install.sh
@@ -79,6 +87,7 @@ claude-research # explore mode — metis + apollo
 
 | Command | What it does |
 |---------|-------------|
+| `/setup` | **First-run after marketplace install** — copies contexts, adds shell aliases |
 | `/ultrawork <task>` | Full pipeline: clarify → plan → challenge → implement → test → review → secure → document |
 | `/plan <task>` | Plan only — Metis + Hermes |
 | `/review [path]` | Code review — Athena (add `--security` for Argus) |
