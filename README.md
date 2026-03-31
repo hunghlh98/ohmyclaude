@@ -1,118 +1,105 @@
 # ohmyclaude
 
-Multi-agent orchestration for Claude Code. 11 specialist agents named after Greek gods, quality automation hooks, domain skills that activate when you need them, and session contexts that keep Claude in the right working mode.
+Multi-agent orchestration for Claude Code — 13 specialist agents, quality hooks, domain skills, and session contexts.
 
-Inspired by [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) and [everything-claude-code](https://github.com/affaan-m/everything-claude-code).
+> Inspired by [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) and [everything-claude-code](https://github.com/affaan-m/everything-claude-code).
 
-## Agents
-
-### Orchestration & Planning
-
-| Agent | Role | Model |
-|-------|------|-------|
-| **Metis** | Requirements clarifier — asks the right questions before planning | sonnet |
-| **Hermes** | Orchestrator — decomposes tasks, routes to specialists | sonnet |
-| **Nemesis** | Plan consultant — validates plans for executability and completeness | sonnet |
-| **Eris** | Challenger — devil's advocate, stress-tests plans and implementations | sonnet |
-
-### Implementation
-
-| Agent | Role | Model |
-|-------|------|-------|
-| **Hephaestus** | Implementer — writes code autonomously | sonnet |
-| **Heracles** | Debugger — root cause analysis and fixes | sonnet |
-| **Momus** | Test writer — TDD enforcer | sonnet |
-| **Mnemosyne** | Documentation writer | haiku |
-
-### Review & Analysis (read-only)
-
-| Agent | Role | Model |
-|-------|------|-------|
-| **Athena** | Code reviewer — quality arbiter | sonnet |
-| **Apollo** | Architect — system design and trade-offs | opus |
-| **Argus** | Security reviewer — OWASP Top 10 | sonnet |
-
-### Recommended Agent Workflow
-
-```
-User request
-  ↓ @metis  — Clarify requirements (if vague)
-  ↓ @hermes — Plan with agent assignments
-  ↓ @nemesis — Validate the plan
-  ↓ @eris   — Challenge assumptions (optional)
-  ↓ @hephaestus — Implement
-  ↓ @momus  — Write/run tests
-  ↓ @athena — Review code quality
-  ↓ @argus  — Security review
-  ↓ @mnemosyne — Document
-```
-
-## Commands
-
-| Command | Action |
-|---------|--------|
-| `/ultrawork` | **Super single entry** — full pipeline, one command |
-| `/plan` | Planning only → Metis + Hermes |
-| `/review` | Code review → Athena |
-| `/commit` | Semantic commit message from diff |
-| `/scaffold` | Generate project boilerplate |
-| `/debug` | Structured debugging → Heracles |
-
-## Hooks
-
-- **pre-write-check** — Blocks writes containing hardcoded secrets
-- **post-bash-lint** — Runs linter after bash commands that modify source files
-- **session-summary** — Writes session summary to `~/.claude/ohmyclaude/` on Stop
-
-## Skills
-
-Activate automatically by keyword:
-
-- **git-workflow** — Triggered by: commit, branch, PR, merge, rebase
-- **tdd-patterns** — Triggered by: test, red-green-refactor, TDD
-- **api-design** — Triggered by: endpoint, REST, GraphQL, OpenAPI
-- **error-handling** — Triggered by: error, exception, try/catch, Result
-- **code-review** — Triggered by: review, PR comment, quality gate
-
-## Contexts
-
-Launch Claude already in the right working mode. The installer adds shell aliases that inject the context as a system prompt:
-
-```bash
-claude-dev       # implementation — @hephaestus builds, @momus tests
-claude-review    # code & security review — @athena + @argus, read-only
-claude-plan      # planning pipeline — @metis → @hermes → @nemesis → @eris
-claude-debug     # root cause — @heracles investigates and fixes
-claude-research  # exploration — @metis + @apollo, no code until clear
-```
-
-Each alias expands to:
-```bash
-claude --system-prompt "$(cat ~/.claude/contexts/<mode>.md)"
-```
-
-| Mode | Primary agents | Use when |
-|------|---------------|----------|
-| `dev` | Hephaestus, Momus, Heracles | Writing or fixing code |
-| `review` | Athena, Argus | Reviewing a PR or diff |
-| `plan` | Metis, Hermes, Nemesis, Eris | Starting a new feature |
-| `debug` | Heracles | Something is broken |
-| `research` | Metis, Apollo | Exploring an unfamiliar codebase |
+---
 
 ## Install
 
 ```bash
-# Clone into your user plugin directory
-git clone https://github.com/hunghlh98/ohmyclaude ~/.claude/plugins/ohmyclaude
-
-# Or install via Claude Code marketplace (v1.0+)
-claude plugin install ohmyclaude
+bash <(curl -fsSL https://raw.githubusercontent.com/hunghlh98/ohmyclaude/main/install.sh)
 ```
 
-## LSP Support (v0.2+)
+Or clone manually:
+```bash
+git clone https://github.com/hunghlh98/ohmyclaude ~/.claude/plugins/ohmyclaude
+cd ~/.claude/plugins/ohmyclaude && bash install.sh
+```
 
-Language server tooling via MCP — go-to-definition, find-references, diagnostics, symbols, rename. Requires Node.js and the relevant language server installed.
+Profiles: `minimal` · `developer` (default) · `polyglot` · `security` · `full`
 
-## Roadmap
+```bash
+bash install.sh polyglot   # adds Java, Go, Python, Rust, Kotlin, C++, Flutter reviewers
+```
 
-See [ROADMAP.md](./ROADMAP.md).
+---
+
+## Quick Start
+
+**One command, full pipeline:**
+```
+/ultrawork add rate limiting to the /api/users endpoint
+```
+
+**Or invoke agents directly:**
+```
+@metis  — clarify a vague requirement
+@hermes — decompose and plan a task
+@athena — review changed code
+@argus  — security audit
+@hephaestus — implement something
+@polyglot-reviewer — review Java / Go / Python / Rust / Kotlin / C++ / Flutter / SQL
+@build-resolver — fix a broken build (any language)
+```
+
+**Session contexts** — launch Claude already in the right mode:
+```bash
+claude-dev      # build mode  — hephaestus + momus
+claude-review   # review mode — athena + argus
+claude-plan     # plan mode   — metis → hermes → nemesis
+claude-debug    # debug mode  — heracles
+claude-research # explore mode — metis + apollo
+```
+
+---
+
+## Agents
+
+| Group | Agent | Does |
+|-------|-------|------|
+| Plan | **Metis** | Clarifies vague requirements before planning |
+| Plan | **Hermes** | Decomposes tasks, assigns to specialists |
+| Plan | **Nemesis** | Validates plans — approval bias, max 3 blockers |
+| Plan | **Eris** | Stress-tests plans across 7 adversarial scenarios |
+| Build | **Hephaestus** | Implements features and fixes — goal-oriented |
+| Build | **Heracles** | Debugs failures to root cause |
+| Build | **Momus** | Writes TDD tests — RED→GREEN→REFACTOR |
+| Build | **Mnemosyne** | Writes docs, READMEs, changelogs |
+| Review | **Athena** | Reviews JS/TS quality, correctness, React/Node |
+| Review | **Apollo** | Architects systems, writes ADRs |
+| Review | **Argus** | OWASP security audit |
+| Lang | **polyglot-reviewer** | Language-aware review — detects and checks Java / Kotlin / Go / Python / Rust / TypeScript / C++ / Flutter / DB |
+| Lang | **build-resolver** | Fixes build errors — Maven, Gradle, Cargo, tsc, CMake, go build |
+
+---
+
+## Commands
+
+| Command | What it does |
+|---------|-------------|
+| `/ultrawork <task>` | Full pipeline: clarify → plan → challenge → implement → test → review → secure → document |
+| `/plan <task>` | Plan only — Metis + Hermes |
+| `/review [path]` | Code review — Athena (add `--security` for Argus) |
+| `/debug <issue>` | Root cause analysis — Heracles |
+| `/commit` | Semantic commit message from diff |
+| `/scaffold <stack>` | Generate project boilerplate |
+
+---
+
+## Skills (auto-activate by keyword)
+
+`git-workflow` · `tdd-patterns` · `api-design` · `error-handling` · `code-review`
+
+---
+
+## Hooks
+
+- **pre-write-check** — blocks writes with hardcoded secrets
+- **post-bash-lint** — runs linter after bash edits source
+- **session-summary** — writes session log to `~/.claude/ohmyclaude/`
+
+---
+
+[Roadmap](./ROADMAP.md) · [Contributing](./CONTRIBUTING.md)
