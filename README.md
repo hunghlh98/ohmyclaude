@@ -29,7 +29,17 @@ cd ~/.claude/plugins/ohmyclaude && bash install.sh
 Profiles: `minimal` · `developer` (default) · `polyglot` · `security` · `full`
 
 ```bash
-bash install.sh polyglot   # adds Java, Go, Python, Rust, Kotlin, C++, Flutter reviewers
+bash install.sh --profile polyglot   # adds Java, Go, Python, Rust, Kotlin, C++, Flutter reviewers
+```
+
+**Upgrade:**
+```bash
+# Marketplace
+claude plugin update hunghlh98/ohmyclaude
+/setup   # re-run if contexts or aliases changed
+
+# Script / Clone
+git pull && bash install.sh
 ```
 
 ---

@@ -42,8 +42,9 @@ if $LIST_PROFILES; then
   echo "Available profiles:"
   echo "  minimal    — Core orchestration + implementation agents only"
   echo "  developer  — Full agent team + all skills (default)"
+  echo "  polyglot   — Developer + multi-language reviewers (Java, Go, Python, Rust, Kotlin, C++, Flutter, DB)"
   echo "  security   — Developer + LSP MCP + security emphasis"
-  echo "  full       — Everything, including experimental LSP MCP (Node 18+ required)"
+  echo "  full       — Everything, including polyglot agents and experimental LSP MCP (Node 18+ required)"
   echo ""
   exit 0
 fi
@@ -93,70 +94,13 @@ else
   success "Linked ${REPO_ROOT} → ${PLUGIN_DIR}"
 fi
 
-# Run Node installer for profile-based setup
+# ── Run postinstall (contexts + aliases + profile setup) ───────────────────────
 if command -v node &>/dev/null; then
   node "${REPO_ROOT}/scripts/install-apply.js" \
     --repo "$REPO_ROOT" \
     --profile "$PROFILE"
+  node "${REPO_ROOT}/scripts/postinstall.js"
 else
-  warn "Node.js not found — skipping profile-based module selection."
-  warn "All agents, skills, and commands are available via the plugin link."
+  warn "Node.js not found — skipping context/alias setup."
+  warn "Install Node.js 18+ and re-run to enable context-mode aliases."
 fi
-
-# ── Install contexts ───────────────────────────────────────────────────────────
-CONTEXTS_DIR="${HOME}/.claude/contexts"
-mkdir -p "$CONTEXTS_DIR"
-for ctx in "${REPO_ROOT}/contexts/"*.md; do
-  cp "$ctx" "$CONTEXTS_DIR/$(basename "$ctx")"
-done
-success "Contexts installed to: ${CONTEXTS_DIR}"
-
-# ── Install shell aliases ──────────────────────────────────────────────────────
-ALIAS_BLOCK="
-# ohmyclaude — context-mode aliases
-alias claude-dev='claude --system-prompt \"\$(cat ~/.claude/contexts/dev.md)\"'
-alias claude-review='claude --system-prompt \"\$(cat ~/.claude/contexts/review.md)\"'
-alias claude-plan='claude --system-prompt \"\$(cat ~/.claude/contexts/plan.md)\"'
-alias claude-debug='claude --system-prompt \"\$(cat ~/.claude/contexts/debug.md)\"'
-alias claude-research='claude --system-prompt \"\$(cat ~/.claude/contexts/research.md)\"'
-# end ohmyclaude"
-
-# Detect shell config file
-if [[ -f "${HOME}/.zshrc" ]]; then
-  SHELL_RC="${HOME}/.zshrc"
-elif [[ -f "${HOME}/.bashrc" ]]; then
-  SHELL_RC="${HOME}/.bashrc"
-elif [[ -f "${HOME}/.bash_profile" ]]; then
-  SHELL_RC="${HOME}/.bash_profile"
-else
-  SHELL_RC="${HOME}/.zshrc"
-fi
-
-# Remove old block if present, then append fresh
-if grep -q "# ohmyclaude — context-mode aliases" "$SHELL_RC" 2>/dev/null; then
-  # Remove existing block
-  sed -i.bak '/# ohmyclaude — context-mode aliases/,/# end ohmyclaude/d' "$SHELL_RC"
-fi
-echo "$ALIAS_BLOCK" >> "$SHELL_RC"
-success "Aliases added to: ${SHELL_RC}"
-
-# ── Post-install ───────────────────────────────────────────────────────────────
-echo ""
-success "ohmyclaude installed successfully!"
-echo ""
-echo "  Profile:  ${PROFILE}"
-echo "  Location: ${PLUGIN_DIR}"
-echo ""
-echo "  Reload your shell, then start Claude in any mode:"
-echo ""
-echo "    claude-dev       → implementation mode (@hephaestus + @momus)"
-echo "    claude-review    → code & security review (@athena + @argus)"
-echo "    claude-plan      → planning pipeline (@metis → @hermes → @nemesis)"
-echo "    claude-debug     → root cause investigation (@heracles)"
-echo "    claude-research  → exploration mode (@metis + @apollo)"
-echo ""
-echo "  Or use /ultrawork inside any session for the full pipeline."
-echo ""
-echo "  Reload now:"
-echo "    source ${SHELL_RC}"
-echo ""

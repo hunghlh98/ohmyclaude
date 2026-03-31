@@ -1,6 +1,6 @@
 {
   "name": "ohmyclaude",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Multi-agent orchestration for Claude Code — 11 specialist agents, /ultrawork pipeline, quality hooks, LSP tooling",
   "author": "ohmyclaude contributors",
   "license": "MIT",
