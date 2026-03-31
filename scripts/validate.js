@@ -41,7 +41,8 @@ const marketJson   = load('.claude-plugin/marketplace.json');
 check('VERSION file', /^\d+\.\d+\.\d+$/.test(versionFile), `Invalid format: "${versionFile}"`);
 check('package.json matches VERSION',      pkg.version        === versionFile, `${pkg.version} ≠ ${versionFile}`);
 check('plugin.json matches VERSION',       pluginJson.version === versionFile, `${pluginJson.version} ≠ ${versionFile}`);
-check('marketplace.json matches VERSION',  marketJson.version === versionFile, `${marketJson.version} ≠ ${versionFile}`);
+const marketVersion = marketJson.plugins?.[0]?.version;
+check('marketplace.json matches VERSION',  marketVersion === versionFile, `${marketVersion} ≠ ${versionFile}`);
 
 // ── plugin.json structure ────────────────────────────────────────────────────
 console.log('\nplugin.json structure:');

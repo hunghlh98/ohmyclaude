@@ -54,20 +54,41 @@
       ]
     },
     {
-      "id": "full",
-      "name": "Full",
-      "description": "Everything, including experimental LSP MCP server (requires Node 18+).",
+      "id": "polyglot",
+      "name": "Polyglot",
+      "description": "Developer profile + multi-language reviewers and build resolver. For teams working in Java, Go, Python, Rust, Kotlin, C++, Flutter, or database-heavy projects.",
       "modules": [
         "agents-orchestration",
         "agents-implementation",
         "agents-review",
         "agents-docs",
+        "agents-polyglot",
         "skills-core",
         "commands-orchestration",
         "commands-core",
         "hooks-quality",
         "hooks-tracking",
         "rules-core",
+        "contexts"
+      ]
+    },
+    {
+      "id": "full",
+      "name": "Full",
+      "description": "Everything, including multi-language agents and experimental LSP MCP server (requires Node 18+).",
+      "modules": [
+        "agents-orchestration",
+        "agents-implementation",
+        "agents-review",
+        "agents-docs",
+        "agents-polyglot",
+        "skills-core",
+        "commands-orchestration",
+        "commands-core",
+        "hooks-quality",
+        "hooks-tracking",
+        "rules-core",
+        "contexts",
         "mcp-lsp"
       ]
     }

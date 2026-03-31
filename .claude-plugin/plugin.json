@@ -1,6 +1,6 @@
 {
   "name": "ohmyclaude",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Multi-agent orchestration for Claude Code — 8 specialist agents with mythological names, quality automation hooks, LSP tooling via MCP, and domain skills.",
   "author": {
     "name": "ohmyclaude contributors"
@@ -28,7 +28,9 @@
     "./agents/mnemosyne.md",
     "./agents/metis.md",
     "./agents/nemesis.md",
-    "./agents/eris.md"
+    "./agents/eris.md",
+    "./agents/polyglot-reviewer.md",
+    "./agents/build-resolver.md"
   ],
   "skills": [
     "./skills/"

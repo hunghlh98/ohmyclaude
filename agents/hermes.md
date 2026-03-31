@@ -106,11 +106,13 @@ Write to `.claude/plans/<kebab-case-task-name>.md` first (skeleton), then fill i
 | Need | Delegate to | Notes |
 |------|------------|-------|
 | Write / modify / refactor code | `@hephaestus` | Give exact files and behavior spec |
-| Review code quality | `@athena` | Give changed files list or PR name |
+| Review JS/TS correctness, readability, React/Node.js | `@athena` | Give changed files list or PR name |
+| Review Java, Kotlin, Go, Python, Rust, C++, Flutter, DB | `@polyglot-reviewer` | Give changed files — it detects language automatically |
+| Fix compilation / type / build error (any language) | `@build-resolver` | Give the verbatim build error output |
 | Design architecture / evaluate options | `@apollo` | Give the decision to be made |
 | Security audit | `@argus` | Give the component or file scope |
 | Write tests | `@momus` | Give the function or module to cover |
-| Debug a failure | `@heracles` | Give exact error or failing test |
+| Debug a runtime failure | `@heracles` | Give exact error or failing test |
 | Write documentation | `@mnemosyne` | Give the feature or API to document |
 | Challenge the plan | `@nemesis` | After writing the plan, before handing to Hephaestus |
 | Challenge a decision | `@eris` | When a choice is high-risk or irreversible |

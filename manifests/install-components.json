@@ -42,6 +42,11 @@
       "description": "Session tracking hook: writes usage summary to ~/.claude/ohmyclaude/",
       "modules": ["hooks-tracking"]
     },
+    "polyglot": {
+      "family": "agent",
+      "description": "Multi-language reviewer + build resolver — Java, Kotlin, Go, Python, Rust, TypeScript, C++, Flutter, Database/SQL",
+      "modules": ["agents-polyglot"]
+    },
     "lsp": {
       "family": "mcp",
       "description": "LSP MCP server: goto-definition, find-references, symbols, diagnostics, rename (v0.2+)",

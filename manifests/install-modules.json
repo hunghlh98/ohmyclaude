@@ -145,6 +145,18 @@
       "stability": "stable"
     },
     {
+      "id": "agents-polyglot",
+      "kind": "agents",
+      "description": "Multi-language reviewer (Java, Kotlin, Go, Python, Rust, TypeScript, C++, Flutter, Database/SQL) and build error resolver for any language/build tool",
+      "paths": [
+        "agents/polyglot-reviewer.md",
+        "agents/build-resolver.md"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": false,
+      "stability": "stable"
+    },
+    {
       "id": "mcp-lsp",
       "kind": "mcp",
       "description": "LSP MCP server: goto-definition, find-references, symbols, diagnostics, rename (v0.2+ — stub in v0.1)",
