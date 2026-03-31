@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "ohmyclaude",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "source": "./",
       "description": "Multi-agent orchestration for Claude Code. 11 specialist agents named after Greek gods — from requirements clarification (Metis) through implementation (Hephaestus) to security review (Argus). One command, /ultrawork, runs the full pipeline automatically.",
       "category": "workflow",
