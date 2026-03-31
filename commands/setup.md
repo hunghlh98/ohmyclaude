@@ -25,12 +25,7 @@ Run this once after installing ohmyclaude via the Claude Code marketplace to ena
 node "$CLAUDE_PLUGIN_ROOT/scripts/postinstall.js"
 ```
 
-`$CLAUDE_PLUGIN_ROOT` is set automatically by Claude Code when running commands from an installed plugin. If it is unset, set it manually before running:
-
-```bash
-export CLAUDE_PLUGIN_ROOT="<path-to-ohmyclaude>"
-node "$CLAUDE_PLUGIN_ROOT/scripts/postinstall.js"
-```
+`$CLAUDE_PLUGIN_ROOT` is resolved by Claude Code to the plugin's installation directory.
 
 Then reload your shell:
 ```bash
