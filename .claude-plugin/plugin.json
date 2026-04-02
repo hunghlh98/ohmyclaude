@@ -1,6 +1,6 @@
 {
   "name": "ohmyclaude",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Multi-agent orchestration for Claude Code — 13 specialist agents, quality hooks, multi-language LSP, and domain skills.",
   "author": {
     "name": "ohmyclaude contributors"
