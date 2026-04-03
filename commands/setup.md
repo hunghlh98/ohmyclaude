@@ -1,47 +1,45 @@
 ---
-description: One-time setup after marketplace install — copies contexts and adds shell aliases for claude-dev, claude-review, claude-plan, claude-debug, claude-research.
+name: setup
+description: One-time setup after marketplace install — copies contexts and adds shell aliases for claude-oss, claude-dev, claude-review, claude-debug.
 ---
 
 # /setup
 
-Run this once after installing ohmyclaude via the Claude Code marketplace to enable context-mode shell aliases.
+Run once after `claude plugin install hunghlh98/ohmyclaude` to enable context-mode shell aliases.
 
-## What This Command Does
+## What it does
 
-1. Runs `postinstall.js` from the plugin directory
-2. Copies `contexts/*.md` to `~/.claude/contexts/`
-3. Injects aliases into your shell config (`~/.zshrc` or `~/.bashrc`)
-4. Prints reload instructions
+1. Copies `contexts/*.md` → `~/.claude/contexts/`
+2. Injects 4 aliases into `~/.zshrc` / `~/.bashrc`
+3. Prints reload instructions
 
-## When to Use
+## Usage
 
-- After `claude plugin install hunghlh98/ohmyclaude` (marketplace install)
-- After `claude plugin update hunghlh98/ohmyclaude` to get new/updated contexts
-- If your aliases are missing or broken
-
-## How It Works
-
-```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/postinstall.js
 ```
-
-`${CLAUDE_PLUGIN_ROOT}` is resolved by Claude Code to the plugin's versioned installation directory.
+/setup
+```
 
 Then reload your shell:
 ```bash
 source ~/.zshrc   # or ~/.bashrc
 ```
 
-## After Setup
+## After setup
 
 ```bash
-claude-dev        # start Claude in implementation mode
-claude-review     # start Claude in review mode
-claude-plan       # start Claude in planning mode
-claude-debug      # start Claude in debug mode
-claude-research   # start Claude in research mode
+claude-oss      # full OSS pipeline  (all 14 agents, /forge entry point)
+claude-dev      # implementation     (@beck-backend + @effie-frontend + @quinn-qa)
+claude-review   # code & security    (@stan-standards + @percy-perf + @sam-sec)
+claude-debug    # debugging          (@heracles)
 ```
 
-## Note
+## How it works
 
-If npm is available in your environment, postinstall runs automatically on marketplace install and this command is not needed.
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/postinstall.js
+```
+
+## When to re-run
+
+- After `claude plugin update hunghlh98/ohmyclaude` to refresh contexts
+- If your aliases are missing or stale

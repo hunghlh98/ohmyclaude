@@ -61,5 +61,5 @@ Added null check: if user is null, throw NotFoundError before accessing fields.
 ## Related Agents
 
 - **@heracles** — Directly invoke the debugger
-- **@athena** — If Heracles finds the bug was caused by a code quality issue
-- **@momus** — To write a regression test after the fix
+- **@stan-standards** — If Heracles finds the bug was caused by a code quality issue
+- **@quinn-qa** — To write a regression test after the fix

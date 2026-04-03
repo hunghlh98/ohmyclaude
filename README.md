@@ -1,6 +1,6 @@
 # ohmyclaude
 
-Multi-agent orchestration for Claude Code — 13 specialist agents, quality hooks, domain skills, and session contexts.
+14-agent OSS company simulation pipeline for Claude Code — document-driven, dynamically routed, with conflict resolution and a post-release feedback loop.
 
 > Inspired by [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) and [everything-claude-code](https://github.com/affaan-m/everything-claude-code).
 
@@ -8,88 +8,96 @@ Multi-agent orchestration for Claude Code — 13 specialist agents, quality hook
 
 ## Install
 
-**Marketplace (recommended):**
 ```
 claude plugin install hunghlh98/ohmyclaude
+```
+
+Then run once inside Claude Code to enable shell aliases:
+
+```
 /setup
-```
-`/setup` runs once after marketplace install — copies contexts and adds shell aliases. (Skippable if npm is available; postinstall runs automatically.)
-
-**Script:**
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/hunghlh98/ohmyclaude/main/install.sh)
-```
-
-**Clone:**
-```bash
-git clone https://github.com/hunghlh98/ohmyclaude ~/.claude/plugins/ohmyclaude
-cd ~/.claude/plugins/ohmyclaude && bash install.sh
-```
-
-Profiles: `minimal` · `developer` (default) · `polyglot` · `security` · `full`
-
-```bash
-bash install.sh --profile polyglot   # adds Java, Go, Python, Rust, Kotlin, C++, Flutter reviewers
 ```
 
 **Upgrade:**
 ```bash
-# Marketplace
 claude plugin update hunghlh98/ohmyclaude
-/setup   # re-run if contexts or aliases changed
-
-# Script / Clone
-git pull && bash install.sh
 ```
 
 ---
 
 ## Quick Start
 
-**One command, full pipeline:**
+**Submit a request (auto-routed through pipeline):**
 ```
-/ultrawork add rate limiting to the /api/users endpoint
+/forge request add rate limiting to the /api/users endpoint
 ```
 
 **Or invoke agents directly:**
 ```
-@metis  — clarify a vague requirement
-@hermes — decompose and plan a task
-@athena — review changed code
-@argus  — security audit
-@hephaestus — implement something
+@paige-product  — classify and route a request
+@artie-arch     — design architecture (C4 diagrams)
+@stan-standards — review code quality
+@sam-sec        — security audit + adversarial plan validation
+@beck-backend   — implement backend features
+@effie-frontend — implement frontend features
 @polyglot-reviewer — review Java / Go / Python / Rust / Kotlin / C++ / Flutter / SQL
-@build-resolver — fix a broken build (any language)
+@build-resolver    — fix a broken build (any language)
 ```
 
 **Session contexts** — launch Claude already in the right mode:
 ```bash
-claude-dev      # build mode  — hephaestus + momus
-claude-review   # review mode — athena + argus
-claude-plan     # plan mode   — metis → hermes → nemesis
-claude-debug    # debug mode  — heracles
-claude-research # explore mode — metis + apollo
+claude-oss      # full pipeline — all 14 agents, /forge entry point
+claude-dev      # build mode   — beck-backend + effie-frontend + quinn-qa
+claude-review   # review mode  — stan-standards + percy-perf + sam-sec
+claude-debug    # debug mode   — heracles
 ```
 
 ---
 
-## Agents
+## OSS Pipeline
 
-| Group | Agent | Does |
-|-------|-------|------|
-| Plan | **Metis** | Clarifies vague requirements before planning |
-| Plan | **Hermes** | Decomposes tasks, assigns to specialists |
-| Plan | **Nemesis** | Validates plans — approval bias, max 3 blockers |
-| Plan | **Eris** | Stress-tests plans across 7 adversarial scenarios |
-| Build | **Hephaestus** | Implements features and fixes — goal-oriented |
-| Build | **Heracles** | Debugs failures to root cause |
-| Build | **Momus** | Writes TDD tests — RED→GREEN→REFACTOR |
-| Build | **Mnemosyne** | Writes docs, READMEs, changelogs |
-| Review | **Athena** | Reviews JS/TS quality, correctness, React/Node |
-| Review | **Apollo** | Architects systems, writes ADRs |
-| Review | **Argus** | OWASP security audit |
-| Lang | **polyglot-reviewer** | Language-aware review — detects and checks Java / Kotlin / Go / Python / Rust / TypeScript / C++ / Flutter / DB |
-| Lang | **build-resolver** | Fixes build errors — Maven, Gradle, Cargo, tsc, CMake, go build |
+```
+TIER 1 — STRATEGY & DESIGN
+  @paige-product  Grand Router + Product Gatekeeper
+  @artie-arch     Architect (C4: C1→C3)
+  @una-ux         UX/UI Design (pre-dev spec + post-dev visual review)
+  @scout-sprint   Planning & Sprint Coordination
+
+TIER 2 — EXECUTION
+  @sam-sec        Security, Compliance & Adversarial Validation
+  @beck-backend   BE Contributor (C4-Code + implementation)
+  @effie-frontend FE Contributor (C4-Code + implementation)
+  @quinn-qa       QA / Tester
+
+TIER 3 — GOVERNANCE
+  @stan-standards Logic & Standards (read-only)
+  @percy-perf     Performance (read-only)
+  @dora-docs      Documentation
+  @devon-ops      SRE / DevOps + Releases (ultimate trump card)
+
+TIER 4 — POST-RELEASE
+  @evan-evangelist  DevRel / Community
+  @anna-analytics   Data / Analytics (feedback loop)
+```
+
+**Document flow (each stage produces a named artifact):**
+```
+UX-SPEC → PRD → SDD → PLAN → REVIEW → IMPL-BE/FE → TEST → CODE-REVIEW → UX-REVIEW → DOC → RELEASE → ANNOUNCEMENT → ANALYTICS
+```
+
+---
+
+## Dynamic Routing
+
+`@paige-product` classifies every request and assigns a route before writing the PRD:
+
+| Route | Name | Trigger | Skips |
+|-------|------|---------|-------|
+| **A** | Docs-Only | Type=docs, Complexity=low | Most agents |
+| **B** | Fast-Track | Matches boilerplate template | @artie-arch, @una-ux |
+| **C** | Hotfix | P0 bug | @artie-arch, @una-ux, @evan-evangelist |
+| **D** | Full Feature | high complexity feature | None |
+| **E** | Security Patch | Touches_Security=true | @una-ux, @evan-evangelist |
 
 ---
 
@@ -97,27 +105,93 @@ claude-research # explore mode — metis + apollo
 
 | Command | What it does |
 |---------|-------------|
-| `/setup` | **First-run after marketplace install** — copies contexts, adds shell aliases |
-| `/ultrawork <task>` | Full pipeline: clarify → plan → challenge → implement → test → review → secure → document |
-| `/plan <task>` | Plan only — Metis + Hermes |
-| `/review [path]` | Code review — Athena (add `--security` for Argus) |
-| `/debug <issue>` | Root cause analysis — Heracles |
+| `/forge request <task>` | Route and triage a new request → ISS-NNN.md |
+| `/forge sprint` | Execute current sprint through each issue's route |
+| `/forge release` | @devon-ops cuts release → @evan-evangelist announces |
+| `/forge analyze` | @anna-analytics post-deploy telemetry (async) |
+| `/forge init <spec>` | Founding build: full Route D pipeline → v1.0.0 |
+| `/forge triage` | @paige-product re-routes all backlog items |
+| `/review [path]` | Code review — @stan-standards + @percy-perf |
+| `/debug <issue>` | Root cause analysis — @heracles |
 | `/commit` | Semantic commit message from diff |
-| `/scaffold <stack>` | Generate project boilerplate |
+
+---
+
+## Conflict Resolution
+
+**Domain Dictator** — who wins conflicts:
+
+| Conflict | Winner |
+|----------|--------|
+| Velocity vs security | @sam-sec always |
+| Release timing vs community hype | @devon-ops always |
+| Product intuition vs telemetry | @anna-analytics (data beats intuition) |
+| UX completeness vs velocity | @una-ux on WCAG failures |
+
+**Circuit Breaker** — after 3 rejection rounds in any stage:
+1. Reviewing agent writes `DEADLOCK-<id>.md`
+2. Pipeline halts
+3. @paige-product synthesizes binary choice for human
+4. Human authorizes → pipeline resumes
+
+---
+
+## Agents
+
+### Primary Pipeline (14)
+
+| Tier | Agent | Persona | Does |
+|------|-------|---------|------|
+| 1 | **@paige-product** | Pragmatic Skeptic | Grand Router — classifies, routes, writes PRD |
+| 1 | **@artie-arch** | Elegant Purist | C4 architect — SDD with C1-C3 diagrams |
+| 1 | **@una-ux** | The Empath | UX-SPEC (pre-dev) + UX-REVIEW (post-dev) |
+| 1 | **@scout-sprint** | Agile Hustler | Sprint planner — PLAN + agent delegation |
+| 2 | **@sam-sec** | The Doomsayer | Security + 7 adversarial scenarios — REVIEW |
+| 2 | **@beck-backend** | Blue-Collar Builder | BE implementation (BE-only scope) |
+| 2 | **@effie-frontend** | Pixel Artisan | FE implementation + WCAG compliance |
+| 2 | **@quinn-qa** | Professional Troll | Tests + fuzz data — TEST report |
+| 3 | **@stan-standards** | Wise Mentor | Code logic + quality — CODE-REVIEW (logic section) |
+| 3 | **@percy-perf** | Unblinking Watcher | Performance — CODE-REVIEW (perf section) |
+| 3 | **@dora-docs** | The Historian | Docs + Keep a Changelog |
+| 3 | **@devon-ops** | The Timekeeper | SRE — RELEASE file + CHANGELOG promotion |
+| 4 | **@evan-evangelist** | The Hypeman | Community announcements |
+| 4 | **@anna-analytics** | Cold Truth-Teller | Post-deploy telemetry + regression feedback loop |
+
+### Utility (on-demand, not in pipeline)
+
+| Agent | Does |
+|-------|------|
+| **@heracles** | Debugs failures to root cause |
+| **@polyglot-reviewer** | Language-aware review — Java / Kotlin / Go / Python / Rust / TypeScript / C++ / Flutter / SQL |
+| **@build-resolver** | Fixes build errors — Maven, Gradle, Cargo, tsc, CMake, go build |
+
+---
+
+## Contexts
+
+| Alias | Mode | Agents |
+|-------|------|--------|
+| `claude-oss` | Full OSS pipeline | All 14 primary agents, /forge |
+| `claude-dev` | Implementation | @beck-backend + @effie-frontend + @quinn-qa |
+| `claude-review` | Code review | @stan-standards + @percy-perf + @sam-sec |
+| `claude-debug` | Debugging | @heracles |
+
+---
+
+## Hooks
+
+| Hook | Trigger | What it does |
+|------|---------|-------------|
+| **pre-write-check** | PreToolUse Write/Edit | Blocks writes with hardcoded secrets |
+| **post-bash-lint** | PostToolUse Bash | Runs linter after bash edits source |
+| **backlog-tracker** | PostToolUse Write | Rebuilds BACKLOG.md when ISS-*.md files are written |
+| **session-summary** | Stop | Writes session log to `~/.claude/ohmyclaude/` |
 
 ---
 
 ## Skills (auto-activate by keyword)
 
 `git-workflow` · `tdd-patterns` · `api-design` · `error-handling` · `code-review`
-
----
-
-## Hooks
-
-- **pre-write-check** — blocks writes with hardcoded secrets
-- **post-bash-lint** — runs linter after bash edits source
-- **session-summary** — writes session log to `~/.claude/ohmyclaude/`
 
 ---
 

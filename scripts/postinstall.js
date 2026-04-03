@@ -3,9 +3,8 @@
  * postinstall.js
  *
  * Runs automatically after:
- *   - claude plugin install hunghlh98/ohmyclaude  (marketplace)
+ *   - /setup command inside Claude Code  (marketplace install)
  *   - npm install  (manual)
- *   - bash install.sh  (delegates here)
  *
  * What it does:
  *   1. Copies contexts/ to ~/.claude/contexts/
@@ -62,11 +61,10 @@ function buildAliasBlock() {
   return [
     '',
     ALIAS_MARKER_START,
+    `alias claude-oss='claude --system-prompt "$(cat ${ctxDir}/oss.md)"'`,
     `alias claude-dev='claude --system-prompt "$(cat ${ctxDir}/dev.md)"'`,
     `alias claude-review='claude --system-prompt "$(cat ${ctxDir}/review.md)"'`,
-    `alias claude-plan='claude --system-prompt "$(cat ${ctxDir}/plan.md)"'`,
     `alias claude-debug='claude --system-prompt "$(cat ${ctxDir}/debug.md)"'`,
-    `alias claude-research='claude --system-prompt "$(cat ${ctxDir}/research.md)"'`,
     ALIAS_MARKER_END,
     '',
   ].join('\n');
@@ -119,14 +117,14 @@ function printQuickStart(rcFile) {
     console.log('');
   }
   console.log('  Start Claude in a mode:');
-  console.log('    claude-dev        implementation  (@hephaestus + @momus)');
-  console.log('    claude-review     code & security (@athena + @argus)');
-  console.log('    claude-plan       planning        (@metis → @hermes → @nemesis)');
-  console.log('    claude-debug      debugging       (@heracles)');
-  console.log('    claude-research   exploration     (@metis + @apollo)');
+  console.log('    claude-oss        full OSS pipeline  (14 agents, /forge entry point)');
+  console.log('    claude-dev        implementation     (@beck-backend + @effie-frontend + @quinn-qa)');
+  console.log('    claude-review     code & security    (@stan-standards + @percy-perf + @sam-sec)');
+  console.log('    claude-debug      debugging          (@heracles)');
   console.log('');
   console.log('  Or inside any session:');
-  console.log('    /ultrawork <task>   full pipeline, one command');
+  console.log('    /forge request <task>   route and triage a new request');
+  console.log('    /forge sprint           run the current sprint through the pipeline');
   console.log('');
 }
 
@@ -138,6 +136,6 @@ try {
   printQuickStart(rcFile);
 } catch (err) {
   warn(`Setup encountered an error: ${err.message}`);
-  warn('Run  bash install.sh  to retry, or add aliases manually (see README).');
+  warn('Run  /setup  inside Claude Code to retry, or add aliases manually (see README).');
   // Non-fatal — don't block npm install
 }

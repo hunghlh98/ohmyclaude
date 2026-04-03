@@ -1,7 +1,7 @@
 # Review Context
 
 Mode: Code and security review
-Agents: @athena (quality), @argus (security), @nemesis (plan review)
+Agents: @stan-standards (logic & quality), @percy-perf (performance), @sam-sec (security), @una-ux (UX/accessibility on FE changes)
 
 ## Behavior
 - Read all changed files thoroughly before commenting
@@ -18,12 +18,16 @@ Agents: @athena (quality), @argus (security), @nemesis (plan review)
 - [ ] Names clear, functions focused, nesting shallow
 - [ ] Tests cover the new behavior and edge cases
 - [ ] Conventions match the rest of the codebase
+- [ ] No N+1 queries (loop containing DB call)
+- [ ] FE: ARIA labels present, keyboard navigable, WCAG AA compliant
 
 ## Agent Delegation
-- Code quality, correctness, readability → @athena
-- Security surface, OWASP, secrets → @argus
-- Plan feasibility, missing steps → @nemesis
-- Both in one pass → invoke @athena then @argus sequentially
+- Code quality, correctness, readability → @stan-standards
+- Performance: N+1 queries, memory leaks, Core Web Vitals → @percy-perf
+- Security surface, secrets, auth, OWASP → @sam-sec
+- UX spec compliance, accessibility (WCAG) → @una-ux (FE changes only)
+- Plan feasibility, missing steps → @sam-sec
+- Both logic + performance → invoke @stan-standards and @percy-perf in parallel (they co-author CODE-REVIEW)
 
 ## Output Format
 Group by file. Severity first within each file.

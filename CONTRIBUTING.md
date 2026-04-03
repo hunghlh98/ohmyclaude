@@ -26,49 +26,68 @@ Two categories of files exist in this repo. Know which is which:
 
 ## Working Style
 
-### Naming Convention — Greek Mythology Theme
+### Naming Convention — Corporate Slack Persona Theme
 
-All agents follow the Greek mythology theme. When adding a new agent, pick a name whose **mythological role matches the agent's function**:
+All agents follow the "Corporate Slack" persona theme — a recognizable human name that signals their role and personality. When adding a new agent, pick a name whose **persona matches the agent's function and occupational hazard**:
 
-| Agent | Myth role | Plugin function |
-|-------|-----------|----------------|
-| Hermes | Messenger, connector | Orchestrator — routes work |
-| Hephaestus | Smith, builder | Implementer — forges code |
-| Athena | Wisdom, strategy | Code reviewer — judges quality |
-| Apollo | Reason, light | Architect — illuminates structure |
-| Argus | Hundred-eyed guardian | Security reviewer — sees everything |
-| Heracles | Hero of trials | Debugger — solves hard problems |
-| Momus | God of criticism | Test writer — finds every gap |
-| Mnemosyne | Memory | Docs writer — preserves knowledge |
-| Metis | Deep counsel | Clarifier — asks the right questions |
-| Nemesis | Balance, retribution | Plan validator — keeps plans honest |
-| Eris | Productive discord | Challenger — devil's advocate |
+| Agent | Persona | Plugin function |
+|-------|---------|----------------|
+| paige-product | Pragmatic Skeptic | Grand Router + product gatekeeper |
+| artie-arch | Elegant Purist | C4 system architect |
+| una-ux | The Empath | UX spec (pre-dev) + accessibility review (post-dev) |
+| scout-sprint | Agile Hustler | Sprint planner + task orchestrator |
+| sam-sec | The Doomsayer | Security, compliance, adversarial plan validation |
+| beck-backend | Blue-Collar Builder | BE implementer (BE-only scope) |
+| effie-frontend | Pixel Artisan | FE implementer (FE-only scope) |
+| quinn-qa | Professional Troll | Test writer + fuzz generator |
+| stan-standards | Wise Mentor | Logic & code quality reviewer (read-only) |
+| percy-perf | Unblinking Watcher | Performance reviewer (read-only) |
+| dora-docs | The Historian | Documentation + Keep a Changelog |
+| devon-ops | The Timekeeper | SRE / DevOps + release manager |
+| evan-evangelist | The Hypeman | DevRel + community announcements |
+| anna-analytics | Cold Truth-Teller | Post-deploy telemetry + feedback loop |
+| heracles | — | Debugger (utility, not in primary pipeline) |
+| build-resolver | — | Build error fixer (utility) |
+| polyglot-reviewer | — | Multi-language code reviewer (utility) |
 
-Don't pick a name just because it sounds good. The myth must fit the function.
+The name must convey the persona's occupational hazard, not just the function.
 
-### Agent Workflow Order
-
-The intended pipeline is:
+### Agent Workflow Order (5-Tier OSS Pipeline)
 
 ```
-Metis → Hermes → Nemesis → (Eris) → Hephaestus → Momus → Athena → Argus → Mnemosyne
+TIER 1 — STRATEGY & DESIGN
+  @paige-product → @una-ux → @artie-arch → @scout-sprint
+
+TIER 2 — EXECUTION
+  @sam-sec (validation) → @beck-backend + @effie-frontend (parallel) → @quinn-qa
+
+TIER 3 — GOVERNANCE
+  @stan-standards + @percy-perf + @una-ux (parallel review) → @dora-docs → @devon-ops
+
+TIER 4 — POST-RELEASE
+  @evan-evangelist → @anna-analytics (async)
 ```
 
-New agents should slot into this pipeline with a clear position. Document where in the workflow the agent belongs.
+New agents should slot into one of the 4 tiers with a clear position. Dynamic routing (Route A/B/C/D/E) determines which tiers are activated per issue.
 
 ### Model Selection
 
 | Model | When to use |
 |-------|------------|
-| `opus` | Expensive analysis, architecture (Apollo only by default) |
+| `opus` | Expensive analysis, architecture (artie-arch only by default) |
 | `sonnet` | Most agents — good balance |
-| `haiku` | High-volume, low-complexity (Mnemosyne) |
+| `haiku` | High-volume, low-complexity (dora-docs, evan-evangelist) |
 
 Don't use `opus` unless the agent genuinely needs deep reasoning. Justify it in the PR.
 
 ### Read-Only Agents
 
-Review agents (Athena, Apollo, Argus, Metis, Nemesis, Eris) must **never** have `Write`, `Edit`, or `MultiEdit` in their tools list. They observe and advise only.
+These agents observe and advise only — they must **never** have `Write`, `Edit`, or `MultiEdit` in their tools list:
+- Tier 1 (design): `artie-arch`, `una-ux` (pre-dev role only — post-dev UX-REVIEW uses Write for the review file)
+- Tier 3 (governance): `stan-standards`, `percy-perf`
+- Tier 4 (post-release): `evan-evangelist`, `anna-analytics` (Write-only to docs, not source code)
+
+`paige-product`, `scout-sprint`, `dora-docs`, `devon-ops` all write to `.claude/pipeline/` — that is their function.
 
 ---
 
@@ -297,6 +316,8 @@ Before opening a PR:
 - [ ] `ROADMAP.md` updated if this completes or adds a milestone item
 - [ ] `contexts/` updated if behavior change affects a working mode
 - [ ] `CONTRIBUTING.md` updated if the contribution process itself changes
+- [ ] No references to `/ultrawork`, `/plan`, `/scaffold`, `/setup` — use `/forge` instead
+- [ ] No references to old Greek agent names — use Corporate Slack names
 
 **Commit**
 - [ ] Commit message follows Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, etc.)

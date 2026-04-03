@@ -1,7 +1,7 @@
 {
   "name": "ohmyclaude",
-  "version": "0.2.7",
-  "description": "Multi-agent orchestration for Claude Code — 13 specialist agents, quality hooks, multi-language LSP, and domain skills.",
+  "version": "0.3.0",
+  "description": "14-agent OSS company simulation pipeline for Claude Code — document-driven, dynamically routed, with conflict resolution and post-release feedback loop.",
   "author": {
     "name": "ohmyclaude contributors"
   },
@@ -18,17 +18,21 @@
     "automation"
   ],
   "agents": [
-    "./agents/hermes.md",
-    "./agents/hephaestus.md",
-    "./agents/athena.md",
-    "./agents/apollo.md",
-    "./agents/argus.md",
+    "./agents/paige-product.md",
+    "./agents/artie-arch.md",
+    "./agents/una-ux.md",
+    "./agents/scout-sprint.md",
+    "./agents/sam-sec.md",
+    "./agents/beck-backend.md",
+    "./agents/effie-frontend.md",
+    "./agents/quinn-qa.md",
+    "./agents/stan-standards.md",
+    "./agents/percy-perf.md",
+    "./agents/dora-docs.md",
+    "./agents/devon-ops.md",
+    "./agents/evan-evangelist.md",
+    "./agents/anna-analytics.md",
     "./agents/heracles.md",
-    "./agents/momus.md",
-    "./agents/mnemosyne.md",
-    "./agents/metis.md",
-    "./agents/nemesis.md",
-    "./agents/eris.md",
     "./agents/polyglot-reviewer.md",
     "./agents/build-resolver.md"
   ],

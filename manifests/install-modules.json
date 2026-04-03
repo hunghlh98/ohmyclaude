@@ -1,16 +1,27 @@
 {
   "$schema": "../schemas/install-modules.schema.json",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "modules": [
     {
-      "id": "agents-orchestration",
+      "id": "agents-strategy",
       "kind": "agents",
-      "description": "Orchestration & planning agents: Metis (clarifier), Hermes (planner), Nemesis (validator), Eris (challenger)",
+      "description": "Tier 1 — Strategy & Design: Paige Product (Grand Router), Artie Arch (C4 architect), Una UX (accessibility + UX spec), Scout Sprint (planner)",
       "paths": [
-        "agents/metis.md",
-        "agents/hermes.md",
-        "agents/nemesis.md",
-        "agents/eris.md"
+        "agents/paige-product.md",
+        "agents/artie-arch.md",
+        "agents/una-ux.md",
+        "agents/scout-sprint.md"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
+      "id": "agents-security",
+      "kind": "agents",
+      "description": "Tier 2 — Security: Sam Sec (security, compliance, adversarial plan validator)",
+      "paths": [
+        "agents/sam-sec.md"
       ],
       "targets": ["claude"],
       "defaultInstall": true,
@@ -19,11 +30,12 @@
     {
       "id": "agents-implementation",
       "kind": "agents",
-      "description": "Implementation agents: Hephaestus (builder), Heracles (debugger), Momus (test writer)",
+      "description": "Tier 2 — Execution: Beck Backend (BE builder), Effie Frontend (FE builder), Heracles (debugger), Quinn QA (test writer)",
       "paths": [
-        "agents/hephaestus.md",
+        "agents/beck-backend.md",
+        "agents/effie-frontend.md",
         "agents/heracles.md",
-        "agents/momus.md"
+        "agents/quinn-qa.md"
       ],
       "targets": ["claude"],
       "defaultInstall": true,
@@ -32,11 +44,10 @@
     {
       "id": "agents-review",
       "kind": "agents",
-      "description": "Review agents (read-only): Athena (code quality), Apollo (architecture), Argus (security)",
+      "description": "Tier 3 — Governance (read-only reviewers): Stan Standards (logic & conventions), Percy Perf (performance)",
       "paths": [
-        "agents/athena.md",
-        "agents/apollo.md",
-        "agents/argus.md"
+        "agents/stan-standards.md",
+        "agents/percy-perf.md"
       ],
       "targets": ["claude"],
       "defaultInstall": true,
@@ -45,12 +56,35 @@
     {
       "id": "agents-docs",
       "kind": "agents",
-      "description": "Documentation agent: Mnemosyne (README, API docs, changelogs)",
+      "description": "Tier 3 — Documentation: Dora Docs (README, API docs, Keep a Changelog)",
       "paths": [
-        "agents/mnemosyne.md"
+        "agents/dora-docs.md"
       ],
       "targets": ["claude"],
       "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
+      "id": "agents-release",
+      "kind": "agents",
+      "description": "Tier 3 — SRE / DevOps: Devon Ops (release manager, ultimate trump card on production stability)",
+      "paths": [
+        "agents/devon-ops.md"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
+      "id": "agents-community",
+      "kind": "agents",
+      "description": "Tier 4 — Post-Release: Evan Evangelist (DevRel/community), Anna Analytics (telemetry + feedback loop)",
+      "paths": [
+        "agents/evan-evangelist.md",
+        "agents/anna-analytics.md"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": false,
       "stability": "stable"
     },
     {
@@ -69,11 +103,11 @@
       "stability": "stable"
     },
     {
-      "id": "commands-orchestration",
+      "id": "commands-forge",
       "kind": "commands",
-      "description": "Orchestration commands: /ultrawork (full pipeline)",
+      "description": "Forge — single OSS entry point: /forge init, request, triage, sprint, release, analyze",
       "paths": [
-        "commands/ultrawork.md"
+        "commands/forge.md"
       ],
       "targets": ["claude"],
       "defaultInstall": true,
@@ -82,12 +116,10 @@
     {
       "id": "commands-core",
       "kind": "commands",
-      "description": "Developer commands: /plan, /review, /commit, /scaffold, /debug",
+      "description": "Developer utility commands: /review, /commit, /debug",
       "paths": [
-        "commands/plan.md",
         "commands/review.md",
         "commands/commit.md",
-        "commands/scaffold.md",
         "commands/debug.md"
       ],
       "targets": ["claude"],
@@ -102,6 +134,17 @@
         "hooks/hooks.json",
         "hooks/scripts/pre-write-check.js",
         "hooks/scripts/post-bash-lint.js"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
+      "id": "hooks-backlog",
+      "kind": "hooks",
+      "description": "Backlog tracker: auto-rebuilds BACKLOG.md index when ISS-*.md files are written",
+      "paths": [
+        "hooks/scripts/backlog-tracker.js"
       ],
       "targets": ["claude"],
       "defaultInstall": true,
@@ -132,13 +175,12 @@
     {
       "id": "contexts",
       "kind": "contexts",
-      "description": "Session mode contexts: dev, review, plan, debug, research — loads the right agents and behavior for each working mode",
+      "description": "Session mode contexts: oss (full pipeline), dev, review, debug — loads the right agents and behavior for each working mode",
       "paths": [
+        "contexts/oss.md",
         "contexts/dev.md",
         "contexts/review.md",
-        "contexts/plan.md",
-        "contexts/debug.md",
-        "contexts/research.md"
+        "contexts/debug.md"
       ],
       "targets": ["claude"],
       "defaultInstall": true,
@@ -159,7 +201,7 @@
     {
       "id": "mcp-lsp",
       "kind": "mcp",
-      "description": "LSP MCP server: goto-definition, find-references, symbols, diagnostics, rename (v0.2+ — stub in v0.1)",
+      "description": "LSP MCP server: goto-definition, find-references, symbols, diagnostics, rename",
       "paths": [
         "mcp/lsp-server/",
         ".mcp.json"

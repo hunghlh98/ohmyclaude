@@ -8,9 +8,9 @@
   "plugins": [
     {
       "name": "ohmyclaude",
-      "version": "0.2.7",
+      "version": "0.3.0",
       "source": "./",
-      "description": "Multi-agent orchestration for Claude Code. 11 specialist agents named after Greek gods — from requirements clarification (Metis) through implementation (Hephaestus) to security review (Argus). One command, /ultrawork, runs the full pipeline automatically.",
+      "description": "14-agent OSS company simulation pipeline for Claude Code. Corporate Slack personas across 4 tiers — strategy, execution, governance, post-release. Dynamic routing (5 routes), document-driven pipeline, conflict resolution with Circuit Breaker, and analytics feedback loop.",
       "category": "workflow",
       "author": {
         "name": "hunghlh"

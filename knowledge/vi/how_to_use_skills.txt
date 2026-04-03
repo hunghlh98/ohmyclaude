@@ -1,0 +1,74 @@
+1/ Skill không phải là "markdown file"
+Đây là misconception phổ biến nhất mà Thariq đề cập ngay đầu bài. Rất nhiều anh em nghĩ Skill chỉ là file markdown chứa mấy dòng instruction rồi Claude đọc. Xong.
+Sai.
+Skill là một folder - bao gồm scripts, assets, data, config, templates - tất cả mọi thứ mà agent có thể khám phá, explore và manipulate. Nói cách khác, Skill là một "knowledge package" hoàn chỉnh, không phải một tờ giấy ghi chú.
+Theo docs chính thức của Anthropic, kiến trúc progressive disclosure hoạt động theo layers:
+Layer 1 - Metadata: Khi Claude khởi động, nó chỉ load name + description của tất cả skills. Tốn khoảng ~100 tokens cho mỗi skill ở bước scanning.
+Layer 2 - SKILL .md body: Chỉ khi skill được kích hoạt (trigger), Claude mới đọc nội dung chính. Anthropic khuyến nghị giữ dưới 500 dòng.
+Layer 3 - Reference files: Các file trong references/, scripts/, assets/ chỉ được load khi thực sự cần. Zero tokens cho đến khi Claude quyết định đọc.
+Đây chính là lý do tại sao skill-based approach hiệu quả hơn việc dump hết mọi thứ vào system prompt hay CLAUDE.md. Context window là tài nguyên công cộng - mỗi token bạn nhét vào đều cạnh tranh trực tiếp với conversation history và reasoning space của model.
+> "Context engineering > prompt engineering"
+> À thì, thật ra thì về nguyên lý Misanthropic đã có thể nâng cấp Slash Commands 1 xíu thì nó thành Agent Skills, nhưng... cái tên Agent Skills nó ngầu hơn 😂
+---
+2/ 9 loại Skills mà Anthropic phân loại nội bộ
+Sau khi catalog tất cả skills nội bộ, đội Anthropic phát hiện chúng gom lại thành 9 nhóm chính. Tui liệt kê ra đây kèm phân tích vì sao mỗi nhóm quan trọng:
+2.1. Library & API Reference
+Skills giải thích cách dùng đúng một library, CLI, hoặc SDK - đặc biệt là internal libraries mà Claude không thể biết được từ training data.
+Ví dụ: billing-lib skill dạy Claude về edge cases của hệ thống billing nội bộ, frontend-design skill giúp Claude hiểu design system riêng của team.
+Insight quan trọng: Đây là nơi Skill phát huy sức mạnh nhất - bổ sung kiến thức mà model KHÔNG CÓ, thay vì lặp lại thứ nó đã biết.
+2.2. Product Verification
+Skills mô tả cách test/verify code đang chạy đúng. Thường kết hợp với Playwright, tmux, hoặc các external tool khác.
+Thariq (lead engineer tại Anthropic) nói: "It can be worth having an engineer spend a week just making your verification skills excellent." - Đáng để đầu tư một tuần cho một engineer chỉ để làm verification skill thôi.
+Mấy kỹ thuật hay:
+- Cho Claude quay video output để bạn xem chính xác nó test cái gì
+- Enforce programmatic assertions ở từng bước
+- Include scripts trong skill folder để chạy automated checks
+2.3. Data Fetching & Analysis
+Skills kết nối vào data stack và monitoring. Bao gồm credentials, dashboard IDs, và hướng dẫn workflow lấy data phổ biến.
+2.4. Business Process & Team Automation
+Automate các workflow lặp đi lặp lại thành một command. Đơn giản nhưng cực kỳ tiết kiệm thời gian.
+Ví dụ: standup-post skill tổng hợp từ ticket tracker + GitHub activity + Slack rồi format thành standup post. weekly-recap tổng hợp merged PRs + closed tickets + deploys.
+Trick hay: Lưu kết quả cũ vào log files để model có thể so sánh với lần chạy trước và giữ consistency.
+2.5. Code Scaffolding & Templates
+Generate boilerplate cho specific functions trong codebase. Đặc biệt hữu ích khi scaffolding có natural language requirements mà code thuần không cover hết được.
+2.6. Code Quality & Review
+Enforce code quality standards. Có thể chạy tự động qua hooks hoặc trong GitHub Actions.
+Cái adversarial-review skill nghe hay phết - spawn một subagent "fresh eyes" để critique code, implement fixes, rồi iterate cho đến khi chỉ còn tiểu tiết. Kiểu như code review tự động với đối thủ ảo.
+2.7. CI/CD & Deployment
+Skills giúp fetch, push, deploy code. babysit-pr skill theo dõi PR, retry flaky CI, resolve merge conflicts, rồi auto-merge. Nghe như giấc mơ của bất kỳ team nào phải deal với flaky tests dzậy.
+2.8. Runbooks
+Nhận triệu chứng (Slack thread, alert, error) rồi walk through investigation bằng nhiều tools, cuối cùng tạo structured report.
+Ví dụ: oncall-runner fetch alert, check "usual suspects", format findings. Kiểu như tự động hóa quy trình on-call mà mấy ông DevOps/SRE hay phải làm tay.
+2.9. Infrastructure Operations
+Thực hiện maintenance và operational procedures - bao gồm cả destructive actions cần guardrails. <resource>-orphans skill tìm orphaned pods/volumes, post lên Slack, chờ soak period, user confirm rồi mới cleanup.
+---
+3/ Tips viết Skills hay - từ người trong cuộc
+Thariq chia sẻ best practices mà đội Anthropic đúc kết từ hàng trăm skills:
+3.1. Đừng nói điều hiển nhiên
+Claude đã biết rất nhiều về coding rồi. Đừng lãng phí context dạy nó những gì nó đã biết. Tập trung vào thông tin đẩy Claude ra khỏi cách suy nghĩ mặc định của nó.
+`frontend-design` skill là ví dụ điển hình - được build bằng cách iterate với customers để cải thiện "design taste" của Claude, tránh mấy pattern cũ rích kiểu font Inter + purple gradient. Cái skill này giờ đã có hơn 277,000 installs.
+Hôm qua mình cùng dùng skill này trong demo của Skill "create-slides"
+3.2. Build "Gotchas" Section
+Phần có giá trị cao nhất trong bất kỳ skill nào chính là "Gotchas". Đây là danh sách các failure points phổ biến mà Claude hay gặp khi dùng skill đó. Nên update liên tục qua thời gian.
+3.3. Dùng File System & Progressive Disclosure
+Nghĩ toàn bộ file system như một hình thức context engineering. Nói cho Claude biết có file gì trong skill folder, và nó sẽ đọc chúng vào thời điểm thích hợp.
+Dạng đơn giản nhất: tách function signatures + usage examples ra references/api.md. Nếu output cuối là markdown file, include template trong assets/. Có thể có cả folders chứa references, scripts, examples.
+Theo docs chính thức, mô hình này hiệu quả vì files trên filesystem "consume zero context tokens until needed" - chỉ khi Claude chủ động đọc thì mới tốn token.
+3.4. Đừng "railroading" Claude
+Vì Skills được tái sử dụng nhiều lần, hãy cẩn thận đừng quá cụ thể trong instructions. Cho Claude thông tin cần thiết, nhưng để nó linh hoạt thích ứng với tình huống.
+3.5. Nghĩ kỹ phần Setup 
+Một số skills cần config từ user. Pattern tốt: lưu setup info vào config.json trong skill directory. Nếu chưa setup, agent sẽ hỏi user.
+3.6. Description Field là cho Model, không phải cho người
+Khi Claude Code khởi động, nó build listing mọi skill available kèm description. Đây là thứ Claude scan để quyết định "có skill nào phù hợp không?" - nghĩa là description không phải là summary, mà là trigger condition.
+Research từ cộng đồng cho thấy: description được tối ưu đúng cách có thể cải thiện activation rate từ 20% lên 50%. Thêm examples thì từ 72% lên 90%.
+3.7. Memory & Storing Data
+Skills có thể lưu data bên trong chúng - từ đơn giản như append-only text log cho đến SQLite database. Ví dụ: standup-post skill giữ standups.log với mọi post đã viết, lần sau Claude đọc history và biết gì đã thay đổi.
+Lưu ý: data trong skill directory có thể bị xóa khi upgrade. Nên lưu vào folder ổn định - Anthropic cung cấp ${CLAUDE_PLUGIN_DATA} làm stable folder cho mỗi plugin.
+3.8. Store Scripts & Generate Code
+Cho Claude scripts và libraries là một trong những công cụ mạnh nhất. Claude sẽ dành turns để compose thay vì reconstruct boilerplate. 
+Ví dụ: skill data science có sẵn helper functions để fetch data, Claude generate scripts on the fly để compose chúng lại cho các phân tích phức tạp.
+3.9. On Demand Hooks
+Skills có thể include hooks chỉ active khi skill được gọi, tồn tại trong suốt session. Dùng cho mấy hooks opinionated mà bạn hổng muốn chạy mọi lúc.
+Ví dụ: 
+/careful - block rm -rf, DROP TABLE, force-push, kubectl delete. Chỉ bật khi biết đang đụng production. 
+/freeze - block mọi Edit/Write ngoài directory cụ thể. Cực kỳ hữu ích khi debug.

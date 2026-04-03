@@ -26,6 +26,18 @@
           }
         ],
         "description": "Run project linter after bash commands that modify source files"
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/backlog-tracker.js\"",
+            "async": true,
+            "timeout": 10
+          }
+        ],
+        "description": "Rebuild BACKLOG.md index when ISS-*.md files are written to .claude/backlog/issues/"
       }
     ],
     "Stop": [

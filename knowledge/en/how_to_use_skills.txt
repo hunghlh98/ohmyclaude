@@ -1,0 +1,107 @@
+### 1/ A Skill is Not Merely a "Markdown File"
+
+This is the most prevalent misconception Thariq addresses right out of the gate. Many developers assume a Skill is simply a markdown file containing a few instruction blocks for Claude to parse. End of story.
+
+False.
+
+A Skill is an entire directory structure—encompassing scripts, assets, data, configurations, and templates—essentially, everything the agent can discover, explore, and manipulate. In other words, a Skill is a comprehensive **"knowledge package,"** not just a cheat sheet.
+
+According to Anthropic's official documentation, the **progressive disclosure** architecture operates across three distinct layers:
+* **Layer 1 - Metadata:** Upon initialization, Claude only loads the `name` and `description` of all available skills. This scanning phase consumes roughly ~100 tokens per skill.
+* **Layer 2 - SKILL .md body:** The primary instruction payload is parsed *only* when the skill is explicitly triggered. Anthropic highly recommends keeping this under 500 lines.
+* **Layer 3 - Reference files:** Files residing within `references/`, `scripts/`, or `assets/` are loaded strictly on demand. They consume **zero tokens** until Claude programmatically decides to read them.
+
+This architecture fundamentally explains why a skill-based approach vastly outperforms dumping context into a global system prompt or a `CLAUDE.md` file. The context window is a shared compute resource—every token you inject competes directly with the model's conversation history and reasoning space.
+
+> "Context engineering > prompt engineering"
+> *(Honestly, conceptually speaking, Anthropic could have just slightly upgraded their old Slash Commands and called it Agent Skills, but... the nomenclature "Agent Skills" just sounds vastly cooler 😂)*
+
+---
+
+### 2/ The 9 Internal Skill Archetypes Categorized by Anthropic
+
+After auditing their internal skill repository, the Anthropic team mapped them into 9 primary clusters. Here is the breakdown and the strategic value of each archetype:
+
+**2.1. Library & API Reference**
+Skills designed to instruct the model on the correct utilization of a specific library, CLI, or SDK—especially internal/proprietary libraries completely absent from Claude's pre-training data.
+*Example:* A `billing-lib` skill teaching Claude the edge cases of an internal billing system, or a `frontend-design` skill mapping out the team's proprietary design system.
+*Key Insight:* This is where Skills demonstrate maximum leverage—injecting proprietary context the model **LACKS**, rather than reiterating universal programming concepts it already knows.
+
+**2.2. Product Verification**
+Skills defining the protocols to test and verify that the executing code functions correctly. These are frequently integrated with Playwright, tmux, or external testing harnesses.
+Thariq (Lead Engineer at Anthropic) noted: *"It can be worth having an engineer spend a week just making your verification skills excellent."*
+*Advanced Engineering Tactics:*
+* Command Claude to capture video outputs of its execution path for visual inspection.
+* Enforce programmatic assertions at every procedural step.
+* Bundle automated check scripts directly within the skill directory.
+
+**2.3. Data Fetching & Analysis**
+Skills bridging the agent to your data stack and observability tooling. This includes injecting credentials, dashboard IDs, and standard operating procedures (SOPs) for data retrieval workflows.
+
+**2.4. Business Process & Team Automation**
+Automating repetitive operational workflows into a single executable command. Conceptually simple, yet yields massive operational overhead reduction.
+*Example:* A `standup-post` skill that aggregates data from Jira/ticket trackers + GitHub activity + Slack to format a daily standup update. A `weekly-recap` skill synthesizing merged PRs + closed tickets + successful deployments.
+*Pro-tip:* Persist historical outputs into log files so the model can diff against previous iterations to maintain stylistic and structural consistency.
+
+**2.5. Code Scaffolding & Templates**
+Generating boilerplate for highly specific, localized functions within a codebase. This is exceptionally potent when scaffolding requires complex natural language requirements that pure code-generation scripts cannot effectively handle.
+
+**2.6. Code Quality & Review**
+Enforcing rigorous code quality standards. These can be executed automatically via pre-commit hooks or integrated directly into GitHub Actions CI pipelines.
+*Highlight:* The `adversarial-review` skill is a fascinating implementation—it spawns a "fresh eyes" subagent to aggressively critique the code, implement remediation, and iterate until only trivial nits remain. Essentially, an automated peer review against a synthetic adversary.
+
+**2.7. CI/CD & Deployment**
+Skills facilitating code fetching, pushing, and infrastructure deployments. The `babysit-pr` skill monitors a pending PR, retries flaky CI pipelines, resolves localized merge conflicts, and triggers auto-merge. Basically, the holy grail for any team dealing with flaky test suites.
+
+**2.8. Runbooks**
+Taking an initial symptom (e.g., a Slack thread, PagerDuty alert, error stack trace) and executing an investigation workflow across multiple diagnostic tools, ultimately synthesizing a structured post-mortem or triage report.
+*Example:* An `oncall-runner` that fetches the alert payload, investigates the "usual suspects," and formats the findings. It automates the initial triage layer typically handled manually by DevOps/SREs.
+
+**2.9. Infrastructure Operations**
+Executing maintenance and operational procedures—specifically destructive actions requiring strict guardrails.
+*Example:* A `<resource>-orphans` skill that identifies orphaned Kubernetes pods/volumes, posts a summary to Slack, enforces a predefined soak period, and awaits manual user confirmation before executing the cleanup script.
+
+---
+
+### 3/ Insider Engineering Tips for High-Performance Skills
+
+Thariq shared battle-tested best practices derived from deploying hundreds of skills at Anthropic:
+
+**3.1. Do Not State the Obvious**
+Claude already possesses extensive coding proficiency. Do not waste context window tokens teaching it established paradigms. Focus on heuristics that force Claude out of its default latent space.
+The `frontend-design` skill is a prime example—it was iteratively refined via user feedback to elevate Claude's "design taste," actively preventing it from defaulting to tired UI tropes (like the classic Inter font paired with purple gradients). This specific skill now boasts over 277,000 installs.
+*(Note: I actually utilized this exact skill yesterday during the "create-slides" Skill demo).*
+
+**3.2. Architect a "Gotchas" Section**
+The highest ROI component of any skill is the "Gotchas" block. This acts as a registry of common failure modes, edge cases, and anti-patterns Claude typically encounters when executing that specific skill. Iterate and append to this list continuously over time.
+
+**3.3. Leverage the File System for Progressive Disclosure**
+Treat the local file system as an extension of context engineering. Explicitly expose the file taxonomy to Claude within the skill folder, allowing it to dynamically parse files only when contextually appropriate.
+*Optimal Pattern:* Decouple function signatures and usage examples into `references/api.md`. If the target output is a markdown file, store the template in `assets/`.
+As per the official documentation, this paradigm is highly efficient because files residing on the filesystem "consume zero context tokens until needed"—incurring a token tax solely upon explicit agent invocation.
+
+**3.4. Avoid "Railroading" Claude**
+Because Skills are designed for high reusability across diverse contexts, avoid overly rigid, deterministic instructions. Provision Claude with the necessary contextual constraints, but grant it the flexibility to dynamically adapt to unexpected edge cases.
+
+**3.5. Engineer the Setup Phase**
+Certain skills require user-specific or environment-specific configurations.
+*Optimal Pattern:* Persist setup configurations into a `config.json` within the skill directory. If the config is missing during runtime execution, program the agent to proactively prompt the user to input the setup parameters.
+
+**3.6. The Description Field is for the Model, Not Humans**
+During initialization, Claude Code compiles a manifest of all available skills and their descriptions. This acts as the primary scanning layer where Claude evaluates, *"Is there an appropriate skill for this user intent?"*—meaning the description is not merely a summary; it is the **trigger condition**.
+Internal telemetry indicates: properly optimizing the description can boost the skill activation rate from 20% to 50%. Injecting specific execution examples can further elevate activation rates from 72% to 90%.
+
+**3.7. State Memory & Data Persistence**
+Skills can maintain internal state data—ranging from simple append-only text logs to robust SQLite databases.
+*Example:* A `standup-post` skill maintains a `standups.log` containing all historical outputs, allowing Claude to parse the history and identify delta changes during the current execution state.
+*Crucial Warning:* Data residing within the skill directory is volatile and may be purged during version upgrades. Always persist stateful data into a stable directory block—Anthropic provisions `${CLAUDE_PLUGIN_DATA}` as a dedicated persistence layer for each plugin.
+
+**3.8. Provision Scripts & Generate Code**
+Equipping Claude with discrete utility scripts and internal libraries is a massive force multiplier. It allows Claude to allocate its execution turns to logic composition rather than reconstructing basic boilerplate.
+*Example:* A data science skill bundled with pre-built helper functions for data fetching enables Claude to generate ephemeral scripts on-the-fly, orchestrating these helpers to execute complex analytical pipelines.
+
+**3.9. On-Demand Session Hooks**
+Skills can inject operational hooks that remain active *only* for the duration of the current session upon skill invocation. Ideal for highly opinionated guardrails that you do not want globally enforced at all times.
+*Examples:*
+* `/careful` - Hard-blocks destructive commands (`rm -rf`, `DROP TABLE`, `force-push`, `kubectl delete`). Triggered only when the agent is aware it is operating in a production environment.
+* `/freeze` - Hard-blocks all Edit/Write operations outside a strictly defined directory scope. Exceptionally useful for isolating blast radiuses during debug sessions.

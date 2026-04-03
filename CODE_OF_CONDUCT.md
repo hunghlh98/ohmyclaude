@@ -7,7 +7,7 @@ This project exists to make Claude Code more powerful for engineers. Contributio
 We expect contributors to:
 
 - Be direct and specific in feedback — "this hook has a race condition at line 42" not "bad code"
-- Accept that plans get challenged (that's what Nemesis and Eris are for — apply the same standard to PRs)
+- Accept that plans get challenged (that's what Sam Sec is for — apply the same standard to PRs)
 - Separate the idea from the person — critique the implementation, not the contributor
 - Follow the working style in [CONTRIBUTING.md](CONTRIBUTING.md)
 

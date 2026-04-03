@@ -1,5 +1,5 @@
 ---
-description: Review changed files for code quality, correctness, and conventions. Invokes Athena.
+description: Review changed files for code quality, correctness, and conventions. Invokes @stan-standards.
 ---
 
 # /review
@@ -9,9 +9,9 @@ Invoke this command to perform a structured code review on changed or specified 
 ## What This Command Does
 
 1. Identifies files to review (changed files, or files you specify)
-2. Invokes **Athena** (code reviewer) on those files
-3. Athena produces a prioritized review with severity-rated findings
-4. Optionally escalates to **@argus** for security-specific issues
+2. Invokes **@stan-standards** (code reviewer) on those files
+3. @stan-standards produces a prioritized review with severity-rated findings
+4. Optionally escalates to **@sam-sec** for security-specific issues
 
 ## When to Use
 
@@ -26,10 +26,10 @@ Invoke this command to perform a structured code review on changed or specified 
 /review                          → review all recently changed files
 /review src/auth/handler.ts      → review a specific file
 /review src/api/                 → review all files in a directory
-/review --security               → include Argus for security analysis
+/review --security               → include @sam-sec for security analysis
 ```
 
-## Example Output (from Athena)
+## Example Output (from @stan-standards)
 
 ```markdown
 ## Review: src/auth/oauth.ts
@@ -60,6 +60,6 @@ REQUEST CHANGES — CRITICAL issue must be resolved before merge.
 
 ## Related Agents
 
-- **@athena** — Directly invoke the reviewer
-- **@argus** — For security-focused review
-- **@heracles** — When Athena finds a bug and you need it fixed
+- **@stan-standards** — Directly invoke the reviewer
+- **@sam-sec** — For security-focused review
+- **@heracles** — When @stan-standards finds a bug and you need it fixed

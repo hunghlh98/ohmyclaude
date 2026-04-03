@@ -1,7 +1,7 @@
 {
   "name": "ohmyclaude",
-  "version": "0.2.7",
-  "description": "Multi-agent orchestration for Claude Code — 11 specialist agents, /ultrawork pipeline, quality hooks, LSP tooling",
+  "version": "0.3.0",
+  "description": "14-agent OSS company simulation pipeline for Claude Code — document-driven, dynamically routed, with conflict resolution and post-release feedback loop.",
   "author": "ohmyclaude contributors",
   "license": "MIT",
   "homepage": "https://github.com/hunghlh98/ohmyclaude",
@@ -41,8 +41,7 @@
   "scripts": {
     "postinstall": "node scripts/postinstall.js",
     "validate": "node scripts/validate.js",
-    "version:bump": "node scripts/bump-version.js",
-    "install:dev": "bash install.sh"
+    "version:bump": "node scripts/bump-version.js"
   },
   "engines": {
     "node": ">=18"

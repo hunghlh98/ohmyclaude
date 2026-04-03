@@ -87,21 +87,22 @@ jobs:
 
           ### Install
 
-          ```bash
-          # macOS / Linux
-          curl -sSL https://raw.githubusercontent.com/hunghlh98/ohmyclaude/main/install.sh | bash
+          ```
+          claude plugin install hunghlh98/ohmyclaude
+          ```
 
-          # or clone and install
-          git clone https://github.com/hunghlh98/ohmyclaude
-          cd ohmyclaude && bash install.sh
+          Then run once inside Claude Code:
+
+          ```
+          /setup
           ```
 
           ### Quick Start
 
           ```
-          /ultrawork <your task>    # full pipeline — one command
-          /plan <task>              # planning only
-          /review                   # code review
+          /forge request <task>   # route and triage a new request
+          /forge sprint           # run the current sprint through the pipeline
+          /review                 # code review
           ```
           EOF
           echo "file=/tmp/highlights.md" >> $GITHUB_OUTPUT
