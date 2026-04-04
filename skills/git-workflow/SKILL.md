@@ -1,6 +1,6 @@
 ---
 name: git-workflow
-description: Git best practices — commit messages, branching strategy, PR workflows, rebasing, and merge strategies.
+description: Git best practices — branching strategy, PR workflows, rebasing, and merge strategies for releases. Used by @devon-ops for release branch management. For commit message hygiene, use the commit-work skill instead.
 origin: ohmyclaude
 ---
 

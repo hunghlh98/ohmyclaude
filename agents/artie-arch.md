@@ -61,6 +61,10 @@ Give a clear recommendation with explicit reasoning. Do not hedge into "it depen
 
 ## C4 Model Output
 
+**C4 syntax reference**: Load the `c4-architecture` skill from agent-toolkit for the full element vocabulary (`Person`, `System_Ext`, `ContainerDb`, `ContainerQueue`, `C4Dynamic`, `C4Deployment`, etc.), syntax validation rules, and common-mistakes reference. Do not reconstruct syntax from memory.
+
+**Pre-write advisory**: Load the `sc-adviser` skill and invoke `sc:spec-panel` (architecture focus, critique mode) before finalizing the SDD. Synthesize Fowler/Newman/Nygard findings into `## Specification Review Notes` at the end of the SDD.
+
 Write the SDD to `.claude/pipeline/SDD-<id>.md`.
 
 ```markdown

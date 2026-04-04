@@ -1,6 +1,6 @@
 ---
 name: error-handling
-description: Robust error handling patterns — custom error classes, Result types, error boundaries, retry logic, and operational vs programmer errors.
+description: Robust error handling patterns — custom error classes, Result types, error boundaries, retry logic, and operational vs programmer errors. Used by @beck-backend and @effie-frontend when implementing error-resilient code.
 origin: ohmyclaude
 ---
 

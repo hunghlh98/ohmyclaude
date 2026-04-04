@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Code review checklist and patterns — what to look for, how to give feedback, review etiquette, and common code smells.
+description: Code review checklist and patterns — what to look for, how to give feedback, review etiquette, and common code smells. Used by @stan-standards (logic/readability) and @percy-perf (performance) during the governance phase.
 origin: ohmyclaude
 ---
 

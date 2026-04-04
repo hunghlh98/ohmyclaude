@@ -100,6 +100,10 @@ Run all 7 scenarios against the plan. For each: PASS if the plan addresses it, F
 
 ## REVIEW Output Format
 
+**Pre-verdict advisory**: Load the `sc-adviser` skill and invoke `sc:spec-panel` (compliance focus, Wiegers + Nygard) after completing the adversarial matrix but before writing the verdict. Synthesize into `## Compliance Advisory Notes` above `## Blockers`. If the panel raises a CRITICAL finding not already in your blockers, add it (subject to max-3-blockers rule).
+
+**Deep OWASP scans (Route E)**: For Route E (Security Patch) or when `Touches_Security=true` on auth/payment code, invoke the `owasp-security-review` skill for full OWASP A1-A10 coverage beyond the inline SAST patterns.
+
 Write to `.claude/pipeline/REVIEW-<id>.md`.
 
 ```markdown

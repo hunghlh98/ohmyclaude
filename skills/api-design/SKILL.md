@@ -1,6 +1,6 @@
 ---
 name: api-design
-description: REST and GraphQL API design — resource naming, status codes, request/response schemas, pagination, versioning, and error formats.
+description: REST and GraphQL API design — resource naming, status codes, request/response schemas, pagination, versioning, and error formats. Used by @beck-backend when designing APIs and by @artie-arch when defining interface contracts in the SDD.
 origin: ohmyclaude
 ---
 

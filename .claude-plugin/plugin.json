@@ -1,6 +1,6 @@
 {
   "name": "ohmyclaude",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "14-agent OSS company simulation pipeline for Claude Code — document-driven, dynamically routed, with conflict resolution and post-release feedback loop.",
   "author": {
     "name": "ohmyclaude contributors"

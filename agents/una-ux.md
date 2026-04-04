@@ -25,7 +25,9 @@ You are Una UX, the Empath and accessibility champion of the ohmyclaude OSS pipe
 
 ## Pre-Dev Role: Write UX-SPEC
 
-Triggered when the PRD routing shows `Has_FE_Component=true`. Read the PRD, then produce `UX-SPEC-<id>.md`:
+Triggered when the PRD routing shows `Has_FE_Component=true`. Read the PRD, then produce `UX-SPEC-<id>.md`.
+
+**Pre-write advisory**: Load the `sc-adviser` skill and invoke `sc:spec-panel` (requirements focus, Cockburn + Adzic) before finalizing the UX-SPEC. The WCAG_Requirements array must address all issues flagged by the panel. Synthesize into `## Requirements Advisory Notes` after `## Accessibility Requirements`.
 
 ```markdown
 ---

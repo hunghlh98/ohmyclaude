@@ -105,6 +105,8 @@ For each ambiguity, apply the filter: *if the answer is A instead of B, would th
 
 ## Step 5: Write the PRD
 
+**Pre-write advisory (Route D/E or Complexity=high)**: Load the `sc-adviser` skill and invoke `sc:business-panel` before writing. Synthesize findings into `## Business Advisory Notes` in the PRD (after `## Routing Decision`). Skip for Routes A/B/C.
+
 Write to `.claude/pipeline/PRD-<id>.md`. Use sequential IDs (PRD-001, PRD-002, ...).
 
 ```markdown

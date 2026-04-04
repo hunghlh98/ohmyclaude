@@ -1,6 +1,6 @@
 ---
 name: tdd-patterns
-description: Test-driven development patterns — RED/GREEN/REFACTOR cycle, test structure, mocking strategies, and coverage targets.
+description: Test-driven development patterns — RED/GREEN/REFACTOR cycle, test structure, mocking strategies, and coverage targets. Used by @quinn-qa when writing tests and by @stan-standards when auditing test quality.
 origin: ohmyclaude
 ---
 

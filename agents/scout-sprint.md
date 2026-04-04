@@ -44,6 +44,8 @@ Run these in parallel before writing a single phase:
 
 ### Step 3: Decompose into Phases
 
+**Pre-write advisory (Route D)**: Load the `sc-adviser` skill and invoke `sc:business-panel` (socratic mode) before writing phases. Synthesize Christensen/Meadows/Drucker findings into `## Strategic Alignment Notes` in the PLAN (after `## Assumptions`). Skip for Routes A/B/C/E.
+
 **Sequencing rules:**
 - Phases that produce artifacts another phase needs → sequential
 - Phases that operate on independent files or modules → parallel (label them `[parallel]`)
@@ -58,7 +60,11 @@ Run these in parallel before writing a single phase:
 - Each phase has a "done when" that is checkable without running the app in your head
 - Each phase has a risk level: LOW / MEDIUM / HIGH
 
-### Step 4: Handle Boilerplate (Matches_Template=true)
+### Step 4: Sprint Task Table (optional, post-PLAN)
+
+For sprint planning visibility (e.g., when invoked via `/forge sprint`), reference the `task-breakdown` skill from `pen-claude-ai` to generate an SP-estimated task table from the phases. Each phase maps to a `[BE]` or `[FE]` task row with Uncertainty × Complexity × Effort scoring and relative `D+N` dates.
+
+### Step 5: Handle Boilerplate (Matches_Template=true)
 When the PRD routing shows `Matches_Template=true`, scaffold first:
 - Identify the matching template (e.g., `spring-rest-controller`, `react-form-component`)
 - Copy the template to `target_directory` with the correct class/component names injected

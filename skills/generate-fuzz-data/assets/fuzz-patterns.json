@@ -1,0 +1,57 @@
+{
+  "email": [
+    "", "a", "a@", "@b.com", "a@b", "a @b.com", "a@b.c",
+    "a+tag@b.com", "\"quoted\"@b.com", "a@[127.0.0.1]",
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@b.com",
+    "test@test.com\nBcc:attacker@evil.com", "user%40domain@b.com",
+    "user@domain..com", ".user@domain.com", "user.@domain.com"
+  ],
+  "url": [
+    "", "javascript:alert(1)", "data:text/html,<h1>test</h1>",
+    "http://localhost", "http://127.0.0.1", "http://0.0.0.0",
+    "http://[::1]", "file:///etc/passwd",
+    "http://evil.com@good.com", "http://good.com.evil.com",
+    "//evil.com", "http://xn--nxasmq6b.com",
+    "http://169.254.169.254/latest/meta-data/"
+  ],
+  "currency": [
+    0, -1, -0.01, 0.001, 999999999.99, -999999999.99,
+    "1,000.00", "1.000,00", "$100", "100USD",
+    null, "", "NaN", "Infinity", 1e20, -1e20,
+    "0.1", "0.2", "0.1000000000000001"
+  ],
+  "date": [
+    "", "0", "2000-02-29", "2001-02-29", "9999-12-31",
+    "0000-01-01", "1970-01-01T00:00:00Z", "2038-01-19T03:14:08Z",
+    "2038-01-19T03:14:09Z", "-1", "not-a-date",
+    "12/31/9999", "31/12/9999", "2024-13-01", "2024-00-01",
+    "2024-01-00", "2024-01-32"
+  ],
+  "string": [
+    "", " ", "\t\n\r", "null", "undefined", "NaN",
+    "true", "false", "0", "-1",
+    "{{7*7}}", "${7*7}", "#{7*7}",
+    "<script>alert(1)</script>", "'; DROP TABLE users; --",
+    "\u0000", "\uFFFD", "\u202E",
+    "😀🔥💯🎉", "\u200B\u200C\u200D",
+    "SELECT * FROM users"
+  ],
+  "sql": [
+    "' OR '1'='1", "'; DROP TABLE users; --", "1; SELECT * FROM users",
+    "' UNION SELECT NULL,NULL,NULL --", "admin'--", "' OR 1=1 --",
+    "\" OR \"1\"=\"1", "1' AND SLEEP(5) --", "%27 OR %271%27%3D%271",
+    "' OR 'x'='x", "1; EXEC xp_cmdshell('dir')",
+    "'; WAITFOR DELAY '0:0:5' --",
+    "' OR EXISTS(SELECT * FROM users WHERE username='admin') --"
+  ],
+  "html": [
+    "<script>alert(1)</script>", "<img src=x onerror=alert(1)>",
+    "javascript:alert(1)", "<svg onload=alert(1)>",
+    "';alert(1)//", "\"><script>alert(1)</script>",
+    "<iframe src=\"javascript:alert(1)\">",
+    "<body onload=alert(1)>", "<<SCRIPT>alert(1)//<</SCRIPT>",
+    "<IMG SRC=JaVaScRiPt:alert(1)>",
+    "<META HTTP-EQUIV=\"refresh\" CONTENT=\"0;url=javascript:alert(1);\">",
+    "<!--<script>alert(1)</script>-->"
+  ]
+}
