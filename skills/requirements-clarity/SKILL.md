@@ -1,5 +1,6 @@
 ---
 name: requirements-clarity
+origin: ohmyclaude
 description: Clarify ambiguous requirements through focused dialogue (0–100 clarity score) before writing the PRD. Used by @paige-product before authoring PRD-<id>.md in .claude/pipeline/. The PRD template here uses paige's schema: frontmatter fields id, type, priority, route, created. Triggers when requirements are unclear, features are complex, or cross-team coordination is needed.
 ---
 

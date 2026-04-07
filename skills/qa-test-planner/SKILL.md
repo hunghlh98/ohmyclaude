@@ -1,5 +1,6 @@
 ---
 name: qa-test-planner
+origin: ohmyclaude
 description: Generate comprehensive test plans, manual test cases, regression test suites, and bug reports. Used by @quinn-qa to produce TEST-<id>.md in .claude/pipeline/ — output must include a required PASS/FAIL verdict field. Includes Figma MCP integration for design validation.
 trigger: explicit
 ---

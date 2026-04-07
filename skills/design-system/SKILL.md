@@ -1,5 +1,6 @@
 ---
-name: design-system-starter
+name: design-system
+origin: ohmyclaude
 description: Create and evolve design systems with design tokens, component architecture, WCAG 2.1 AA accessibility audit (contrast ratios, ARIA roles, keyboard navigation), and documentation templates. Used by @una-ux when authoring UX-SPEC-<id>.md and auditing frontend accessibility.
 license: MIT
 metadata:

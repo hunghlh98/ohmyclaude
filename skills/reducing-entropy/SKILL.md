@@ -1,5 +1,7 @@
 ---
 name: reducing-entropy
+origin: ohmyclaude
+trigger: explicit
 description: Manual-only skill for minimizing total codebase size. Used by @stan-standards when complexity score is high during CODE-REVIEW phase. Only activate when explicitly requested. Measures success by final code amount, not effort. Bias toward deletion.
 ---
 

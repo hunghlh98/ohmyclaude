@@ -1,0 +1,38 @@
+#!/bin/sh
+#
+# Git pre-commit hook for ohmyclaude development.
+# 1. Runs validate.js — blocks commit if checks fail
+# 2. Updates README.md inventory table from disk — auto-stages it
+# 3. Warns if plugin files changed without version bump
+#
+# Install: git config core.hooksPath .githooks
+#
+
+set -e
+
+# ── Step 1: Validate ─────────────────────────────────────────────────────────
+echo "[pre-commit] Running validation..."
+node scripts/validate.js > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+  echo "[pre-commit] Validation failed. Fix errors before committing."
+  node scripts/validate.js
+  exit 1
+fi
+echo "[pre-commit] Validation passed."
+
+# ── Step 2: Update README inventory ──────────────────────────────────────────
+node scripts/generate-inventory.js --patch
+git add README.md
+echo "[pre-commit] README.md inventory updated and staged."
+
+# ── Step 3: Check version bump ───────────────────────────────────────────────
+STAGED=$(git diff --cached --name-only)
+PLUGIN_CHANGED=$(echo "$STAGED" | grep -E '^(agents|skills|commands|hooks|rules|manifests)/' || true)
+VERSION_CHANGED=$(echo "$STAGED" | grep -E '^(VERSION|package\.json|\.claude-plugin/)' || true)
+
+if [ -n "$PLUGIN_CHANGED" ] && [ -z "$VERSION_CHANGED" ]; then
+  echo ""
+  echo "[pre-commit] Warning: plugin files changed but VERSION not bumped."
+  echo "  Run: node scripts/bump-version.js --patch"
+  echo ""
+fi

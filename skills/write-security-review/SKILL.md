@@ -1,5 +1,6 @@
 ---
 name: write-security-review
+origin: ohmyclaude
 description: Write and save the Security Review (REVIEW-<id>.md) to .claude/pipeline/. Used by @sam-sec after running SAST analysis. Output must include a verdict ENUM (APPROVE / APPROVE_WITH_NOTES / REVISE) — this field is required. Triggers on "write security review", "save REVIEW", "security verdict", "SAST findings".
 ---
 

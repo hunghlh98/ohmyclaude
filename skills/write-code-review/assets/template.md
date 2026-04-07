@@ -24,7 +24,7 @@ percy_verdict: APPROVE
 ---
 
 ## Performance Review
-*Author: @percy-perf*
+*Author: @stan-standards*
 
 ### Summary
 

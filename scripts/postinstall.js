@@ -3,139 +3,33 @@
  * postinstall.js
  *
  * Runs automatically after:
- *   - /setup command inside Claude Code  (marketplace install)
- *   - npm install  (manual)
+ *   - claude plugin install hunghlh98/ohmyclaude
+ *   - npm install (manual)
  *
- * What it does:
- *   1. Copies contexts/ to ~/.claude/contexts/
- *   2. Injects shell aliases into ~/.zshrc / ~/.bashrc / ~/.bash_profile
- *   3. Prints quick-start instructions
+ * v1.0.0: Zero-setup. No contexts to copy, no aliases to inject.
+ * Just prints quick-start instructions.
  */
 
 'use strict';
 
-const fs   = require('fs');
-const path = require('path');
-const os   = require('os');
-
-const REPO_ROOT    = path.resolve(__dirname, '..');
-const HOME         = os.homedir();
-const CONTEXTS_SRC = path.join(REPO_ROOT, 'contexts');
-const CONTEXTS_DST = path.join(HOME, '.claude', 'contexts');
-
-const ALIAS_MARKER_START = '# ohmyclaude — context-mode aliases';
-const ALIAS_MARKER_END   = '# end ohmyclaude';
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
 const green  = s => `\x1b[32m${s}\x1b[0m`;
 const blue   = s => `\x1b[34m${s}\x1b[0m`;
-const yellow = s => `\x1b[33m${s}\x1b[0m`;
 
-function info(msg)    { console.log(`${blue('[ohmyclaude]')} ${msg}`); }
-function success(msg) { console.log(`${green('[ohmyclaude]')} ${msg}`); }
-function warn(msg)    { console.log(`${yellow('[ohmyclaude]')} ${msg}`); }
-
-// ── 1. Copy contexts ──────────────────────────────────────────────────────────
-function installContexts() {
-  if (!fs.existsSync(CONTEXTS_SRC)) {
-    warn('contexts/ directory not found — skipping context install.');
-    return;
-  }
-
-  fs.mkdirSync(CONTEXTS_DST, { recursive: true });
-
-  for (const file of fs.readdirSync(CONTEXTS_SRC)) {
-    if (!file.endsWith('.md')) continue;
-    fs.copyFileSync(
-      path.join(CONTEXTS_SRC, file),
-      path.join(CONTEXTS_DST, file)
-    );
-  }
-
-  success(`Contexts installed → ${CONTEXTS_DST}`);
-}
-
-// ── 2. Inject shell aliases ───────────────────────────────────────────────────
-function buildAliasBlock() {
-  const ctxDir = CONTEXTS_DST.replace(HOME, '$HOME');
-  return [
-    '',
-    ALIAS_MARKER_START,
-    `alias claude-oss='claude --system-prompt "$(cat ${ctxDir}/oss.md)"'`,
-    `alias claude-dev='claude --system-prompt "$(cat ${ctxDir}/dev.md)"'`,
-    `alias claude-review='claude --system-prompt "$(cat ${ctxDir}/review.md)"'`,
-    `alias claude-debug='claude --system-prompt "$(cat ${ctxDir}/debug.md)"'`,
-    ALIAS_MARKER_END,
-    '',
-  ].join('\n');
-}
-
-function detectShellRc() {
-  const candidates = ['.zshrc', '.bashrc', '.bash_profile'];
-  for (const f of candidates) {
-    const p = path.join(HOME, f);
-    if (fs.existsSync(p)) return p;
-  }
-  // Default to .zshrc — create it if needed
-  return path.join(HOME, '.zshrc');
-}
-
-function installAliases() {
-  if (process.platform === 'win32') {
-    warn('Windows detected — skipping bash alias install. Add aliases to your PowerShell $PROFILE manually (see README).');
-    return null;
-  }
-
-  const rcFile = detectShellRc();
-  let content  = fs.existsSync(rcFile) ? fs.readFileSync(rcFile, 'utf8') : '';
-
-  // Remove existing block (replace if present)
-  const startIdx = content.indexOf(ALIAS_MARKER_START);
-  const endIdx   = content.indexOf(ALIAS_MARKER_END);
-  if (startIdx !== -1 && endIdx !== -1) {
-    // +1 to also consume the newline after the end marker
-    content = content.slice(0, startIdx) + content.slice(endIdx + ALIAS_MARKER_END.length + 1);
-  } else if (startIdx !== -1) {
-    // Partial/corrupted block — remove from start marker to end of file section
-    content = content.slice(0, startIdx);
-  }
-
-  content = content.trimEnd() + '\n' + buildAliasBlock();
-  fs.writeFileSync(rcFile, content, 'utf8');
-  success(`Aliases added → ${rcFile}`);
-  return rcFile;
-}
-
-// ── 3. Print quick-start ──────────────────────────────────────────────────────
-function printQuickStart(rcFile) {
-  console.log('');
-  console.log(green('  ohmyclaude ready!'));
-  console.log('');
-  if (rcFile) {
-    console.log(`  Reload your shell:`);
-    console.log(`    source ${rcFile}`);
-    console.log('');
-  }
-  console.log('  Start Claude in a mode:');
-  console.log('    claude-oss        full OSS pipeline  (14 agents, /forge entry point)');
-  console.log('    claude-dev        implementation     (@beck-backend + @effie-frontend + @quinn-qa)');
-  console.log('    claude-review     code & security    (@stan-standards + @percy-perf + @sam-sec)');
-  console.log('    claude-debug      debugging          (@heracles)');
-  console.log('');
-  console.log('  Or inside any session:');
-  console.log('    /forge request <task>   route and triage a new request');
-  console.log('    /forge sprint           run the current sprint through the pipeline');
-  console.log('');
-}
-
-// ── Main ──────────────────────────────────────────────────────────────────────
-try {
-  info('Setting up ohmyclaude...');
-  installContexts();
-  const rcFile = installAliases();
-  printQuickStart(rcFile);
-} catch (err) {
-  warn(`Setup encountered an error: ${err.message}`);
-  warn('Run  /setup  inside Claude Code to retry, or add aliases manually (see README).');
-  // Non-fatal — don't block npm install
-}
+console.log('');
+console.log(green('  ohmyclaude v1.0.0 ready!'));
+console.log('');
+console.log('  Single entry point:');
+console.log(`    ${blue('/forge <what you want>')}   describe your task in natural language`);
+console.log(`    ${blue('/forge sprint')}            run a sprint from the backlog`);
+console.log(`    ${blue('/forge release')}           cut a release`);
+console.log(`    ${blue('/forge commit')}            generate semantic commit message`);
+console.log(`    ${blue('/forge help')}              show help`);
+console.log('');
+console.log('  10 agents available via @name:');
+console.log('    @paige-product  @artie-arch     @una-ux        @sam-sec');
+console.log('    @beck-backend   @effie-frontend @quinn-qa      @stan-standards');
+console.log('    @devon-ops      @heracles');
+console.log('');
+console.log('  Optional: Install code-review-graph for enhanced analysis');
+console.log('    claude plugin install code-review-graph');
+console.log('');

@@ -1,163 +1,127 @@
 # ohmyclaude Roadmap
 
-## v0.2.7 — Previous Release (snapshot)
+## v1.0.0 — Harness Engineering Overhaul ✅ Complete
 
-### Agents (13, Greek mythology names)
-- [x] Metis, Hermes, Nemesis, Eris — orchestration
-- [x] Hephaestus, Heracles, Momus, Mnemosyne — implementation + docs
-- [x] Athena, Apollo, Argus — review
-- [x] Polyglot Reviewer, Build Resolver — multi-language utilities
+Major architectural transformation: Agent Teams coordination, single entry point, Java-first skills, source graph integration, token-conscious design.
 
-### Commands (7): /ultrawork, /plan, /review, /commit, /scaffold, /debug, /setup
-### Contexts (5): dev, review, plan, debug, research
-### Hooks (3): pre-write-check, post-bash-lint, session-summary
+### Agent Teams Model
+- [x] TeamCreate/SendMessage/TaskList for runtime agent coordination
+- [x] @paige-product as team lead (absorbs scout-sprint's planning duties)
+- [x] Dynamic routing replaces rigid Routes A-E
+- [x] Circuit Breaker via AskUserQuestion (replaces DEADLOCK files)
+- [x] Task dependency graph with parallel wave execution
 
----
+### Agent Consolidation (17 → 10)
+- [x] `paige-product` absorbs `scout-sprint` — Grand Router + Planner + Oracle
+- [x] `stan-standards` absorbs `percy-perf` + `polyglot-reviewer` — unified reviewer
+- [x] `devon-ops` absorbs `dora-docs` + `evan-evangelist` — docs + release + announcement
+- [x] `anna-analytics` converted to `post-deploy-analytics` skill
+- [x] `build-resolver` absorbed into `beck-backend` / `effie-frontend`
+- [x] All agents: `color` field, `<example>` blocks, descriptions ≤30 words
 
-## v0.3.0 — OSS Company Simulation Refactor (this release)
+### Single Entry Point
+- [x] `/forge` as the only command — absorbs /review, /debug, /commit
+- [x] Shell aliases and contexts removed (zero-setup model)
+- [x] Smart UX: 3-level confidence model (HIGH/MEDIUM/LOW)
+- [x] Progress display during team execution
 
-Complete architectural transformation: Corporate Slack personas, document-driven pipeline, dynamic routing, C4 model, conflict resolution protocol, Keep a Changelog releases, backlog system.
+### Java-First Skills & Rules
+- [x] 4 Java/Spring Boot skills: java-coding-standards, springboot-patterns, springboot-tdd, springboot-security
+- [x] `rules/java/` with path-based activation (coding-style, patterns, security, testing)
+- [x] `rules/common/` shared coding style
 
-### Agents (14 primary — renamed + rewritten)
+### New Skills (7)
+- [x] `task-breakdown` — dependency graph with parallel waves, SP estimation, Trigger break
+- [x] `project-discovery` — language/framework detection, source graph querying
+- [x] `post-deploy-analytics` — post-deploy telemetry (replaces anna-analytics agent)
+- [x] `java-coding-standards` — Java 17+ conventions
+- [x] `springboot-patterns` — REST APIs, layered architecture, JPA, validation
+- [x] `springboot-tdd` — JUnit 5, Mockito, Testcontainers, JaCoCo
+- [x] `springboot-security` — Spring Security, OAuth, JWT, CSRF
 
-**Renamed from Greek to Corporate Slack:**
-- [x] `paige-product` (was metis) — Grand Router + Oracle Fallback synthesizer
-- [x] `artie-arch` (was apollo) — C4 architect: SDD with C1-C3 Mermaid diagrams
-- [x] `scout-sprint` (was hermes) — PLAN output + boilerplate scaffold
-- [x] `sam-sec` (was nemesis, absorbs eris) — SAST simulation + 7 adversarial scenarios + REVIEW output
-- [x] `beck-backend` (was hephaestus) — BE-only scope + CODE-DESIGN-BE + IMPL-BE + ESCALATE-ARCH
-- [x] `quinn-qa` (was momus) — fuzz data generation + TEST output + Circuit Breaker aware
-- [x] `stan-standards` (was athena) — CODE-REVIEW logic section + 3-Strike rule
-- [x] `percy-perf` (was argus) — refocused from security to performance + CODE-REVIEW perf section
-- [x] `dora-docs` (was mnemosyne) — DOC output + Keep a Changelog (append-only [Unreleased])
-
-**New agents (5):**
-- [x] `una-ux` — dual-role: UX-SPEC (pre-dev) + UX-REVIEW (post-dev), WCAG AA gatekeeper
-- [x] `effie-frontend` — FE-only scope + CODE-DESIGN-FE + IMPL-FE + WCAG self-audit
-- [x] `devon-ops` — SRE release manager + SemVer bump + RELEASE file + CHANGELOG promotion
-- [x] `evan-evangelist` — multi-platform announcements (tweet/GitHub/newsletter)
-- [x] `anna-analytics` — post-deploy telemetry + regression → ISS-NNN feedback loop
-
-**Unchanged (utility agents):** heracles, build-resolver, polyglot-reviewer
-
-**Deleted:** eris (adversarial scenarios absorbed into sam-sec)
-
-### Commands
-- [x] `/forge` — single OSS entry point: init, request, triage, sprint, release, analyze
-- [x] Deleted: /ultrawork, /plan, /scaffold, /setup
-- [x] Kept: /review, /debug, /commit
-
-### Contexts
-- [x] `oss.md` — full 14-agent pipeline, claude-oss alias
-- [x] `dev.md` — updated: beck-backend + effie-frontend + quinn-qa
-- [x] `review.md` — updated: stan-standards + percy-perf + sam-sec + una-ux
-- [x] Deleted: plan.md, research.md
-
-### Hooks
-- [x] `backlog-tracker.js` — PostToolUse Write, rebuilds BACKLOG.md when ISS-*.md files written
+### Source Graph Integration
+- [x] code-review-graph MCP tools in all agent instructions (optional, graceful fallback)
+- [x] Exploration tool priority: tree-sitter > `tree` CLI > Glob/Grep
+- [x] `graph-update` hook for incremental graph updates after code changes
+- [x] `team-cleanup` hook for orphaned team cleanup
 
 ### Infrastructure
-- [x] `manifests/install-modules.json` — 17 modules with new tier-based grouping
-- [x] `manifests/install-profiles.json` — updated to 14-agent counts, agents-community module
-- [x] `hooks/hooks.json` — added backlog-tracker PostToolUse hook
-- [x] `scripts/postinstall.js` — claude-oss alias, removed claude-plan/claude-research
-- [x] `install.sh` — updated profile descriptions and agent counts
-
-### Documentation
-- [x] `README.md` — full rewrite: 14-agent OSS model, /forge commands, routing table
-- [x] `ROADMAP.md` — this file
-- [x] `CONTRIBUTING.md` — Corporate Slack naming convention, 5-tier workflow, updated PR checklist
-- [x] `CODE_OF_CONDUCT.md` — "Sam Sec" replaces "Nemesis and Eris"
+- [x] Install profiles simplified: 5 → 3 (minimal, standard, full)
+- [x] Install modules restructured for 10-agent model
+- [x] validate.js: enhanced dead-reference check (retired agent names)
+- [x] postinstall.js: zero-setup, print-only
+- [x] Document artifacts kept for human review (PRD, SDD, CODE-REVIEW, RELEASE)
 
 ---
 
-## v0.4.0 — Hook Depth
-
-Richer automated quality signals. All hooks are standalone Node.js scripts — no new external dependencies.
+## v1.1.0 — Hook Depth & Language Expansion
 
 ### New hooks
-- [ ] **console-log-auditor** (PostToolUse / Write|Edit|MultiEdit) — scan for `console.log`, `print(`, `fmt.Println`. Language-aware by extension. Non-blocking.
-- [ ] **pre-commit-quality-gate** (PreToolUse / Bash — matcher: `git commit`) — run project lint + test suite before Claude-initiated commits. Blocks on failure (exit 2).
-- [ ] **typescript-check** (PostToolUse / Write|Edit|MultiEdit, async) — after writing `.ts`/`.tsx`, run `npx tsc --noEmit`.
-- [ ] **cost-tracker** (Stop) — extend session-summary to compute estimated USD cost. Write to `~/.claude/ohmyclaude/costs.jsonl`.
-- [ ] **desktop-notify** (Stop, async) — fire desktop notification when session exceeds `OHMYCLAUDE_NOTIFY_THRESHOLD_SEC`.
-- [ ] **prompt-injection-guard** (PreToolUse / Write) — detect injection patterns in writes. Blocks on match (exit 2).
+- [ ] **console-log-auditor** — scan for debug statements by language
+- [ ] **pre-commit-quality-gate** — run lint + tests before Claude-initiated commits
+- [ ] **cost-tracker** — estimated USD cost per session to `~/.claude/ohmyclaude/costs.jsonl`
+- [ ] **prompt-injection-guard** — detect injection patterns in writes
 
 ### Hook infrastructure
-- [ ] `hooks-extended` module in install-modules.json
 - [ ] `OHMYCLAUDE_HOOKS=skip:<id>` env var — disable individual hooks at runtime
+- [ ] `hooks-extended` module in install-modules.json
 
----
+### Language expansion (rules + skills)
+- [ ] TypeScript/JavaScript rules (`rules/typescript/`)
+- [ ] Go rules (`rules/go/`)
+- [ ] Python rules (`rules/python/`)
+- [ ] Kotlin rules (`rules/kotlin/`)
 
-## v0.5.0 — Skills & Commands Expansion
-
-### New skills
-- [ ] **performance-patterns** — N+1 detection, caching strategies, batch vs stream, bundle analysis
-- [ ] **security-patterns** — OWASP Top 10, input validation, parameterised queries, CSRF, secrets discipline
-- [ ] **database-patterns** — reversible migrations, index design, transaction boundaries, connection pool sizing
-- [ ] **frontend-patterns** — component decomposition, controlled inputs, a11y, loading/error/empty state trifecta
-- [ ] **backend-patterns** — 12-factor, structured logging, graceful shutdown, idempotency keys, background jobs
-
-### New commands
-- [ ] **/compact** — phase-aware context compaction (preserves task, plan, files changed, current stage)
-- [ ] **/test** — focused test runner: Jest/Vitest/pytest/go test/cargo test. On failure, passes to @heracles.
-
-### Command flag additions
+### Forge flags
 - [ ] `/forge sprint --think` — explore ≥3 approaches before committing to plan
 - [ ] `/forge sprint --delegate` — pause after plan for human approval before implementation
-- [ ] `/review --security` — invoke @sam-sec after @stan-standards
-- [ ] `/debug --trace` — full execution-trace hypothesis before fix
 
 ---
 
-## v0.6.0 — Orchestration Intelligence
-
-### Confidence gate
-Pre-implementation 5-dimension scorecard (requirements clarity, codebase coverage, dependency risk, test plan, rollback plan). Score < 80 → pause, targeted clarifying questions.
-
-### Wave orchestration
-Group 6+ implementation phases into parallel waves with integration checkpoints between waves.
+## v1.2.0 — Session Intelligence
 
 ### Session lifecycle
-- [ ] **/save** — snapshot to `~/.claude/ohmyclaude/sessions/<id>.json`
+- [ ] **/save** — snapshot session state to `~/.claude/ohmyclaude/sessions/<id>.json`
 - [ ] **/load [id]** — restore context, resume from next pending stage
-- [ ] Stop hook extended: append to `sessions/index.jsonl`
+- [ ] SessionStart hook — auto-load previous session context
+- [ ] PreCompact hook — save agent state before context compaction
 
-### Context injection hook
-- [ ] **SubagentStart hook** — prepend compact context block before each agent invocation in /forge sprint (original task, files changed, current stage). Eliminates agents re-exploring already-reviewed files.
+### Confidence gate
+- [ ] Pre-implementation 5-dimension scorecard (requirements, coverage, risk, test plan, rollback)
+- [ ] Score < 80 → pause, targeted clarifying questions
+
+### Wave orchestration
+- [ ] Group implementation phases into parallel waves with integration checkpoints
+- [ ] SubagentStart hook — prepend compact context block before each agent invocation
 
 ---
 
-## v1.0.0 — Polish & Distribution
-
-No new features — reliability, documentation, distribution.
-
-### Documentation
-- [ ] `AGENTS.md` — all 14 agents: purpose, when to invoke, what it won't do, example prompts
-- [ ] `HOOKS.md` — all hooks: trigger, blocking vs async, env vars, how to disable
-- [ ] `COMMANDS-QUICK-REF.md` — one-page cheat sheet for all /forge subcommands and flags
-- [ ] `SKILLS.md` — index of all skills with one-sentence description and primary use case
+## v1.3.0 — Distribution & Testing
 
 ### Validation & testing
-- [ ] `validate.js` expanded: all agent files have required frontmatter + personality sections, hook scripts are syntactically valid JS, all install-modules.json paths exist on disk
 - [ ] Smoke test suite: fixture inputs through each hook script, asserting exit codes
+- [ ] `npm prepublishOnly` script: runs `npm run validate`, aborts on failure
+- [ ] Agent integration tests: verify each agent's frontmatter, tools, and example triggers
 
 ### Distribution
-- [ ] `marketplace.json` updated for v1.0 agent counts (14 primary)
 - [ ] `install.sh` verified on macOS (zsh + bash), Ubuntu 22.04, Windows WSL2
-- [ ] `install.ps1` brought to parity with `install.sh` for native Windows PowerShell
-- [ ] npm `prepublishOnly` script: runs `npm run validate`, aborts on failure
+- [ ] `install.ps1` parity with `install.sh` for native Windows PowerShell
+- [ ] Marketplace listing updated with v1.0.0 screenshots and examples
+
+### Documentation
+- [ ] `AGENTS.md` — all 10 agents: purpose, when to invoke, what it won't do, example prompts
+- [ ] `HOOKS.md` — all hooks: trigger, blocking vs async, env vars, how to disable
 
 ---
 
 ## Guiding Principles
 
-**Hooks are defensive infrastructure, not features.** Each hook must have a clear failure mode, a deterministic exit code, and a graceful no-op when its dependency is absent.
+**The model IS the agent. Build harnesses, not prompt chains.** Tools + knowledge + permissions = effective orchestration.
 
-**Commands orchestrate agents — they don't replace them.** A command is a prompt program. Logic stays in agent `.md` files.
+**Skills are reference material, not instructions.** Progressive disclosure: SKILL.md is concise, references/ has depth.
 
-**Skills are reference material, not instructions.** A skill gives Claude accurate domain knowledge — not orders. Readable by a human engineer as a quality reference.
+**Hooks are defensive infrastructure.** Clear failure mode, deterministic exit code, graceful no-op when dependency absent.
 
-**Profiles are install-time decisions, not runtime mode switches.** Runtime variation comes from `/forge` subcommands and env vars, not profile switching.
+**Every new feature must be removable.** Delete one file or comment one line in hooks.json.
 
-**Every new feature must be removable.** If a hook, skill, or agent causes problems, the user should be able to remove it by deleting one file or commenting out one line in `hooks.json`.
+**Token budgets are explicit.** Skills ≤400 lines, agent descriptions ≤30 words, model selection justified.

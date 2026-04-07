@@ -1,5 +1,6 @@
 ---
 name: game-changing-features
+origin: ohmyclaude
 description: Find 10x product opportunities and high-leverage improvements. Used by @paige-product on Route D/E (high-complexity features) before finalizing the PRD, to stress-test product value. Triggers when user wants strategic product thinking, asks "what would make this 10x better", or mentions "product strategy".
 ---
 

@@ -1,5 +1,6 @@
 ---
-name: crafting-effective-readmes
+name: readme-templates
+origin: ohmyclaude
 description: Use when writing or improving README files. Not all READMEs are the same — provides templates and guidance matched to your audience and project type.
 ---
 

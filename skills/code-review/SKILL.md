@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Code review checklist and patterns — what to look for, how to give feedback, review etiquette, and common code smells. Used by @stan-standards (logic/readability) and @percy-perf (performance) during the governance phase.
+description: Code review checklist and patterns — what to look for, how to give feedback, review etiquette, and common code smells. Used by @stan-standards (logic/readability) and @stan-standards (performance) during the governance phase.
 origin: ohmyclaude
 ---
 
@@ -11,7 +11,7 @@ Use this skill when the user asks to review code, create PR review comments, or 
 ## Review Priority Order
 
 1. **Correctness** — Does it work? Are edge cases handled?
-2. **Security** — Any vulnerabilities? (delegate deep analysis to @argus)
+2. **Security** — Any vulnerabilities? (delegate deep analysis to @sam-sec)
 3. **Readability** — Can the next person understand it?
 4. **Maintainability** — Will this be easy to change?
 5. **Performance** — Any obvious bottlenecks? (don't prematurely optimize)
@@ -27,7 +27,7 @@ Never block a PR on performance without a measured benchmark.
 - [ ] Mutations are safe — no unintended side effects
 - [ ] Business rules are correctly encoded
 
-### Security (surface check — escalate to @argus for depth)
+### Security (surface check — escalate to @sam-sec for depth)
 - [ ] No hardcoded secrets or credentials
 - [ ] User input is validated before use
 - [ ] SQL/template/command injection not possible

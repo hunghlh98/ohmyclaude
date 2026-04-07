@@ -1,5 +1,6 @@
 ---
 name: commit-work
+origin: ohmyclaude
 description: "Create high-quality git commits: review/stage intended changes, split into logical commits, write clear Conventional Commit messages with Co-Authored-By: Claude trailer. Used by @devon-ops post-implementation. Triggers when user asks to commit, craft a commit message, or stage changes."
 ---
 

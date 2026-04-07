@@ -1,10 +1,6 @@
 # ohmyclaude
 
-14-agent OSS company simulation pipeline for Claude Code — document-driven, dynamically routed, with conflict resolution and a post-release feedback loop.
-
-> Inspired by [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) and [everything-claude-code](https://github.com/affaan-m/everything-claude-code).
-
----
+10-agent OSS pipeline for Claude Code -- harness engineering framework with Agent Teams coordination, document-driven artifacts for human review, Java-first skills, and source graph integration.
 
 ## Install
 
@@ -12,187 +8,173 @@
 claude plugin install hunghlh98/ohmyclaude
 ```
 
-Then run once inside Claude Code to enable shell aliases:
-
-```
-/setup
-```
-
-**Upgrade:**
-```bash
-claude plugin update hunghlh98/ohmyclaude
-```
-
----
+Zero-setup. No `/setup` command, no config files, no shell aliases. Install and go.
 
 ## Quick Start
 
-**Submit a request (auto-routed through pipeline):**
 ```
-/forge request add rate limiting to the /api/users endpoint
-```
-
-**Or invoke agents directly:**
-```
-@paige-product  — classify and route a request
-@artie-arch     — design architecture (C4 diagrams)
-@stan-standards — review code quality
-@sam-sec        — security audit + adversarial plan validation
-@beck-backend   — implement backend features
-@effie-frontend — implement frontend features
-@polyglot-reviewer — review Java / Go / Python / Rust / Kotlin / C++ / Flutter / SQL
-@build-resolver    — fix a broken build (any language)
+/forge add rate limiting to the /api/users endpoint
+/forge fix the null pointer in payment processor
+/forge review src/auth/
+/forge debug tests fail in CI but pass locally
+/forge commit
 ```
 
-**Session contexts** — launch Claude already in the right mode:
-```bash
-claude-oss      # full pipeline — all 14 agents, /forge entry point
-claude-dev      # build mode   — beck-backend + effie-frontend + quinn-qa
-claude-review   # review mode  — stan-standards + percy-perf + sam-sec
-claude-debug    # debug mode   — heracles
+One command. The pipeline figures out the rest.
+
+## The `/forge` Command
+
+| Subcommand | What it does |
+|------------|--------------|
+| `/forge <natural language>` | Route and execute any request (default) |
+| `/forge sprint [--size N]` | Execute sprint from backlog |
+| `/forge release` | Cut release |
+| `/forge commit` | Generate semantic commit message |
+| `/forge help` | Show help |
+
+## How It Works
+
+```
+1. Project discovery    CLAUDE.md, source graph, tree, language detection
+2. Create Agent Team    TeamCreate allocates agents for this request
+3. Plan                 @paige-product classifies, decomposes into tasks
+                        with dependency graph
+4. Execute              Agents work in parallel waves, write artifacts
+                        for human review
+5. Progress             Real-time display
+6. Shutdown             Team cleanup, summary
 ```
 
----
+### Smart UX -- Confidence-Based Interaction
 
-## OSS Pipeline
+| Confidence | Behavior |
+|------------|----------|
+| HIGH | Execute immediately |
+| MEDIUM | 1 clarifying question |
+| LOW | 2-3 questions |
 
-```
-TIER 1 — STRATEGY & DESIGN
-  @paige-product  Grand Router + Product Gatekeeper
-  @artie-arch     Architect (C4: C1→C3)
-  @una-ux         UX/UI Design (pre-dev spec + post-dev visual review)
-  @scout-sprint   Planning & Sprint Coordination
+Never more than 3 questions. Circuit breaker: 3 rejection rounds triggers human oracle decision via `AskUserQuestion`.
 
-TIER 2 — EXECUTION
-  @sam-sec        Security, Compliance & Adversarial Validation
-  @beck-backend   BE Contributor (C4-Code + implementation)
-  @effie-frontend FE Contributor (C4-Code + implementation)
-  @quinn-qa       QA / Tester
+## Agents
 
-TIER 3 — GOVERNANCE
-  @stan-standards Logic & Standards (read-only)
-  @percy-perf     Performance (read-only)
-  @dora-docs      Documentation
-  @devon-ops      SRE / DevOps + Releases (ultimate trump card)
+10 agents with corporate Slack personas. Each has a name, a clear lane, and a model assignment.
 
-TIER 4 — POST-RELEASE
-  @evan-evangelist  DevRel / Community
-  @anna-analytics   Data / Analytics (feedback loop)
-```
-
-**Document flow (each stage produces a named artifact):**
-```
-UX-SPEC → PRD → SDD → PLAN → REVIEW → IMPL-BE/FE → TEST → CODE-REVIEW → UX-REVIEW → DOC → RELEASE → ANNOUNCEMENT → ANALYTICS
-```
-
----
+| Tier | Agent | Role | Model |
+|------|-------|------|-------|
+| Lead | @paige-product | Grand Router + Planner + Oracle | sonnet |
+| Design | @artie-arch | C4 system architect | opus |
+| Design | @una-ux | UX spec + WCAG review | sonnet |
+| Execution | @sam-sec | Security audit, adversarial validation | sonnet |
+| Execution | @beck-backend | Backend implementation (BE-only) | sonnet |
+| Execution | @effie-frontend | Frontend implementation (FE-only) | sonnet |
+| Execution | @quinn-qa | Testing + fuzz data | sonnet |
+| Governance | @stan-standards | Code review -- logic + performance + language | sonnet |
+| Ship | @devon-ops | Docs + release + announcement | haiku |
+| Utility | @heracles | Debugging + root cause analysis | sonnet |
 
 ## Dynamic Routing
 
-`@paige-product` classifies every request and assigns a route before writing the PRD:
+@paige-product classifies every request and selects agents based on intent:
 
-| Route | Name | Trigger | Skips |
-|-------|------|---------|-------|
-| **A** | Docs-Only | Type=docs, Complexity=low | Most agents |
-| **B** | Fast-Track | Matches boilerplate template | @artie-arch, @una-ux |
-| **C** | Hotfix | P0 bug | @artie-arch, @una-ux, @evan-evangelist |
-| **D** | Full Feature | high complexity feature | None |
-| **E** | Security Patch | Touches_Security=true | @una-ux, @evan-evangelist |
+| Intent | Agent Chain |
+|--------|-------------|
+| Docs | @devon-ops + @stan-standards |
+| Template / boilerplate | builder + @quinn-qa + @stan-standards |
+| P0 hotfix | builder + @quinn-qa + @devon-ops |
+| Complex feature | @artie-arch, @una-ux, @sam-sec, builders, @quinn-qa, @stan-standards, @devon-ops |
+| Security | @sam-sec, builder, @quinn-qa, @sam-sec (re-review), @devon-ops |
+| Code review | @stan-standards |
+| Debug | @heracles |
 
----
-
-## Commands
-
-| Command | What it does |
-|---------|-------------|
-| `/forge request <task>` | Route and triage a new request → ISS-NNN.md |
-| `/forge sprint` | Execute current sprint through each issue's route |
-| `/forge release` | @devon-ops cuts release → @evan-evangelist announces |
-| `/forge analyze` | @anna-analytics post-deploy telemetry (async) |
-| `/forge init <spec>` | Founding build: full Route D pipeline → v1.0.0 |
-| `/forge triage` | @paige-product re-routes all backlog items |
-| `/review [path]` | Code review — @stan-standards + @percy-perf |
-| `/debug <issue>` | Root cause analysis — @heracles |
-| `/commit` | Semantic commit message from diff |
-
----
-
-## Conflict Resolution
-
-**Domain Dictator** — who wins conflicts:
+### Conflict Resolution
 
 | Conflict | Winner |
 |----------|--------|
 | Velocity vs security | @sam-sec always |
-| Release timing vs community hype | @devon-ops always |
-| Product intuition vs telemetry | @anna-analytics (data beats intuition) |
-| UX completeness vs velocity | @una-ux on WCAG failures |
+| Release vs stability | @devon-ops (ultimate trump card) |
+| UX vs velocity | @una-ux on WCAG failures |
 
-**Circuit Breaker** — after 3 rejection rounds in any stage:
-1. Reviewing agent writes `DEADLOCK-<id>.md`
-2. Pipeline halts
-3. @paige-product synthesizes binary choice for human
-4. Human authorizes → pipeline resumes
+## Skills (27)
 
----
+### General Engineering (12)
 
-## Agents
+`api-design` `c4-architecture` `code-review` `commit-work` `database-schema-designer` `datadog-cli` `design-system` `error-handling` `game-changing-features` `generate-fuzz-data` `git-workflow` `tdd-patterns`
 
-### Primary Pipeline (14)
+### Java / Spring Boot (4)
 
-| Tier | Agent | Persona | Does |
-|------|-------|---------|------|
-| 1 | **@paige-product** | Pragmatic Skeptic | Grand Router — classifies, routes, writes PRD |
-| 1 | **@artie-arch** | Elegant Purist | C4 architect — SDD with C1-C3 diagrams |
-| 1 | **@una-ux** | The Empath | UX-SPEC (pre-dev) + UX-REVIEW (post-dev) |
-| 1 | **@scout-sprint** | Agile Hustler | Sprint planner — PLAN + agent delegation |
-| 2 | **@sam-sec** | The Doomsayer | Security + 7 adversarial scenarios — REVIEW |
-| 2 | **@beck-backend** | Blue-Collar Builder | BE implementation (BE-only scope) |
-| 2 | **@effie-frontend** | Pixel Artisan | FE implementation + WCAG compliance |
-| 2 | **@quinn-qa** | Professional Troll | Tests + fuzz data — TEST report |
-| 3 | **@stan-standards** | Wise Mentor | Code logic + quality — CODE-REVIEW (logic section) |
-| 3 | **@percy-perf** | Unblinking Watcher | Performance — CODE-REVIEW (perf section) |
-| 3 | **@dora-docs** | The Historian | Docs + Keep a Changelog |
-| 3 | **@devon-ops** | The Timekeeper | SRE — RELEASE file + CHANGELOG promotion |
-| 4 | **@evan-evangelist** | The Hypeman | Community announcements |
-| 4 | **@anna-analytics** | Cold Truth-Teller | Post-deploy telemetry + regression feedback loop |
+`java-coding-standards` `springboot-patterns` `springboot-tdd` `springboot-security`
 
-### Utility (on-demand, not in pipeline)
+### Pipeline Artifact Writers (4)
 
-| Agent | Does |
-|-------|------|
-| **@heracles** | Debugs failures to root cause |
-| **@polyglot-reviewer** | Language-aware review — Java / Kotlin / Go / Python / Rust / TypeScript / C++ / Flutter / SQL |
-| **@build-resolver** | Fixes build errors — Maven, Gradle, Cargo, tsc, CMake, go build |
+`write-sdd` `write-code-review` `write-security-review` `write-ux-spec`
 
----
+### Specialized (7)
 
-## Contexts
+`task-breakdown` `project-discovery` `post-deploy-analytics` `qa-test-planner` `readme-templates` `reducing-entropy` `requirements-clarity`
 
-| Alias | Mode | Agents |
-|-------|------|--------|
-| `claude-oss` | Full OSS pipeline | All 14 primary agents, /forge |
-| `claude-dev` | Implementation | @beck-backend + @effie-frontend + @quinn-qa |
-| `claude-review` | Code review | @stan-standards + @percy-perf + @sam-sec |
-| `claude-debug` | Debugging | @heracles |
+## Rules System
 
----
+Path-activated language rules:
 
-## Hooks
+| Path | Scope |
+|------|-------|
+| `rules/common/` | Shared coding style (all files) |
+| `rules/java/` | Coding style, patterns, security, testing (activates on `**/*.java`) |
+
+## Hooks (6)
 
 | Hook | Trigger | What it does |
-|------|---------|-------------|
-| **pre-write-check** | PreToolUse Write/Edit | Blocks writes with hardcoded secrets |
-| **post-bash-lint** | PostToolUse Bash | Runs linter after bash edits source |
-| **backlog-tracker** | PostToolUse Write | Rebuilds BACKLOG.md when ISS-*.md files are written |
-| **session-summary** | Stop | Writes session log to `~/.claude/ohmyclaude/` |
+|------|---------|--------------|
+| `pre-write-check` | PreToolUse Write/Edit | Blocks writes with hardcoded secrets |
+| `post-bash-lint` | PostToolUse Bash | Runs linter after bash edits source |
+| `backlog-tracker` | PostToolUse Write | Rebuilds BACKLOG.md when ISS-*.md written |
+| `graph-update` | PostToolUse Write/Edit | Incrementally updates source graph (optional) |
+| `session-summary` | Stop | Writes session log |
+| `team-cleanup` | Stop | Cleans orphaned teams older than 24h |
+
+## Source Graph Integration (optional)
+
+Install [code-review-graph](https://github.com/nicholasgriffintn/code-review-graph) for enhanced analysis:
+
+```
+claude plugin install code-review-graph
+```
+
+Provides semantic code search, blast radius analysis, architecture overview, and flow detection. Agents use graph tools when available, fall back to tree/grep when not.
+
+### Exploration Tool Priority
+
+| Priority | Tool | Type |
+|----------|------|------|
+| 1 | tree-sitter source graph (code-review-graph) | Semantic intelligence |
+| 2 | `tree` CLI | Directory structure |
+| 3 | Glob / Grep | Last resort |
+
+## Install Profiles
+
+| Profile | Contents |
+|---------|----------|
+| Minimal | 10 agents + /forge |
+| Standard (default) | + 27 skills + Java rules + quality hooks |
+| Full | + source graph hooks + tracking hooks |
+
+## Project Inventory
+
+| Component | Count | Detail |
+|-----------|------:|--------|
+| Version | 1.0.0 | VERSION, package.json, plugin.json, marketplace.json |
+| Agents | 10 | sonnet: 8, opus: 1, haiku: 1 |
+| Skills | 27 | engineering: 12, java: 4, pipeline: 4, specialized: 7 |
+| Commands | 1 | forge |
+| Rules | 5 | common: 1, java: 4 |
+| Hooks | 6 | backlog-tracker, graph-update, post-bash-lint, pre-write-check, session-summary, team-cleanup |
+| Profiles | 3 | minimal, standard (default), full |
+| Modules | 14 | agents: 4, skills: 4, rules: 2, commands: 1, hooks: 3 |
+
+Run `node scripts/validate.js` to see the live inventory with per-agent detail.
 
 ---
 
-## Skills (auto-activate by keyword)
+[Roadmap](./ROADMAP.md) -- [Contributing](./CONTRIBUTING.md)
 
-`git-workflow` · `tdd-patterns` · `api-design` · `error-handling` · `code-review`
-
----
-
-[Roadmap](./ROADMAP.md) · [Contributing](./CONTRIBUTING.md)
+Inspired by [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) and [everything-claude-code](https://github.com/affaan-m/everything-claude-code).

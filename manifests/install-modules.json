@@ -1,40 +1,18 @@
 {
   "$schema": "../schemas/install-modules.schema.json",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "modules": [
     {
-      "id": "agents-strategy",
+      "id": "agents-core",
       "kind": "agents",
-      "description": "Tier 1 — Strategy & Design: Paige Product (Grand Router), Artie Arch (C4 architect), Una UX (accessibility + UX spec), Scout Sprint (planner)",
+      "description": "Core pipeline agents: Paige (lead), Artie (architect), Una (UX), Sam (security), Beck (backend), Effie (frontend), Quinn (QA)",
       "paths": [
         "agents/paige-product.md",
         "agents/artie-arch.md",
         "agents/una-ux.md",
-        "agents/scout-sprint.md"
-      ],
-      "targets": ["claude"],
-      "defaultInstall": true,
-      "stability": "stable"
-    },
-    {
-      "id": "agents-security",
-      "kind": "agents",
-      "description": "Tier 2 — Security: Sam Sec (security, compliance, adversarial plan validator)",
-      "paths": [
-        "agents/sam-sec.md"
-      ],
-      "targets": ["claude"],
-      "defaultInstall": true,
-      "stability": "stable"
-    },
-    {
-      "id": "agents-implementation",
-      "kind": "agents",
-      "description": "Tier 2 — Execution: Beck Backend (BE builder), Effie Frontend (FE builder), Heracles (debugger), Quinn QA (test writer)",
-      "paths": [
+        "agents/sam-sec.md",
         "agents/beck-backend.md",
         "agents/effie-frontend.md",
-        "agents/heracles.md",
         "agents/quinn-qa.md"
       ],
       "targets": ["claude"],
@@ -42,32 +20,20 @@
       "stability": "stable"
     },
     {
-      "id": "agents-review",
+      "id": "agents-governance",
       "kind": "agents",
-      "description": "Tier 3 — Governance (read-only reviewers): Stan Standards (logic & conventions), Percy Perf (performance)",
+      "description": "Code reviewer: Stan Standards (logic + performance + language-specific quality, read-only)",
       "paths": [
-        "agents/stan-standards.md",
-        "agents/percy-perf.md"
+        "agents/stan-standards.md"
       ],
       "targets": ["claude"],
       "defaultInstall": true,
       "stability": "stable"
     },
     {
-      "id": "agents-docs",
+      "id": "agents-ship",
       "kind": "agents",
-      "description": "Tier 3 — Documentation: Dora Docs (README, API docs, Keep a Changelog)",
-      "paths": [
-        "agents/dora-docs.md"
-      ],
-      "targets": ["claude"],
-      "defaultInstall": true,
-      "stability": "stable"
-    },
-    {
-      "id": "agents-release",
-      "kind": "agents",
-      "description": "Tier 3 — SRE / DevOps: Devon Ops (release manager, ultimate trump card on production stability)",
+      "description": "Ship agent: Devon Ops (docs + changelog + release + announcement, ultimate trump card)",
       "paths": [
         "agents/devon-ops.md"
       ],
@@ -76,51 +42,114 @@
       "stability": "stable"
     },
     {
-      "id": "agents-community",
+      "id": "agents-utility",
       "kind": "agents",
-      "description": "Tier 4 — Post-Release: Evan Evangelist (DevRel/community), Anna Analytics (telemetry + feedback loop)",
+      "description": "Utility agent: Heracles (debugger, root cause analysis, on-demand)",
       "paths": [
-        "agents/evan-evangelist.md",
-        "agents/anna-analytics.md"
-      ],
-      "targets": ["claude"],
-      "defaultInstall": false,
-      "stability": "stable"
-    },
-    {
-      "id": "skills-core",
-      "kind": "skills",
-      "description": "Core engineering skills: git-workflow, tdd-patterns, api-design, error-handling, code-review",
-      "paths": [
-        "skills/git-workflow/",
-        "skills/tdd-patterns/",
-        "skills/api-design/",
-        "skills/error-handling/",
-        "skills/code-review/"
+        "agents/heracles.md"
       ],
       "targets": ["claude"],
       "defaultInstall": true,
       "stability": "stable"
     },
     {
-      "id": "commands-forge",
+      "id": "skills-engineering",
+      "kind": "skills",
+      "description": "General engineering skills — useful standalone, outside the pipeline",
+      "paths": [
+        "skills/api-design/",
+        "skills/c4-architecture/",
+        "skills/code-review/",
+        "skills/commit-work/",
+        "skills/database-schema-designer/",
+        "skills/datadog-cli/",
+        "skills/design-system/",
+        "skills/error-handling/",
+        "skills/game-changing-features/",
+        "skills/generate-fuzz-data/",
+        "skills/git-workflow/",
+        "skills/tdd-patterns/"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
+      "id": "skills-java",
+      "kind": "skills",
+      "description": "Java / Spring Boot skills — coding standards, patterns, TDD, security",
+      "paths": [
+        "skills/java-coding-standards/",
+        "skills/springboot-patterns/",
+        "skills/springboot-tdd/",
+        "skills/springboot-security/"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
+      "id": "skills-pipeline",
+      "kind": "skills",
+      "description": "Pipeline artifact writers — define format/schema for review artifacts (SDD, CODE-REVIEW, REVIEW, UX-SPEC)",
+      "paths": [
+        "skills/write-code-review/",
+        "skills/write-sdd/",
+        "skills/write-security-review/",
+        "skills/write-ux-spec/"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
+      "id": "skills-specialized",
+      "kind": "skills",
+      "description": "Specialized skills: task breakdown, project discovery, post-deploy analytics, QA planning, templates, entropy reduction, requirements clarity",
+      "paths": [
+        "skills/task-breakdown/",
+        "skills/project-discovery/",
+        "skills/post-deploy-analytics/",
+        "skills/qa-test-planner/",
+        "skills/readme-templates/",
+        "skills/reducing-entropy/",
+        "skills/requirements-clarity/"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
+      "id": "rules-common",
+      "kind": "rules",
+      "description": "Common coding style rules — apply to all languages",
+      "paths": [
+        "rules/common/coding-style.md"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
+      "id": "rules-java",
+      "kind": "rules",
+      "description": "Java rules — coding style, patterns, security, testing (path-activated on **/*.java)",
+      "paths": [
+        "rules/java/coding-style.md",
+        "rules/java/patterns.md",
+        "rules/java/security.md",
+        "rules/java/testing.md"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
+      "id": "commands",
       "kind": "commands",
-      "description": "Forge — single OSS entry point: /forge init, request, triage, sprint, release, analyze",
+      "description": "Single entry point: /forge (route, sprint, release, commit, help)",
       "paths": [
         "commands/forge.md"
-      ],
-      "targets": ["claude"],
-      "defaultInstall": true,
-      "stability": "stable"
-    },
-    {
-      "id": "commands-core",
-      "kind": "commands",
-      "description": "Developer utility commands: /review, /commit, /debug",
-      "paths": [
-        "commands/review.md",
-        "commands/commit.md",
-        "commands/debug.md"
       ],
       "targets": ["claude"],
       "defaultInstall": true,
@@ -140,76 +169,28 @@
       "stability": "stable"
     },
     {
-      "id": "hooks-backlog",
+      "id": "hooks-graph",
       "kind": "hooks",
-      "description": "Backlog tracker: auto-rebuilds BACKLOG.md index when ISS-*.md files are written",
+      "description": "Source graph hook: incremental code-review-graph update after code changes (optional, skips if not installed)",
       "paths": [
-        "hooks/scripts/backlog-tracker.js"
+        "hooks/scripts/graph-update.js"
       ],
       "targets": ["claude"],
-      "defaultInstall": true,
+      "defaultInstall": false,
       "stability": "stable"
     },
     {
       "id": "hooks-tracking",
       "kind": "hooks",
-      "description": "Session tracking: write usage summary on Stop",
+      "description": "Tracking hooks: backlog index rebuild, session summary, team cleanup",
       "paths": [
-        "hooks/scripts/session-summary.js"
+        "hooks/scripts/backlog-tracker.js",
+        "hooks/scripts/session-summary.js",
+        "hooks/scripts/team-cleanup.js"
       ],
       "targets": ["claude"],
       "defaultInstall": false,
       "stability": "stable"
-    },
-    {
-      "id": "rules-core",
-      "kind": "rules",
-      "description": "Engineering standards: function size, naming, immutability, error handling, security baseline",
-      "paths": [
-        "rules/engineering-standards.md"
-      ],
-      "targets": ["claude"],
-      "defaultInstall": true,
-      "stability": "stable"
-    },
-    {
-      "id": "contexts",
-      "kind": "contexts",
-      "description": "Session mode contexts: oss (full pipeline), dev, review, debug — loads the right agents and behavior for each working mode",
-      "paths": [
-        "contexts/oss.md",
-        "contexts/dev.md",
-        "contexts/review.md",
-        "contexts/debug.md"
-      ],
-      "targets": ["claude"],
-      "defaultInstall": true,
-      "stability": "stable"
-    },
-    {
-      "id": "agents-polyglot",
-      "kind": "agents",
-      "description": "Multi-language reviewer (Java, Kotlin, Go, Python, Rust, TypeScript, C++, Flutter, Database/SQL) and build error resolver for any language/build tool",
-      "paths": [
-        "agents/polyglot-reviewer.md",
-        "agents/build-resolver.md"
-      ],
-      "targets": ["claude"],
-      "defaultInstall": false,
-      "stability": "stable"
-    },
-    {
-      "id": "mcp-lsp",
-      "kind": "mcp",
-      "description": "LSP MCP server: goto-definition, find-references, symbols, diagnostics, rename",
-      "paths": [
-        "mcp/lsp-server/",
-        ".mcp.json"
-      ],
-      "targets": ["claude"],
-      "defaultInstall": false,
-      "dependencies": ["node >= 18"],
-      "stability": "experimental"
     }
   ]
 }

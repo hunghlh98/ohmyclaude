@@ -78,4 +78,4 @@ status: draft | approved
 - **Max 20 elements per C4 diagram** — split into multiple diagrams if the system is large
 - **ADRs are append-only** — never delete an ADR, mark it Superseded instead
 - **Data Model section is optional** — only include if the schema is non-trivial; use `database-schema-designer` skill for full schema detail
-- **Open Questions block the pipeline** — if any exist, ping @artie-arch before handing off to @scout-sprint
+- **Open Questions block the pipeline** — if any exist, ping @artie-arch before handing off to @paige-product

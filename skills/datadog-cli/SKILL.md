@@ -1,6 +1,7 @@
 ---
 name: datadog-cli
-description: Datadog CLI for searching logs, querying metrics, tracing requests, and managing dashboards. Used by @anna-analytics as the telemetry backbone — after fetching metrics, if error_rate_delta exceeds threshold, triggers regression issue creation (ISS-NNN.md in .claude/pipeline/backlog/) for @paige-product. Triggers on "telemetry", "metrics", "error rate", "latency", "Datadog", "observability".
+origin: ohmyclaude
+description: Datadog CLI for searching logs, querying metrics, tracing requests, and managing dashboards. Used by @devon-ops as the telemetry backbone — after fetching metrics, if error_rate_delta exceeds threshold, triggers regression issue creation (ISS-NNN.md in .claude/pipeline/backlog/) for @paige-product. Triggers on "telemetry", "metrics", "error rate", "latency", "Datadog", "observability".
 ---
 
 # Datadog CLI

@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "ohmyclaude/skill.schema.json",
+  "title": "ohmyclaude Skill Frontmatter Schema",
+  "description": "Canonical schema for SKILL.md YAML frontmatter in ohmyclaude skills",
+  "type": "object",
+  "required": ["name", "description", "origin"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Skill identifier. MUST match the parent directory name exactly (folder name is canonical).",
+      "examples": ["api-design", "tdd-patterns", "circuit-breaker"]
+    },
+    "description": {
+      "type": "string",
+      "description": "Describes what the skill provides and when it activates. Include trigger keywords for auto-activating skills. General engineering skills should be concise (under 200 chars). Pipeline artifact and mechanics skills may be longer to accurately describe their pipeline role, agent relationships, and trigger conditions."
+    },
+    "origin": {
+      "type": "string",
+      "const": "ohmyclaude",
+      "description": "Plugin that owns this skill. Always 'ohmyclaude' for first-party skills."
+    },
+    "trigger": {
+      "type": "string",
+      "enum": ["keyword", "explicit"],
+      "default": "keyword",
+      "description": "'keyword' (default) — skill auto-activates when trigger phrases appear in the user's message. 'explicit' — skill only activates when directly invoked by name. Use 'explicit' for destructive or manual-only operations."
+    },
+    "license": {
+      "type": "string",
+      "description": "SPDX license identifier. Optional. Defaults to the plugin's MIT license if omitted.",
+      "examples": ["MIT", "Apache-2.0"]
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "name": "api-design",
+      "description": "REST and GraphQL API design — resource naming, versioning, error responses, pagination. Triggers on 'design API', 'REST endpoint', 'GraphQL schema'.",
+      "origin": "ohmyclaude"
+    },
+    {
+      "name": "reducing-entropy",
+      "description": "Manual-only skill for minimizing total codebase size. Only activate when explicitly requested.",
+      "origin": "ohmyclaude",
+      "trigger": "explicit"
+    }
+  ]
+}

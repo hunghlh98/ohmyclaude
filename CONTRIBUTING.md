@@ -13,14 +13,11 @@ node scripts/validate.js
 
 ## Project Structure
 
-Two categories of files exist in this repo. Know which is which:
-
 | Category | Files | Purpose |
 |----------|-------|---------|
-| **Plugin deliverable** | `agents/`, `skills/`, `commands/`, `hooks/`, `rules/`, `contexts/`, `.claude-plugin/`, `.mcp.json`, `mcp/`, `manifests/` | Shipped to end users |
-| **Repo dev config** | `scripts/`, `tests/`, `.github/`, `CONTRIBUTING.md`, `package.json` | Repo maintenance only |
-
-**`CLAUDE.md` (this file's sibling) is a contributor guide — not end-user content.**
+| **Plugin deliverable** | `agents/`, `skills/`, `commands/`, `hooks/`, `rules/`, `.claude-plugin/`, `manifests/`, `schemas/` | Shipped to end users |
+| **Repo dev config** | `scripts/`, `.github/`, `CONTRIBUTING.md`, `package.json` | Repo maintenance only |
+| **Dev-only skills** | `.claude/skills/` | Local skills for developing ohmyclaude — NOT shipped |
 
 ---
 
@@ -28,117 +25,68 @@ Two categories of files exist in this repo. Know which is which:
 
 ### Naming Convention — Corporate Slack Persona Theme
 
-All agents follow the "Corporate Slack" persona theme — a recognizable human name that signals their role and personality. When adding a new agent, pick a name whose **persona matches the agent's function and occupational hazard**:
+All agents follow the "Corporate Slack" persona theme — a recognizable human name that signals their role and personality.
 
-| Agent | Persona | Plugin function |
-|-------|---------|----------------|
-| paige-product | Pragmatic Skeptic | Grand Router + product gatekeeper |
+| Agent | Persona | Role |
+|-------|---------|------|
+| paige-product | Pragmatic Skeptic | Team lead, Grand Router, Oracle |
 | artie-arch | Elegant Purist | C4 system architect |
 | una-ux | The Empath | UX spec (pre-dev) + accessibility review (post-dev) |
-| scout-sprint | Agile Hustler | Sprint planner + task orchestrator |
-| sam-sec | The Doomsayer | Security, compliance, adversarial plan validation |
+| sam-sec | The Doomsayer | Security, compliance, adversarial validation |
 | beck-backend | Blue-Collar Builder | BE implementer (BE-only scope) |
 | effie-frontend | Pixel Artisan | FE implementer (FE-only scope) |
 | quinn-qa | Professional Troll | Test writer + fuzz generator |
-| stan-standards | Wise Mentor | Logic & code quality reviewer (read-only) |
-| percy-perf | Unblinking Watcher | Performance reviewer (read-only) |
-| dora-docs | The Historian | Documentation + Keep a Changelog |
-| devon-ops | The Timekeeper | SRE / DevOps + release manager |
-| evan-evangelist | The Hypeman | DevRel + community announcements |
-| anna-analytics | Cold Truth-Teller | Post-deploy telemetry + feedback loop |
-| heracles | — | Debugger (utility, not in primary pipeline) |
-| build-resolver | — | Build error fixer (utility) |
-| polyglot-reviewer | — | Multi-language code reviewer (utility) |
+| stan-standards | Wise Mentor | Logic + performance + language reviewer (read-only) |
+| devon-ops | The Timekeeper | Docs + release + announcement (ultimate trump card) |
+| heracles | — | Debugger (utility, on-demand) |
 
-The name must convey the persona's occupational hazard, not just the function.
-
-### Agent Workflow Order (5-Tier OSS Pipeline)
+### Agent Teams Workflow
 
 ```
-TIER 1 — STRATEGY & DESIGN
-  @paige-product → @una-ux → @artie-arch → @scout-sprint
-
-TIER 2 — EXECUTION
-  @sam-sec (validation) → @beck-backend + @effie-frontend (parallel) → @quinn-qa
-
-TIER 3 — GOVERNANCE
-  @stan-standards + @percy-perf + @una-ux (parallel review) → @dora-docs → @devon-ops
-
-TIER 4 — POST-RELEASE
-  @evan-evangelist → @anna-analytics (async)
+/forge <request>
+  ├── Project discovery (graph > tree > grep)
+  ├── TeamCreate
+  ├── @paige-product classifies + decomposes into tasks
+  ├── Agents work in parallel waves
+  ├── Artifacts written to .claude/pipeline/ for human review
+  └── TeamDelete + summary
 ```
-
-New agents should slot into one of the 4 tiers with a clear position. Dynamic routing (Route A/B/C/D/E) determines which tiers are activated per issue.
 
 ### Model Selection
 
 | Model | When to use |
 |-------|------------|
-| `opus` | Expensive analysis, architecture (artie-arch only by default) |
-| `sonnet` | Most agents — good balance |
-| `haiku` | High-volume, low-complexity (dora-docs, evan-evangelist) |
+| `opus` | Deep reasoning, architecture (artie-arch only by default) |
+| `sonnet` | Most agents — 90% of tasks |
+| `haiku` | Templated work (devon-ops only) |
 
 Don't use `opus` unless the agent genuinely needs deep reasoning. Justify it in the PR.
 
 ### Read-Only Agents
 
-These agents observe and advise only — they must **never** have `Write`, `Edit`, or `MultiEdit` in their tools list:
-- Tier 1 (design): `artie-arch`, `una-ux` (pre-dev role only — post-dev UX-REVIEW uses Write for the review file)
-- Tier 3 (governance): `stan-standards`, `percy-perf`
-- Tier 4 (post-release): `evan-evangelist`, `anna-analytics` (Write-only to docs, not source code)
+These agents must **never** have `Write`, `Edit`, or `MultiEdit` in their tools list:
+- `artie-arch`, `una-ux` (pre-dev role only), `stan-standards`, `sam-sec` (except Bash)
 
-`paige-product`, `scout-sprint`, `dora-docs`, `devon-ops` all write to `.claude/pipeline/` — that is their function.
+### Token Budget Rules
+
+- **Skills**: ≤400 lines per SKILL.md (≈500 tokens). Verbose content in `references/`.
+- **Agent descriptions**: ≤30 words (loaded in every Task invocation — bloat is expensive).
+- **Token estimation**: words x 1.3 for prose, chars / 4 for code.
 
 ---
 
 ## Documentation Rule
 
-**Any change that affects public behavior must update documentation in the same commit. No exceptions.**
+**Any change that affects public behavior must update documentation in the same commit.**
 
 | What changed | What to update |
 |-------------|---------------|
-| New agent added | `README.md` agents table + group, `ROADMAP.md` v0.1 checklist |
-| New skill added | `README.md` skills list with trigger keywords |
-| New command added | `README.md` commands table |
-| New context added | `README.md` contexts table |
+| New agent added | `README.md` agents table, `ROADMAP.md` |
+| New skill added | `README.md` skills list |
+| New rule added | `README.md` rules section |
 | New hook added | `README.md` hooks list |
-| New install profile | `README.md` install section, `manifests/install-profiles.json` |
-| Any new module | `manifests/install-modules.json` + relevant profile(s) |
-| Version bumped | `VERSION`, `package.json`, `plugin.json`, `marketplace.json` — all 4 |
-| Behavior changed | `README.md` relevant section + context file if mode affected |
-
-**The PR checklist blocks merge if `README.md` is not updated.** If you're unsure whether a change requires a doc update, it does.
-
----
-
-## Adding a New Context
-
-Create `contexts/<mode-name>.md`:
-
-```markdown
-# <Mode Name> Context
-
-Mode: <short description>
-Agents: @<primary> (primary), @<secondary> (secondary role)
-
-## Behavior
-- <Rule 1>
-- <Rule 2>
-
-## Agent Delegation
-- <Task type> → @<agent>
-
-## Tools to Favor
-- <Tool> — why
-
-## Output Format
-<What the output should look like>
-```
-
-Then update:
-- `README.md` — add row to the Contexts table
-- `manifests/install-modules.json` — add path to `contexts` module paths list
-- `ROADMAP.md` — if it's a new v0.x feature
+| Version bumped | `node scripts/bump-version.js` (handles all 4 files) |
+| Behavior changed | `README.md` relevant section |
 
 ---
 
@@ -146,125 +94,102 @@ Then update:
 
 1. Create `agents/<name>.md` with required frontmatter:
 
-```markdown
+```yaml
 ---
 name: <lowercase-name>
-description: <One sentence. What triggers auto-invocation. Mention /command or @name usage.>
+description: Use @<name> for <what>. Under 30 words.
 tools: ["Read", "Grep", "Glob"]
 model: sonnet
+color: blue
 ---
-
-You are <Name>, <mythological role>. <What that means for this plugin>.
-
-## Your Role
-...
-
-## What You Do NOT Do
-...
 ```
 
-2. Add the explicit file path to `.claude-plugin/plugin.json` `agents` array (not a directory — see schema notes).
+2. Add `<example>` blocks after frontmatter for reliable auto-triggering.
 
-3. Add the module entry to `manifests/install-modules.json`.
+3. Add the explicit file path to `.claude-plugin/plugin.json` `agents` array.
 
-4. Assign the agent to one or more profiles in `manifests/install-profiles.json`.
+4. Add the module entry to `manifests/install-modules.json`.
 
-5. Run `node scripts/validate.js` — all checks must pass.
+5. Assign to profiles in `manifests/install-profiles.json`.
 
-6. Document the agent in `README.md` under the correct group (Orchestration / Implementation / Review).
+6. Run `node scripts/validate.js` — all checks must pass.
+
+7. Document in `README.md` under the correct tier.
 
 ---
 
 ## Adding a New Skill
 
-1. Create `skills/<skill-name>/SKILL.md`:
+### Skill taxonomy
 
-```markdown
+| Category | Module | Who uses it | Examples |
+|----------|--------|-------------|---------|
+| **General engineering** | `skills-engineering` | Any user, standalone | `api-design`, `tdd-patterns` |
+| **Java / Spring Boot** | `skills-java` | Java backend developers | `springboot-patterns`, `springboot-tdd` |
+| **Pipeline artifact writers** | `skills-pipeline` | Specific agents, writes named docs | `write-sdd`, `write-code-review` |
+| **Specialized** | `skills-specialized` | Pipeline coordination, project tools | `task-breakdown`, `project-discovery` |
+
+### Steps
+
+1. Create `skills/<skill-name>/SKILL.md` (≤400 lines) with frontmatter:
+
+```yaml
 ---
-name: <skill-name>
-description: <One sentence describing what this skill teaches.>
+name: <skill-name>          # MUST match folder name
+description: Under 200 chars with trigger keywords.
 origin: ohmyclaude
 ---
-
-# <Skill Title>
-
-Use this skill when the user mentions: <trigger keywords>.
-
-## <Section>
-...
-
-## Anti-Patterns
-...
 ```
 
-The **"Use this skill when..."** line is critical — it drives auto-activation. Without it, the skill never loads.
+2. Optional: Create `skills/<skill-name>/references/` for verbose content.
 
-2. Run `node scripts/validate.js` to confirm the file is detected.
+3. Add to the correct module in `manifests/install-modules.json`.
+
+4. Run `node scripts/validate.js`.
+
+5. Document in `README.md` under the correct category.
 
 ---
 
-## Adding a New Command
+## Adding a Language Rule
 
-Create `commands/<command-name>.md`:
+1. Create `rules/<language>/<rule-name>.md` with frontmatter:
 
-```markdown
+```yaml
 ---
-description: <One sentence shown in the command picker.>
+paths:
+  - "**/*.<extension>"
 ---
-
-# /<command-name>
-
-<What this command does in 1-2 sentences.>
-
-## What This Command Does
-<Numbered steps>
-
-## When to Use
-<Scenarios>
-
-## Related Agents
-- **@<agent>** — why
 ```
 
-Commands describe workflows and invoke agents — they contain no logic themselves.
+2. Add to the `rules-<language>` module in `manifests/install-modules.json`.
+
+3. Document in `README.md` rules section.
 
 ---
 
 ## Adding a Hook
 
-1. Add the hook entry to `hooks/hooks.json`:
+1. Add the hook entry to `hooks/hooks.json`.
 
-```json
-{
-  "matcher": "Write|Edit",
-  "hooks": [{
-    "type": "command",
-    "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/my-hook.js\"",
-    "timeout": 10
-  }],
-  "description": "One sentence: what this hook does and why"
-}
-```
-
-2. Create `hooks/scripts/my-hook.js` following the stdin/stdout passthrough pattern:
+2. Create `hooks/scripts/<hook-name>.js` following the stdin/stdout passthrough pattern:
 
 ```js
 'use strict';
 let raw = '';
 process.stdin.on('data', c => raw += c);
 process.stdin.on('end', () => {
-  const input = JSON.parse(raw);
   // ... your logic ...
   process.stdout.write(raw); // always pass through
   process.exit(0);           // 0 = allow, 2 = block (PreToolUse only)
 });
 ```
 
-3. Add the module to `manifests/install-modules.json`.
+3. Add to a hooks module in `manifests/install-modules.json`.
 
 **Hook rules:**
-- Always pass stdin through to stdout — never drop it
-- Only exit code `2` blocks (and only in `PreToolUse`)
+- Always pass stdin through to stdout
+- Only exit code `2` blocks (PreToolUse only)
 - Async hooks (`"async": true`) must not block the conversation
 - Never call the Claude API from a hook script
 
@@ -272,68 +197,42 @@ process.stdin.on('end', () => {
 
 ## Versioning
 
-All three version sources must match or CI fails:
-
-| File | Field |
-|------|-------|
-| `VERSION` | entire file content |
-| `package.json` | `version` |
-| `.claude-plugin/plugin.json` | `version` |
-| `.claude-plugin/marketplace.json` | `version` |
-
-To bump the version:
+Use the bump script (handles all 4 files atomically):
 ```bash
-NEW=0.2.0
-echo $NEW > VERSION
-# update package.json, plugin.json, marketplace.json manually
-node scripts/validate.js  # verify
-git add -A && git commit -m "chore: bump version to $NEW"
-git tag v$NEW && git push origin main v$NEW
+node scripts/bump-version.js --patch   # 1.0.0 → 1.0.1
+node scripts/bump-version.js --minor   # 1.0.0 → 1.1.0
+node scripts/bump-version.js --major   # 1.0.0 → 2.0.0
+node scripts/bump-version.js 1.2.3     # explicit version
 ```
 
-The release workflow creates the GitHub release automatically on tag push.
+Then validate and commit:
+```bash
+node scripts/validate.js
+git add -A && git commit -m "chore: bump version to X.Y.Z"
+```
 
 ---
 
 ## Pull Request Checklist
 
-Before opening a PR:
-
 **Validation**
 - [ ] `node scripts/validate.js` passes with no errors
-- [ ] New agent files have all required frontmatter (`name`, `description`, `tools`, `model`)
-- [ ] New skill files have a "Use this skill when..." activation line
-- [ ] `plugin.json` uses explicit file paths for agents (no directory refs)
+- [ ] New agent files have all required frontmatter (`name`, `description`, `tools`, `model`, `color`)
+- [ ] Agent descriptions ≤30 words with `<example>` blocks
+- [ ] New skill files have `origin: ohmyclaude` and match folder name
+- [ ] Skill SKILL.md ≤400 lines
+- [ ] `plugin.json` uses explicit file paths for agents
 - [ ] No `hooks` field in `plugin.json`
-- [ ] Version is consistent across all 4 files (if bumped)
+- [ ] Version consistent across all 4 files (use bump-version.js)
 
 **Manifests**
 - [ ] `manifests/install-modules.json` updated if new module added
 - [ ] `manifests/install-profiles.json` updated if new module should be in a profile
 
-**Documentation — required for every change that affects public behavior**
-- [ ] `README.md` updated (new agent / skill / command / context / hook → add to the relevant table)
+**Documentation**
+- [ ] `README.md` updated (new agent / skill / rule / hook → add to relevant table)
 - [ ] `ROADMAP.md` updated if this completes or adds a milestone item
-- [ ] `contexts/` updated if behavior change affects a working mode
-- [ ] `CONTRIBUTING.md` updated if the contribution process itself changes
-- [ ] No references to `/ultrawork`, `/plan`, `/scaffold`, `/setup` — use `/forge` instead
-- [ ] No references to old Greek agent names — use Corporate Slack names
+- [ ] No references to retired agents (scout-sprint, percy-perf, polyglot-reviewer, dora-docs, evan-evangelist, build-resolver, anna-analytics)
 
 **Commit**
-- [ ] Commit message follows Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, etc.)
-- [ ] `docs:` commits used when only documentation changes
-
----
-
-## Commit Message Format
-
-Follow [Conventional Commits](https://www.conventionalcommits.org/):
-
-```
-feat(agents): add Prometheus agent for strategic planning
-fix(hooks): pre-write-check false positive on test files
-chore: bump version to 0.2.0
-docs: update README with LSP setup instructions
-```
-
-Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `ci`
+- [ ] Conventional Commits format (`feat:`, `fix:`, `docs:`, `chore:`, etc.)

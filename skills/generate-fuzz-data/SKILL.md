@@ -1,5 +1,6 @@
 ---
 name: generate-fuzz-data
+origin: ohmyclaude
 description: Generate adversarial edge-case test data arrays for QA. Used by @quinn-qa when writing fuzz tests or stress-testing input validation. Accepts a type ENUM and returns a JSON array of extreme inputs. Triggers on "fuzz data", "edge cases", "adversarial inputs", "generate test data", "boundary values".
 ---
 

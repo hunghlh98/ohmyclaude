@@ -1,6 +1,8 @@
 # C4 Mermaid Diagram Syntax Reference
 
-Complete syntax reference for Mermaid C4 diagrams. Compatible with PlantUML C4 syntax.
+Complete syntax reference for Mermaid C4 diagrams.
+
+> **Note**: This reference covers **Mermaid C4 syntax only**. PlantUML C4 uses a different syntax (`!include C4Container.puml`, different parameter ordering). Do not mix the two. See the "Unsupported Features" section below for PlantUML C4 features not yet available in Mermaid.
 
 ## Table of Contents
 

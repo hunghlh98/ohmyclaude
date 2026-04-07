@@ -1,5 +1,6 @@
 ---
 name: c4-architecture
+origin: ohmyclaude
 description: Generate C4 architecture diagrams (context, container, component, deployment) using Mermaid. Used by @artie-arch when producing diagrams that are embedded inside SDD-<id>.md in .claude/pipeline/. Triggers on "architecture diagram", "C4 diagram", "system context", "container diagram", "component diagram", "deployment diagram".
 ---
 

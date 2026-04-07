@@ -1,6 +1,7 @@
 ---
 name: write-code-review
-description: Write and append to the Code Review document (CODE-REVIEW-<id>.md) in .claude/pipeline/. Used by @stan-standards (writes "## Standards Review" section) and @percy-perf (appends "## Performance Review" section). Sequential append-only convention — never overwrite the other agent's section. Triggers on "write code review", "save CODE-REVIEW", "standards review", "performance review".
+origin: ohmyclaude
+description: Write and append to the Code Review document (CODE-REVIEW-<id>.md) in .claude/pipeline/. Used by @stan-standards (writes "## Standards Review" section) and @stan-standards (performance section) (appends "## Performance Review" section). Sequential append-only convention — never overwrite the other agent's section. Triggers on "write code review", "save CODE-REVIEW", "standards review", "performance review".
 ---
 
 # Write Code Review
@@ -12,7 +13,7 @@ Produce or append to the Code Review document for the current pipeline request.
 This skill is shared between two agents:
 
 1. **@stan-standards** writes first → creates the file with `## Standards Review`
-2. **@percy-perf** writes second → appends `## Performance Review`
+2. **@stan-standards (performance section)** writes second → appends `## Performance Review`
 
 **Never overwrite the other agent's section.** If the file already contains your section, append a `### Round N` subsection instead (for multi-round reviews).
 
@@ -51,7 +52,7 @@ percy_verdict: REQUEST_CHANGES | APPROVE
 ---
 
 ## Performance Review
-*Author: @percy-perf*
+*Author: @stan-standards (performance section)*
 
 ### Summary
 [1–2 sentence overall assessment]
@@ -79,7 +80,7 @@ percy_verdict: REQUEST_CHANGES | APPROVE
 
 ## Gotchas
 
-- **@percy-perf does NOT flag security issues** — those belong to @sam-sec's REVIEW document
-- **@stan-standards does NOT flag performance metrics** — that's @percy-perf's domain
+- **@stan-standards (performance section) does NOT flag security issues** — those belong to @sam-sec's REVIEW document
+- **@stan-standards does NOT flag performance metrics** — that's @stan-standards (performance section)'s domain
 - **Circuit breaker watches this file** — after 3 REQUEST_CHANGES rounds, `circuit-breaker` skill writes a DEADLOCK file
 - **Append, never overwrite** — read the current file before writing; use `## Round 2` subsections on re-review

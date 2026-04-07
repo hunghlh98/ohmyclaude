@@ -1,5 +1,6 @@
 ---
 name: database-schema-designer
+origin: ohmyclaude
 description: Design robust, scalable database schemas for SQL and NoSQL databases. Provides normalization guidelines, indexing strategies, migration patterns, constraint design, and performance optimization. Used by @artie-arch as a supplementary tool when the SDD-<id>.md requires a data model section.
 license: MIT
 ---

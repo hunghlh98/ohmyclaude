@@ -1,7 +1,7 @@
 {
   "name": "ohmyclaude",
-  "version": "0.4.0",
-  "description": "14-agent OSS company simulation pipeline for Claude Code — document-driven, dynamically routed, with conflict resolution and post-release feedback loop.",
+  "version": "1.0.0",
+  "description": "10-agent OSS pipeline for Claude Code — Agent Teams coordination, single /forge entry point, Java-first skills, source graph integration.",
   "author": {
     "name": "ohmyclaude contributors"
   },
@@ -21,20 +21,13 @@
     "./agents/paige-product.md",
     "./agents/artie-arch.md",
     "./agents/una-ux.md",
-    "./agents/scout-sprint.md",
     "./agents/sam-sec.md",
     "./agents/beck-backend.md",
     "./agents/effie-frontend.md",
     "./agents/quinn-qa.md",
     "./agents/stan-standards.md",
-    "./agents/percy-perf.md",
-    "./agents/dora-docs.md",
     "./agents/devon-ops.md",
-    "./agents/evan-evangelist.md",
-    "./agents/anna-analytics.md",
-    "./agents/heracles.md",
-    "./agents/polyglot-reviewer.md",
-    "./agents/build-resolver.md"
+    "./agents/heracles.md"
   ],
   "skills": [
     "./skills/"
