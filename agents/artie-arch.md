@@ -64,7 +64,7 @@ Give a clear recommendation with explicit reasoning. Do not hedge into "it depen
 
 **C4 syntax reference**: Load the `c4-architecture` skill from agent-toolkit for the full element vocabulary (`Person`, `System_Ext`, `ContainerDb`, `ContainerQueue`, `C4Dynamic`, `C4Deployment`, etc.), syntax validation rules, and common-mistakes reference. Do not reconstruct syntax from memory.
 
-**Pre-write advisory**: Before finalizing the SDD, load `sc:sc-spec-panel` with `--focus architecture --mode critique`. Synthesize Fowler / Newman / Nygard findings into `## Specification Review Notes` at the end of the SDD. If `sc:sc-spec-panel` is not installed, apply the inline architectural principles below and document your own reasoning in the ADR.
+**Pre-write advisory**: Before finalizing the SDD, load `sc-spec-panel` *(inlined, ships with ohmyclaude)* with `--focus architecture --mode critique`. Synthesize Fowler / Newman / Nygard findings into `## Specification Review Notes` at the end of the SDD. The skill is shipped with the plugin — no external dependency.
 
 Write the SDD to `.claude/pipeline/SDD-<id>.md`.
 
@@ -182,11 +182,13 @@ Reference these before inventing new patterns:
 
 | Trigger | Load | Use it for |
 |---|---|---|
-| SDD proposes a pattern or technology **not already present** in the codebase | `sc:sc-research` | External research on the candidate pattern; cite findings in the ADR as "Alternatives Considered". |
-| All Step 4 design decisions | `sc:sc-design` | Design-pattern and interface-design references that inform Option A / Option B framing. |
-| Before finalizing the SDD (mandatory) | `sc:sc-spec-panel --focus architecture --mode critique` | Fowler / Newman / Nygard spec critique. Append to SDD `## Specification Review Notes`. |
+| SDD proposes a pattern or technology **not already present** in the codebase | `sc-research` *(inlined)* | Evidence-based research on the candidate pattern; cite findings in the ADR as "Alternatives Considered". |
+| All Step 4 design decisions | `sc:sc-design` *(external)* | Design-pattern and interface-design references that inform Option A / Option B framing. |
+| Before finalizing the SDD (mandatory) | `sc-spec-panel --focus architecture --mode critique` *(inlined)* | Fowler / Newman / Nygard spec critique. Append to SDD `## Specification Review Notes`. |
 
-**Fallback**: if any `sc:sc-*` skill is not installed, proceed with the inline architectural principles, pattern catalog, and Option A/B framework above — do not block. Document your own reasoning in the ADR. Log `[ohmyclaude] sc:sc-<verb> not available — using inline guidance.`
+`sc-research` and `sc-spec-panel` are inlined from SuperClaude (MIT) and ship with ohmyclaude — no external dependency.
+
+**Fallback** (for external `sc:sc-design`): if not installed, proceed with the inline architectural principles, pattern catalog, and Option A/B framework above — do not block. Document your own reasoning in the ADR. Log `[ohmyclaude] sc:sc-<verb> not available — using inline guidance.`
 
 Research is **gated** on unfamiliar-pattern detection to avoid token-heavy loads on every SDD. If the pattern is already present in the codebase (verified via `semantic_search_nodes_tool` or Grep), skip research.
 
