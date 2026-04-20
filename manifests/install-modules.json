@@ -120,6 +120,19 @@
       "stability": "stable"
     },
     {
+      "id": "skills-superclaude",
+      "kind": "skills",
+      "description": "SuperClaude verb-skills inlined from SuperClaude_Plugin v4.3.0 (MIT). brainstorm/research/spec-panel — used by paige, artie, una, sam at gated trigger points. Ships with ohmyclaude — no external dependency.",
+      "paths": [
+        "skills/sc-brainstorm/",
+        "skills/sc-research/",
+        "skills/sc-spec-panel/"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
       "id": "rules-common",
       "kind": "rules",
       "description": "Common coding style rules — apply to all languages",

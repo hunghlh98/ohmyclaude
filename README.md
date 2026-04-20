@@ -164,12 +164,12 @@ Provides semantic code search, blast radius analysis, architecture overview, and
 |-----------|------:|--------|
 | Version | 1.0.2 | VERSION, package.json, plugin.json, marketplace.json |
 | Agents | 10 | sonnet: 8, opus: 1, haiku: 1 |
-| Skills | 27 | engineering: 12, java: 4, pipeline: 4, specialized: 7 |
+| Skills | 30 | engineering: 12, java: 4, pipeline: 4, specialized: 7, superclaude: 3 |
 | Commands | 1 | forge |
 | Rules | 5 | common: 1, java: 4 |
 | Hooks | 6 | backlog-tracker, graph-update, post-bash-lint, pre-write-check, session-summary, team-cleanup |
 | Profiles | 3 | minimal, standard (default), full |
-| Modules | 14 | agents: 4, skills: 4, rules: 2, commands: 1, hooks: 3 |
+| Modules | 15 | agents: 4, skills: 5, rules: 2, commands: 1, hooks: 3 |
 
 Run `node scripts/validate.js` to see the live inventory with per-agent detail.
 

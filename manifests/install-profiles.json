@@ -17,7 +17,7 @@
     {
       "id": "standard",
       "name": "Standard",
-      "description": "Full pipeline: 10 agents + 27 skills (including Java/Spring Boot) + quality hooks + rules. Recommended for most engineers.",
+      "description": "Full pipeline: 10 agents + 30 skills (engineering, Java, pipeline, specialized, SuperClaude) + quality hooks + rules. Recommended for most engineers.",
       "default": true,
       "modules": [
         "agents-core",
@@ -28,6 +28,7 @@
         "skills-java",
         "skills-pipeline",
         "skills-specialized",
+        "skills-superclaude",
         "rules-common",
         "rules-java",
         "commands",
@@ -47,6 +48,7 @@
         "skills-java",
         "skills-pipeline",
         "skills-specialized",
+        "skills-superclaude",
         "rules-common",
         "rules-java",
         "commands",
