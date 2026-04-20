@@ -43,7 +43,8 @@
   "scripts": {
     "postinstall": "node scripts/postinstall.js",
     "validate": "node scripts/validate.js",
-    "version:bump": "node scripts/bump-version.js"
+    "version:bump": "node scripts/bump-version.js",
+    "test:sc-fallback": "node scripts/test-sc-fallback.js"
   },
   "engines": {
     "node": ">=18"

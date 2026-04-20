@@ -101,7 +101,7 @@ Run all 7 scenarios against the plan. For each: PASS if the plan addresses it, F
 
 ## REVIEW Output Format
 
-**Pre-verdict advisory**: Load the `sc-adviser` skill and invoke `sc:spec-panel` (compliance focus, Wiegers + Nygard) after completing the adversarial matrix but before writing the verdict. Synthesize into `## Compliance Advisory Notes` above `## Blockers`. If the panel raises a CRITICAL finding not already in your blockers, add it (subject to max-3-blockers rule).
+**Pre-verdict advisory**: After completing the adversarial matrix but before writing the verdict, load `sc:sc-spec-panel` with `--focus compliance --mode critique --experts "wiegers,nygard"`. Synthesize findings into `## Compliance Advisory Notes` above `## Blockers`. If the panel raises a CRITICAL finding not already in your blockers, add it (subject to the max-3-blockers rule). If `sc:sc-spec-panel` is not installed, proceed with the inline adversarial matrix above — do not block.
 
 **Deep OWASP scans (Route E)**: For Route E (Security Patch) or when `Touches_Security=true` on auth/payment code, invoke the `owasp-security-review` skill for full OWASP A1-A10 coverage beyond the inline SAST patterns.
 
@@ -188,6 +188,19 @@ status: awaiting-human
 ```
 
 3. Halt. @paige-product will synthesize for the human oracle.
+
+---
+
+## SuperClaude Integration
+
+| Trigger | Load | Use it for |
+|---|---|---|
+| Phase 2 + 3 — plan review and adversarial scenario matrix | `sc:sc-analyze --focus security` | Multi-domain security analysis that complements the 7-scenario matrix; flags issues the inline SAST grep patterns miss. |
+| Before verdict (any route) | `sc:sc-spec-panel --focus compliance --mode critique --experts "wiegers,nygard"` | Compliance critique; CRITICAL findings must be addressed (subject to max-3-blockers). |
+
+**Fallback**: if either `sc:sc-*` skill is not installed, proceed with the inline SAST patterns, 7-scenario adversarial matrix, and verdict criteria above — do not block. Log `[ohmyclaude] sc:sc-<verb> not available — using inline guidance.`
+
+Rationale and schema: see `docs/superclaude-integration.md`.
 
 ---
 
