@@ -162,7 +162,7 @@ Provides semantic code search, blast radius analysis, architecture overview, and
 
 | Component | Count | Detail |
 |-----------|------:|--------|
-| Version | 1.0.1 | VERSION, package.json, plugin.json, marketplace.json |
+| Version | 1.0.2 | VERSION, package.json, plugin.json, marketplace.json |
 | Agents | 10 | sonnet: 8, opus: 1, haiku: 1 |
 | Skills | 27 | engineering: 12, java: 4, pipeline: 4, specialized: 7 |
 | Commands | 1 | forge |
@@ -174,6 +174,8 @@ Provides semantic code search, blast radius analysis, architecture overview, and
 Run `node scripts/validate.js` to see the live inventory with per-agent detail.
 
 ---
+
+**Reference**: [Operating](./docs/OPERATING.md) -- [Pipeline Schema](./docs/pipeline-schema.md) -- [Cost Model](./docs/TOKENS.md) -- [Migration (0.x → 1.0)](./MIGRATION.md)
 
 [Roadmap](./ROADMAP.md) -- [Contributing](./CONTRIBUTING.md) -- [Changelog](./CHANGELOG.md) -- [Security](./SECURITY.md) -- [License](./LICENSE)
 

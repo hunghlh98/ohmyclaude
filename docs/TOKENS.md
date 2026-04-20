@@ -1,0 +1,108 @@
+# TOKENS.md — Cost Transparency
+
+A `/forge` run is not free. This doc shows what you're actually paying for and the levers that move the bill.
+
+> **Caveat**: Prices are Anthropic list pricing at writing (April 2026). Check [anthropic.com/pricing](https://www.anthropic.com/pricing) for current rates. This doc is a model for reasoning about cost, not an invoice.
+
+---
+
+## Model Pricing (reference)
+
+| Model | Input $/M tokens | Output $/M tokens | Relative |
+|---|---:|---:|---:|
+| Haiku 4.5 | $1 | $5 | 1× |
+| Sonnet 4.6 | $3 | $15 | 3× |
+| Opus 4.7 | $15 | $75 | 5× |
+
+Prompt caching reduces input cost on cache-hit by **~90%** (cache reads) but adds ~**25%** on cache writes. TTL is 5 minutes.
+
+---
+
+## What a `/forge` Run Pays For
+
+Every run loads at least:
+
+| Surface | Size | Tokens (≈) |
+|---|---:|---:|
+| `/forge` command prompt | 266 lines | ~2,700 |
+| Project `CLAUDE.md` | 157 lines | ~1,500 |
+| Agent system prompt (per spawned agent) | ~230 lines avg | **~2,300 each** |
+| Skill SKILL.md (per loaded skill, capped at 400) | ≤400 lines | ≤500 each |
+| README.md (when referenced) | 180 lines | ~1,100 |
+| Codebase context (discovery + file reads) | — | ~5–30 K |
+
+A **complex-feature** run spawns all 10 agents across waves. At 2,300 tokens per agent × 10 = **23 K tokens of system-prompt surface** if every agent is active in the team. Prompt caching (5-min TTL) drops re-reads to ~10% of that; the first load still pays full.
+
+---
+
+## Four Canonical Scenarios
+
+| Scenario | Agents spawned | Input tokens | Output tokens | Est. cost |
+|---|---|---:|---:|---:|
+| **A. `/forge commit`** (inline, no team) | 0 | ~5 K | ~0.3 K | **~$0.02** |
+| **B. Fast-track** ("add rate limit") | paige + beck + quinn + stan (4 sonnet) | ~40–60 K | ~5–10 K | **~$0.25–$0.40** |
+| **C. Complex feature** (full chain) | all 10, inc. artie-arch on opus | ~80–120 K | ~10–15 K | **~$0.70–$1.20** |
+| **D. Sprint `--size 3`** | ~3 × Scenario C, partial cache reuse | ~200–280 K | ~25–40 K | **~$1.50–$3.00** |
+
+### Worked example: Scenario C (complex feature, $0.90 typical)
+
+- Sonnet agents (8 agents): ~60 K input × $3/M + ~12 K output × $15/M → $0.18 + $0.18 = **$0.36**
+- Opus @artie-arch: ~15 K input × $15/M + ~5 K output × $75/M → $0.23 + $0.38 = **$0.61**  ← the expensive one
+- Haiku @devon-ops: ~4 K input × $1/M + ~1 K output × $5/M → ~**$0.01**
+- Total: **~$0.98**
+
+Without Opus on @artie-arch (running it on Sonnet for simple features): total drops to ~**$0.40–0.60**. That's the single biggest lever.
+
+---
+
+## Cost-Driver Ranking
+
+| # | Driver | Why it matters | Lever |
+|---|---|---|---|
+| 1 | `@artie-arch` on **Opus** | 5× the price of Sonnet agents; every complex-feature path hits it. | Gate Opus to truly architectural work; default to Sonnet for simple designs. Planned in `PLAN-001` Phase 6 (task 37). |
+| 2 | **Agent system-prompt** tokens | 10 agents × ~2,300 tokens = 23 K of resident system surface at peak. | Caching helps; trimming helps more. Planned cuts in Phase 6 (tasks 35, 36). |
+| 3 | **Exploration fallback** to Glob/Grep | Without `code-review-graph`, agents re-scan the tree. | Install `code-review-graph`. Zero-config fallback, but pays off. |
+| 4 | **Artifact writes** (PRD + SDD + CODE-REVIEW) | 6–12 K output tokens per feature × $15/M on Sonnet = $0.09–$0.18 of output cost. | Keep artifacts lean; defer verbose reference material to skill `references/` instead of inlining. |
+| 5 | **Hooks** | Zero token cost (they run local Node) but add wall-clock (5–30 s timeouts). | Keep `async: true` where possible. |
+
+---
+
+## Levers to Pull
+
+### Free wins
+
+1. **Install `code-review-graph`** — agents explore via semantic graph instead of scanning the tree with Grep/Glob. Typical saving: 30–50% input reduction on large repos. Zero-setup penalty if absent (graceful fallback per `graph-update` hook).
+2. **Let prompt caching work** — spawn all the agents you need inside one Team, so their system prompts hit the cache on re-invocation. Avoid splitting a task across separate `/forge` calls if they'd reuse the same agents.
+3. **Use `/forge commit` for commits** — it's Scenario A ($0.02). Don't spawn a full team for a commit message.
+
+### Medium wins
+
+4. **Trim `@artie-arch`'s use** — reserve it for Route D (complex features). For a README update or a CRUD endpoint, `@paige-product` can skip architecture.
+5. **Keep agent descriptions ≤30 words** — they load on every auto-trigger attempt, not just when the agent is spawned. Bloat here is expensive. `validate.js` does not yet enforce this; planned in PLAN-001 Phase 6.
+6. **Write lean artifacts** — a 500-token SDD is clearer than a 3,000-token one. Output tokens are the expensive half of a Sonnet call.
+
+### Structural wins (PLAN-001 Phase 3)
+
+7. **Compose SuperClaude verbs** instead of inlining their content in agent prompts. Each SC verb (`sc:sc-implement`, `sc:sc-test`, `sc:sc-analyze`, etc.) lives in the user's skill library and loads on demand. Phase 3 of `PLAN-001` wires these in.
+8. **Drop duplicated local content** once SC verbs cover the same ground (Phase 6, task 36). Expected saving: 20–30% per spawn for `@artie-arch` and `@stan-standards`.
+
+### Observability (PLAN-001 Phase 4)
+
+9. The planned `cost-tracker` hook (`PLAN-001` Phase 4, task 25) appends per-run token counts to `~/.claude/ohmyclaude/costs.jsonl`. Once it ships, you can grep your actual cost history instead of estimating.
+
+---
+
+## How to Read This Cost Model
+
+- **One-time spawn** ≠ per-message. Sonnet at $3/M is cheap per token; the system prompt amortizes across many tool calls within the same spawn.
+- **Big jumps come from model tier, not prompt length.** Moving one agent from Sonnet to Opus is a bigger cost than adding 5 K tokens to every Sonnet agent.
+- **Output >> input per token.** A Sonnet output token is 5× an input token. Artifacts are output-heavy.
+- **Caching is not free.** Cache writes cost 25% more than raw inputs. The economics only work when you re-read the cached block within 5 min.
+
+---
+
+## See Also
+
+- `docs/OPERATING.md` — per-agent model assignment (the primary cost knob).
+- `ROADMAP.md` — planned cost-related hooks and optimizations.
+- `.claude/pipeline/PLAN-001.md` — Phase 4 ships the cost tracker; Phase 6 is the cost-cut pass.

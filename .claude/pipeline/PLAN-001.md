@@ -8,7 +8,7 @@ from_version: 1.0.0
 target_version: 1.4.0
 created: 2026-04-20
 updated: 2026-04-20
-status: Phase 1 complete (2026-04-20) — ready for Phase 2
+status: Phase 2 complete (2026-04-20) — ready for Phase 3 (SuperClaude integration)
 author: spec-panel (Wiegers, Adzic, Cockburn, Fowler, Nygard, Newman, Crispin, Hightower)
 ---
 
@@ -74,7 +74,7 @@ ohmyclaude's `/forge` dispatcher keeps its role. The 10 agents gain one canonica
 ## Acceptance Criteria (plan-level)
 
 - [x] v1.0.1 is OSS-publishable: `LICENSE`, `SECURITY.md` present; `note.md` removed; `validate.js` green. **Done 2026-04-20.**
-- [ ] v1.0.2 ships a single `docs/OPERATING.md` that answers "what does agent X do?" and "what does hook Y cost?" in one lookup.
+- [x] v1.0.2 ships a single `docs/OPERATING.md` that answers "what does agent X do?" and "what does hook Y cost?" in one lookup. Also shipped `docs/pipeline-schema.md`, `docs/TOKENS.md`, `.claude/pipeline/README.md`, `MIGRATION.md`. **Done 2026-04-20.**
 - [ ] v1.1.0 SuperClaude integration: every agent invokes at least one `sc:sc-*` verb at its canonical stage; `docs/superclaude-integration.md` published; fallback path verified.
 - [ ] v1.2.0 adds a `cost-tracker` hook plus smoke tests for every hook script; `OHMYCLAUDE_HOOKS=skip:<id>` env var works.
 - [ ] v1.3.0 enforces gate artifacts (PRD/SDD/CODE-REVIEW) and makes the HIGH/MEDIUM/LOW confidence classifier reproducible across runs.

@@ -1,6 +1,6 @@
 {
   "name": "ohmyclaude",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "10-agent OSS pipeline for Claude Code — Agent Teams coordination, single /forge entry point, Java-first skills, source graph integration.",
   "author": "ohmyclaude contributors",
   "license": "MIT",
@@ -27,6 +27,7 @@
     "manifests/",
     "schemas/",
     "scripts/",
+    "docs/",
     ".claude-plugin/",
     ".mcp.json",
     "VERSION",
@@ -36,7 +37,8 @@
     "CONTRIBUTING.md",
     "CODE_OF_CONDUCT.md",
     "LICENSE",
-    "SECURITY.md"
+    "SECURITY.md",
+    "MIGRATION.md"
   ],
   "scripts": {
     "postinstall": "node scripts/postinstall.js",

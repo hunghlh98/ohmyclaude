@@ -8,6 +8,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [1.0.2] — 2026-04-20
+
+Operator Docs — Phase 2 of `PLAN-001`. Documentation-only; zero runtime behavior changes.
+
+### Added
+- `docs/OPERATING.md` — single operator reference for all 10 agents and 6 hooks (purpose, model, tools, boundaries, failure modes, how to disable).
+- `docs/pipeline-schema.md` — canonical artifact schema (IDs, frontmatter, gate vs informational, lifecycle diagram).
+- `docs/TOKENS.md` — cost transparency with 4-scenario cost envelope ($0.02 trivial → ~$1 complex feature → $1.50–$3.00 sprint) and ranked cost levers.
+- `.claude/pipeline/README.md` — index for runtime artifact directory.
+- `MIGRATION.md` — 0.x → 1.0 upgrade guide covering retired agents, retired commands, shell-alias removal, and profile consolidation.
+- README footer links to product docs.
+
+### Changed
+- `docs/README.md` — split into "Product Docs" (shipped) and "Research Material" (not shipped) sections.
+- `package.json` files array: add `docs/` and `MIGRATION.md` so product docs ship in the npm tarball.
+
 ## [1.0.1] — 2026-04-20
 
 Trust & Transparency — OSS hygiene pass. Phase 1 of `PLAN-001` (spec-panel self-improvement plan). No runtime behavior changes.
