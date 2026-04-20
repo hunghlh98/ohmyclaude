@@ -188,7 +188,7 @@ Reference these before inventing new patterns:
 
 `sc-research` and `sc-spec-panel` are inlined from SuperClaude (MIT) and ship with ohmyclaude — no external dependency.
 
-**Fallback** (for external `sc:sc-design`): if not installed, proceed with the inline architectural principles, pattern catalog, and Option A/B framework above — do not block. Document your own reasoning in the ADR. Log `[ohmyclaude] sc:sc-<verb> not available — using inline guidance.`
+**Fallback** (for external `sc:sc-design`): if `sc:sc-design` is not installed, proceed with the inline architectural principles, pattern catalog, and Option A/B framework above — do not block. Document your own reasoning in the ADR. Log `[ohmyclaude] sc:sc-<verb> not available — using inline guidance.`
 
 Research is **gated** on unfamiliar-pattern detection to avoid token-heavy loads on every SDD. If the pattern is already present in the codebase (verified via `semantic_search_nodes_tool` or Grep), skip research.
 
