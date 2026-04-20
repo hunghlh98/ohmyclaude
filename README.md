@@ -164,7 +164,7 @@ Provides semantic code search, blast radius analysis, architecture overview, and
 |-----------|------:|--------|
 | Version | 1.0.2 | VERSION, package.json, plugin.json, marketplace.json |
 | Agents | 10 | sonnet: 8, opus: 1, haiku: 1 |
-| Skills | 30 | engineering: 12, java: 4, pipeline: 4, specialized: 7, superclaude: 3 |
+| Skills | 40 | engineering: 12, java: 4, pipeline: 4, specialized: 7, superclaude: 13 |
 | Commands | 1 | forge |
 | Rules | 5 | common: 1, java: 4 |
 | Hooks | 6 | backlog-tracker, graph-update, post-bash-lint, pre-write-check, session-summary, team-cleanup |

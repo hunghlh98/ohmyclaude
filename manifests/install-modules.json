@@ -122,11 +122,21 @@
     {
       "id": "skills-superclaude",
       "kind": "skills",
-      "description": "SuperClaude verb-skills inlined from SuperClaude_Plugin v4.3.0 (MIT). brainstorm/research/spec-panel — used by paige, artie, una, sam at gated trigger points. Ships with ohmyclaude — no external dependency.",
+      "description": "SuperClaude verb-skills inlined from SuperClaude_Plugin v4.3.0 (MIT). Full set of 13 verbs used by ohmyclaude agents: brainstorm, research, spec-panel, pm, estimate, design, analyze, implement, build, test, improve, troubleshoot, document. Ships with ohmyclaude — no external dependency on SuperClaude.",
       "paths": [
         "skills/sc-brainstorm/",
         "skills/sc-research/",
-        "skills/sc-spec-panel/"
+        "skills/sc-spec-panel/",
+        "skills/sc-pm/",
+        "skills/sc-estimate/",
+        "skills/sc-design/",
+        "skills/sc-analyze/",
+        "skills/sc-implement/",
+        "skills/sc-build/",
+        "skills/sc-test/",
+        "skills/sc-improve/",
+        "skills/sc-troubleshoot/",
+        "skills/sc-document/"
       ],
       "targets": ["claude"],
       "defaultInstall": true,
