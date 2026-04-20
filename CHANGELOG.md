@@ -8,6 +8,29 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [1.0.1] — 2026-04-20
+
+Trust & Transparency — OSS hygiene pass. Phase 1 of `PLAN-001` (spec-panel self-improvement plan). No runtime behavior changes.
+
+### Added
+- `LICENSE` (MIT) at repo root — unblocks OSS publication.
+- `SECURITY.md` with vulnerability-report policy, triage SLA, and scope boundaries.
+- `docs/README.md` — index for research/reference material in `docs/en/` and `docs/vi/`.
+- `.claude/pipeline/PLAN-001.md` — self-improvement plan from spec-panel review (rev 2 with SuperClaude integration).
+- README footer links to `CHANGELOG`, `SECURITY`, `LICENSE`.
+
+### Changed
+- `package.json`: description now matches `plugin.json` ("10-agent OSS pipeline..."), `files` array drops retired `contexts/`, adds `rules/`, `CHANGELOG.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `LICENSE`, `SECURITY.md`.
+
+### Removed
+- Stale `note.md` at repo root — its TODO items are addressed in v1.0.0 (pipeline folder, AskUserQuestion confidence model, c4-architecture skill); CHANGELOG v0.5.0 erroneously claimed this file was already removed.
+
+---
+
+## [1.0.0] — 2026-04-08
+
+Harness Engineering Overhaul — the v1.0.0 release.
+
 ### Added
 - Agent Teams coordination model (TeamCreate/SendMessage/TaskList) for runtime orchestration
 - Single `/forge` entry point — absorbs /review, /debug, /commit into natural-language routing

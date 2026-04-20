@@ -1,7 +1,7 @@
 {
   "name": "ohmyclaude",
-  "version": "1.0.0",
-  "description": "14-agent OSS company simulation pipeline for Claude Code — document-driven, dynamically routed, with conflict resolution and post-release feedback loop.",
+  "version": "1.0.1",
+  "description": "10-agent OSS pipeline for Claude Code — Agent Teams coordination, single /forge entry point, Java-first skills, source graph integration.",
   "author": "ohmyclaude contributors",
   "license": "MIT",
   "homepage": "https://github.com/hunghlh98/ohmyclaude",
@@ -23,7 +23,7 @@
     "skills/",
     "commands/",
     "hooks/",
-    "contexts/",
+    "rules/",
     "manifests/",
     "schemas/",
     "scripts/",
@@ -31,7 +31,12 @@
     ".mcp.json",
     "VERSION",
     "README.md",
-    "ROADMAP.md"
+    "ROADMAP.md",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "CODE_OF_CONDUCT.md",
+    "LICENSE",
+    "SECURITY.md"
   ],
   "scripts": {
     "postinstall": "node scripts/postinstall.js",
