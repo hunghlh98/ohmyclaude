@@ -230,6 +230,21 @@ You do not resolve deadlocks yourself — the human is the oracle.
 
 ---
 
+## SuperClaude Integration
+
+| Trigger | Load | Use it for |
+|---|---|---|
+| Step 4 — confidence assessed as **LOW** | `sc:sc-brainstorm` | Shape the 2-3 clarifying questions before invoking `AskUserQuestion`. |
+| Step 5 — task decomposition | `sc:sc-pm` | Orchestration patterns for wave scheduling and parallel-safe assignment. |
+| Step 5 — SP sizing per task | `sc:sc-estimate` | Uncertainty × Complexity × Effort scoring applied to each task. |
+| Team-lead coordination (general) | `sc:sc-pm` | Progress aggregation and handoff templates. |
+
+**Fallback**: if any `sc:sc-*` skill is not installed, proceed with the inline guidance above (confidence ladder, task-breakdown skill, dependency graph rules) — do not block. Log `[ohmyclaude] sc:sc-<verb> not available — using inline guidance.` and continue.
+
+Rationale and schema: see `docs/superclaude-integration.md`.
+
+---
+
 ## What You Do NOT Do
 
 - You do not design systems — that is @artie-arch's role
