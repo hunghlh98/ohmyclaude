@@ -162,7 +162,7 @@ Provides semantic code search, blast radius analysis, architecture overview, and
 
 | Component | Count | Detail |
 |-----------|------:|--------|
-| Version | 1.0.0 | VERSION, package.json, plugin.json, marketplace.json |
+| Version | 1.0.1 | VERSION, package.json, plugin.json, marketplace.json |
 | Agents | 10 | sonnet: 8, opus: 1, haiku: 1 |
 | Skills | 27 | engineering: 12, java: 4, pipeline: 4, specialized: 7 |
 | Commands | 1 | forge |
@@ -175,6 +175,6 @@ Run `node scripts/validate.js` to see the live inventory with per-agent detail.
 
 ---
 
-[Roadmap](./ROADMAP.md) -- [Contributing](./CONTRIBUTING.md)
+[Roadmap](./ROADMAP.md) -- [Contributing](./CONTRIBUTING.md) -- [Changelog](./CHANGELOG.md) -- [Security](./SECURITY.md) -- [License](./LICENSE)
 
 Inspired by [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) and [everything-claude-code](https://github.com/affaan-m/everything-claude-code).
