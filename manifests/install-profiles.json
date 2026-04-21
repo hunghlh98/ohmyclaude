@@ -38,7 +38,7 @@
     {
       "id": "full",
       "name": "Full",
-      "description": "Everything — standard profile + source graph integration + tracking hooks (backlog, session summary, team cleanup).",
+      "description": "Everything — standard profile + source graph integration + tracking hooks (backlog, session summary, team cleanup) + cost profiler (measures /forge runs).",
       "modules": [
         "agents-core",
         "agents-governance",
@@ -54,7 +54,8 @@
         "commands",
         "hooks-quality",
         "hooks-graph",
-        "hooks-tracking"
+        "hooks-tracking",
+        "hooks-profiler"
       ]
     }
   ]

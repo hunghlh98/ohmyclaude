@@ -8,6 +8,30 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [1.2.0] — 2026-04-21
+
+Cost Profiler Harness — measurement-driven observability for `/forge` runs. Every Agent Teams run now emits structured telemetry, compared against a rolling baseline, so harness tuning is evidence-based rather than intuition-based.
+
+### Added
+- `hooks/scripts/cost-profiler.js` — SubagentStop + Stop hook. Parses `transcript.jsonl`, diffs per-agent deltas, writes `.claude/pipeline/PROFILE-<runId>.md` on Stop. Non-fatal: passes through and exits 0 on any error. Zero token cost on agents.
+- `skills/profile-run/` — interpretation skill. Reads PROFILE artifacts + `baseline.json`, surfaces anomaly flags (`turn_explosion`, `cost_over_p95`, `cache_miss_spike`, `opus_budget_breach`), recommends concrete tuning. Has `--calibrate` mode for quarterly drift audit against dry-run priors.
+- `.claude/metrics/baseline.json` — seeded with dry-run priors per scenario (full-app $1.43, feature $0.68, hotfix $0.38, docs $0.05) and per agent (mean_in, mean_out, p95_usd, turns_p95). Rolling N=20 maintained by `cost-profiler.js`.
+- `hooks-profiler` install module; included in `full` profile. Opt-in on `standard`.
+- New agent frontmatter integration in `@paige-product`: `profile-run` skill entry in SuperClaude Integration table; "Post-Run Cost Surface" section in Teams Coordination adds one cost line to SUMMARY artifacts when PROFILE is present.
+
+### Changed
+- `hooks/hooks.json` — registers `SubagentStop` (new event type for this plugin) and appends cost-profiler to Stop. Both async, timeout 5-10s.
+- `manifests/install-modules.json` — adds `hooks-profiler` module; `skills-specialized` gains `skills/profile-run/`.
+- `manifests/install-profiles.json` — `full` profile includes `hooks-profiler`.
+
+### Philosophy
+Agents stay blind to the profiler. All measurement happens in-hook, off the Claude side, parsing a transcript the platform already writes. "Build harnesses, not prompt chains" — this is the harness layer.
+
+### Pipeline Simulator (`/forge --dry-run`)
+- `hooks/scripts/dry-run.js` — pure Node classifier + router + cost estimator. Regex-classifies the request against the 9 intent types (feature, bug, enhancement, refactor, docs, security, boilerplate, debug, review), infers P0 / arch / FE / BE signals, picks an agent route via the same heuristic table as `@paige-product`, counts files via a depth-3 walk, and reads `.claude/metrics/baseline.json` for cost priors (falls back to dry-run defaults if missing).
+- `commands/forge.md` — new `/forge --dry-run <request>` subcommand. Emits a structured report (human-readable by default, `--json` flag available) and invokes zero agents. Intended for sprint budgeting, route sanity-checks, and explaining the pipeline.
+- No new manifest entries needed — `dry-run.js` sits in the already-shipped `hooks/scripts/` directory. Paired with `commands/forge.md` which is part of the `commands` install module.
+
 ## [1.1.0] — 2026-04-21
 
 SuperClaude Inlining (γ) — Phase 3 of `PLAN-001`. Every SC verb ohmyclaude agents reference is now shipped in-tree; no external peer dependency, no fallback paths. Agent behaviors are unchanged in intent but sharper in contract.

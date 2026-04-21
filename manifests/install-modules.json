@@ -105,7 +105,7 @@
     {
       "id": "skills-specialized",
       "kind": "skills",
-      "description": "Specialized skills: task breakdown, project discovery, post-deploy analytics, QA planning, templates, entropy reduction, requirements clarity",
+      "description": "Specialized skills: task breakdown, project discovery, post-deploy analytics, QA planning, templates, entropy reduction, requirements clarity, run profiling",
       "paths": [
         "skills/task-breakdown/",
         "skills/project-discovery/",
@@ -113,7 +113,8 @@
         "skills/qa-test-planner/",
         "skills/readme-templates/",
         "skills/reducing-entropy/",
-        "skills/requirements-clarity/"
+        "skills/requirements-clarity/",
+        "skills/profile-run/"
       ],
       "targets": ["claude"],
       "defaultInstall": true,
@@ -210,6 +211,17 @@
         "hooks/scripts/backlog-tracker.js",
         "hooks/scripts/session-summary.js",
         "hooks/scripts/team-cleanup.js"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": false,
+      "stability": "stable"
+    },
+    {
+      "id": "hooks-profiler",
+      "kind": "hooks",
+      "description": "Cost-profiler hook: on SubagentStop/Stop, writes .claude/pipeline/PROFILE-<runId>.md and rolling baseline.json (measures /forge runs, pairs with skills/profile-run)",
+      "paths": [
+        "hooks/scripts/cost-profiler.js"
       ],
       "targets": ["claude"],
       "defaultInstall": false,

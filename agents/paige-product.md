@@ -215,6 +215,16 @@ When spawned as team lead via /forge:
 
 After 3 REQUEST_CHANGES rounds tracked via SendMessage, stop iterating. Use AskUserQuestion to escalate to the human oracle with a binary decision (Option A vs Option B).
 
+### Post-Run Cost Surface
+
+At team shutdown, before writing SUMMARY-{timestamp}.md:
+1. Check for `.claude/pipeline/PROFILE-<runId>.md` — written automatically by the `cost-profiler.js` hook on Stop.
+2. If present, read the frontmatter (total_usd, delta_pct, cache_hit_rate) and the flags column.
+3. Append one cost line to SUMMARY: `"Cost: $X.XX (baseline $Y.YY, ±Δ%). Flags: [list]"`.
+4. If any flag fires, include one tuning suggestion in SUMMARY using the `profile-run` skill's recommendation library. Do not rewrite any agent prompts — tuning lives at the routing and contract level.
+
+The profiler is measurement-only; it never blocks the pipeline. Missing PROFILE means either the run was too short or the hook is disabled — continue without cost commentary.
+
 ---
 
 ## Oracle Fallback Role
@@ -240,6 +250,7 @@ All SC verbs are inlined from SuperClaude (MIT) and ship with ohmyclaude — no 
 | Step 5 — task decomposition | `sc-pm` | Orchestration patterns for wave scheduling and parallel-safe assignment. |
 | Step 5 — SP sizing per task | `sc-estimate` | Uncertainty × Complexity × Effort scoring applied to each task. |
 | Team-lead coordination (general) | `sc-pm` | Progress aggregation and handoff templates. |
+| Post-run cost surface (shutdown) | `profile-run` | Read latest PROFILE artifact, interpret anomaly flags, pick one tuning recommendation. |
 
 Rationale and schema: see `docs/superclaude-integration.md`.
 

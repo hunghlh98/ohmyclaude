@@ -27,6 +27,7 @@ One command. The pipeline figures out the rest.
 | Subcommand | What it does |
 |------------|--------------|
 | `/forge <natural language>` | Route and execute any request (default) |
+| `/forge --dry-run <request>` | Simulate routing + cost, no agents invoked |
 | `/forge sprint [--size N]` | Execute sprint from backlog |
 | `/forge release` | Cut release |
 | `/forge commit` | Generate semantic commit message |
@@ -121,7 +122,7 @@ Path-activated language rules:
 | `rules/common/` | Shared coding style (all files) |
 | `rules/java/` | Coding style, patterns, security, testing (activates on `**/*.java`) |
 
-## Hooks (6)
+## Hooks (7)
 
 | Hook | Trigger | What it does |
 |------|---------|--------------|
@@ -131,6 +132,18 @@ Path-activated language rules:
 | `graph-update` | PostToolUse Write/Edit | Incrementally updates source graph (optional) |
 | `session-summary` | Stop | Writes session log |
 | `team-cleanup` | Stop | Cleans orphaned teams older than 24h |
+| `cost-profiler` | SubagentStop + Stop | Writes `.claude/pipeline/PROFILE-<runId>.md` and rolling `baseline.json`; pair with `skills/profile-run` |
+
+## Cost Profiler (harness observability)
+
+Every `/forge` run emits structured telemetry. Agents stay blind to it — all measurement happens in-hook by parsing `transcript.jsonl`.
+
+- **PROFILE artifact** — per-run table: agent, model, turns, in/out tokens, cache hit rate, USD, anomaly flags
+- **Baseline** — rolling N=20 means + p95 per scenario (full-app, feature, hotfix, docs) and per agent
+- **Anomaly flags** — `turn_explosion`, `cost_over_p95`, `cache_miss_spike`, `opus_budget_breach`
+- **@paige-product** reads the latest PROFILE at team shutdown and surfaces a one-line cost summary in `SUMMARY-{timestamp}.md`
+- **`profile-run` skill** interprets PROFILE + baseline and recommends concrete tuning (ranked by ROI)
+- **Calibration** — `profile-run --calibrate` diffs observed means against dry-run priors; flag drift >25%
 
 ## Source Graph Integration (optional)
 
@@ -162,14 +175,14 @@ Provides semantic code search, blast radius analysis, architecture overview, and
 
 | Component | Count | Detail |
 |-----------|------:|--------|
-| Version | 1.1.0 | VERSION, package.json, plugin.json, marketplace.json |
+| Version | 1.2.0 | VERSION, package.json, plugin.json, marketplace.json |
 | Agents | 10 | sonnet: 8, opus: 1, haiku: 1 |
-| Skills | 40 | engineering: 12, java: 4, pipeline: 4, specialized: 7, superclaude: 13 |
+| Skills | 42 | engineering: 12, java: 4, pipeline: 4, specialized: 8, superclaude: 13 |
 | Commands | 1 | forge |
 | Rules | 5 | common: 1, java: 4 |
-| Hooks | 6 | backlog-tracker, graph-update, post-bash-lint, pre-write-check, session-summary, team-cleanup |
+| Hooks | 8 | backlog-tracker, cost-profiler, dry-run, graph-update, post-bash-lint, pre-write-check, session-summary, team-cleanup |
 | Profiles | 3 | minimal, standard (default), full |
-| Modules | 15 | agents: 4, skills: 5, rules: 2, commands: 1, hooks: 3 |
+| Modules | 16 | agents: 4, skills: 5, rules: 2, commands: 1, hooks: 4 |
 
 Run `node scripts/validate.js` to see the live inventory with per-agent detail.
 

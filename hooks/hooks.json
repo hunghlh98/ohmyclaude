@@ -76,6 +76,32 @@
           }
         ],
         "description": "Clean up orphaned Agent Teams older than 24 hours"
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/cost-profiler.js\"",
+            "async": true,
+            "timeout": 10
+          }
+        ],
+        "description": "Aggregate /forge run telemetry → PROFILE-{runId}.md and baseline.json"
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/cost-profiler.js\"",
+            "async": true,
+            "timeout": 5
+          }
+        ],
+        "description": "Snapshot cumulative transcript totals per subagent for cost profiling"
       }
     ]
   }

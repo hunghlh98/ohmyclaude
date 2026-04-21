@@ -11,6 +11,7 @@ Single entry point. Every task enters here. Natural language in, working softwar
 
 ```
 /forge <natural language>     Smart router (DEFAULT)
+/forge --dry-run <request>    Simulate routing + cost without running agents
 /forge sprint [--size N]      Execute sprint from backlog
 /forge release                Cut release
 /forge commit                 Generate semantic commit from diff
@@ -18,6 +19,34 @@ Single entry point. Every task enters here. Natural language in, working softwar
 ```
 
 Bare `/forge <description>` is the primary interaction. It handles features, bugs, docs, security, review, debug — everything. The lead classifies intent from natural language.
+
+---
+
+## /forge --dry-run <request> — Pipeline Simulator
+
+Classify, route, and estimate cost for a request WITHOUT invoking any agents. Use this to budget a sprint, sanity-check routing before a costly run, or explain the pipeline to a new teammate.
+
+**Handling**: when the request begins with `--dry-run`, execute the simulator and return its output directly. Do NOT create a team, do NOT spawn @paige-product.
+
+```bash
+!node "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/dry-run.js" "<the rest of the request>"
+```
+
+Flags on `dry-run.js`: `--json` emits structured JSON instead of a human-readable report.
+
+**What it does**:
+- Classifies via regex (mirrors @paige-product's routing table): feature, bug, enhancement, refactor, docs, security, boilerplate, debug, review
+- Detects signals: FE/BE components, architectural scope, P0 priority
+- Routes through the same heuristic paige would apply (single agent for debug/review, 2–3 for docs/hotfix, 5–9 for feature/arch)
+- Counts files in the cwd (depth ≤3, standard ignore list) and estimates touched count by classification
+- Reads `.claude/metrics/baseline.json` (if present) for per-scenario mean/p95; falls back to dry-run priors (`full-app $1.40`, `feature $0.68`, `hotfix $0.38`, `docs $0.05`)
+
+**What it does NOT do**:
+- Does not read the source graph (pure-Node, no MCP)
+- Does not read CLAUDE.md or apply project-specific rules
+- Does not resolve ambiguity (no clarifying questions) — classification is best-effort from the request text alone
+
+Treat the output as an estimate, not a contract. Routing is heuristic; the real `@paige-product` may refine the plan based on codebase discovery.
 
 ---
 
@@ -235,6 +264,7 @@ Print the following and stop:
 
 Usage:
   /forge <what you want>       Describe your task in natural language
+  /forge --dry-run <request>   Simulate routing + cost, no agents invoked
   /forge sprint [--size N]     Run a sprint from the backlog
   /forge release               Cut a release
   /forge commit                Generate semantic commit message
@@ -246,6 +276,7 @@ Examples:
   /forge review src/auth/
   /forge update the README
   /forge debug: tests fail in CI but pass locally
+  /forge --dry-run add OAuth login to /api/users
 
 Agents:
   @paige-product  Route + plan    @beck-backend   Backend code
