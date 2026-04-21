@@ -145,23 +145,25 @@ Every `/forge` run emits structured telemetry. Agents stay blind to it — all m
 - **`profile-run` skill** interprets PROFILE + baseline and recommends concrete tuning (ranked by ROI)
 - **Calibration** — `profile-run --calibrate` diffs observed means against dry-run priors; flag drift >25%
 
-## Source Graph Integration (optional)
+## Source Graph Integration (all optional, all soft-detected)
 
-Install [code-review-graph](https://github.com/nicholasgriffintn/code-review-graph) for enhanced analysis:
+The plugin ships md/js files only. Nothing is installed on your machine when you install ohmyclaude. Graph backends are **opportunistic** — if one is present, agents use it; if not, they fall through to the next tier without error.
 
-```
-claude plugin install code-review-graph
-```
+Either of these unlocks richer exploration:
 
-Provides semantic code search, blast radius analysis, architecture overview, and flow detection. Agents use graph tools when available, fall back to tree/grep when not.
+- [codegraph](https://github.com/colbymchenry/codegraph) — `npx @colbymchenry/codegraph` (project-level, `.codegraph/codegraph.db`). Benchmarks at ~94% fewer tool calls for Explore-agent workloads.
+- [code-review-graph](https://github.com/nicholasgriffintn/code-review-graph) — `claude plugin install code-review-graph` (Claude Code plugin MCP). Adds impact radius + review-specific tools.
+
+The `hooks-graph` hook auto-detects which is present and syncs incrementally after edits. Java projects additionally get the `java-source-intel` skill, which routes semantic queries (callers, impact, `@Transactional` scans, call chains) to whichever backend is installed — or falls back to ripgrep patterns when none is.
 
 ### Exploration Tool Priority
 
-| Priority | Tool | Type |
-|----------|------|------|
-| 1 | tree-sitter source graph (code-review-graph) | Semantic intelligence |
-| 2 | `tree` CLI | Directory structure |
-| 3 | Glob / Grep | Last resort |
+| Priority | Tool | Type | Required? |
+|----------|------|------|-----------|
+| 1 | codegraph | Pre-indexed tree-sitter graph, FTS5 search | No |
+| 2 | code-review-graph | Tree-sitter graph + review tooling | No |
+| 3 | `tree` CLI | Directory structure | No (standard on macOS/Linux) |
+| 4 | Glob / Grep | File-level search | Always available |
 
 ## Install Profiles
 
@@ -175,9 +177,9 @@ Provides semantic code search, blast radius analysis, architecture overview, and
 
 | Component | Count | Detail |
 |-----------|------:|--------|
-| Version | 1.2.0 | VERSION, package.json, plugin.json, marketplace.json |
+| Version | 1.3.0 | VERSION, package.json, plugin.json, marketplace.json |
 | Agents | 10 | sonnet: 8, opus: 1, haiku: 1 |
-| Skills | 42 | engineering: 12, java: 4, pipeline: 4, specialized: 8, superclaude: 13 |
+| Skills | 42 | engineering: 12, java: 5, pipeline: 4, specialized: 8, superclaude: 13 |
 | Commands | 1 | forge |
 | Rules | 5 | common: 1, java: 4 |
 | Hooks | 8 | backlog-tracker, cost-profiler, dry-run, graph-update, post-bash-lint, pre-write-check, session-summary, team-cleanup |

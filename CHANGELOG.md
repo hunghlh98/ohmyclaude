@@ -8,6 +8,24 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [1.3.0] — 2026-04-21
+
+Graph Backend Pluralism — the exploration-tool tier list is now `codegraph → code-review-graph → tree → grep`, all soft-detected at runtime. The plugin ships exactly the same files; nothing new is installed on the client's machine. If the user has a graph backend (either one), agents use it; if not, they fall through to ripgrep. The new `java-source-intel` skill is the first consumer — it routes Java semantic queries to whichever backend is present.
+
+### Added
+- `skills/java-source-intel/` — Java semantic-query skill. Canonical patterns for 6 question types (callers, `@Transactional` boundaries, Spring bean inventory, impact radius, endpoint→DB traces, interface inheritors). Routes across graph backends in priority order: codegraph → code-review-graph → ripgrep. Read-only; used by @beck-backend, @stan-standards, @heracles, @artie-arch, @sam-sec.
+
+### Changed
+- `hooks/scripts/graph-update.js` — incremental-sync hook now probes **codegraph first** (`codegraph sync --quiet` when `.codegraph/` exists), then falls back to `code-review-graph update --incremental`, then silently skips. Passes stdin through unchanged; always exits 0.
+- `skills/project-discovery/SKILL.md` — tool priority list extended to `codegraph → code-review-graph → tree → grep` with soft-detect probes per tier. Install suggestions are rate-limited to once per session. Java detection now activates `java-source-intel`.
+- `commands/forge.md` — Step-1 discovery rewritten to reflect the 4-tier exploration priority and reference `java-source-intel` for Java projects.
+- `CLAUDE.md` — "Exploration Tool Priority" section updated to list codegraph as tier 1 and emphasize that all graph backends are soft dependencies.
+- `manifests/install-modules.json` — `skills-java` module adds `skills/java-source-intel/`; `hooks-graph` description updated to reflect dual-backend probing.
+- `README.md` — "Source Graph Integration" section rewritten to make the opt-in / soft-dependency nature explicit, lists both codegraph and code-review-graph as unlock paths.
+
+### Philosophy
+All three tools (`tree`, `tree-sitter-*`-based graphs, codegraph) are **inlined as behavior**, not as install steps. The plugin ships md + js; nothing is installed on the client's machine by `claude plugin install`. Agents detect at runtime and degrade gracefully — harnesses, not prompt chains.
+
 ## [1.2.0] — 2026-04-21
 
 Cost Profiler Harness — measurement-driven observability for `/forge` runs. Every Agent Teams run now emits structured telemetry, compared against a rolling baseline, so harness tuning is evidence-based rather than intuition-based.

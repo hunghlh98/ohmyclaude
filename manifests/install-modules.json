@@ -77,12 +77,13 @@
     {
       "id": "skills-java",
       "kind": "skills",
-      "description": "Java / Spring Boot skills — coding standards, patterns, TDD, security",
+      "description": "Java / Spring Boot skills — coding standards, patterns, TDD, security, source intel (semantic queries via codegraph → code-review-graph → ripgrep)",
       "paths": [
         "skills/java-coding-standards/",
         "skills/springboot-patterns/",
         "skills/springboot-tdd/",
-        "skills/springboot-security/"
+        "skills/springboot-security/",
+        "skills/java-source-intel/"
       ],
       "targets": ["claude"],
       "defaultInstall": true,
@@ -195,7 +196,7 @@
     {
       "id": "hooks-graph",
       "kind": "hooks",
-      "description": "Source graph hook: incremental code-review-graph update after code changes (optional, skips if not installed)",
+      "description": "Source graph hook: incremental update after code changes. Probes codegraph first (requires .codegraph/), then code-review-graph. Silently skips if neither installed.",
       "paths": [
         "hooks/scripts/graph-update.js"
       ],

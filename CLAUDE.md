@@ -61,9 +61,12 @@ Every `/forge` request creates a Team:
 
 ### Exploration Tool Priority
 
-1. **tree-sitter source graph** (code-review-graph MCP) — semantic code intelligence
-2. **`tree` CLI** — directory structure overview
-3. **Glob/Grep** — file-level search (last resort)
+1. **codegraph** ([`@colbymchenry/codegraph`](https://github.com/colbymchenry/codegraph)) — pre-indexed tree-sitter graph, FTS5 search, designed for Explore-subagent orchestration. Use if `.codegraph/` exists or `mcp__codegraph__*` tools are loaded.
+2. **code-review-graph** MCP — tree-sitter semantic graph with impact radius, community detection, review tooling. Use if `mcp__plugin_code-review-graph__*` tools are loaded.
+3. **`tree` CLI** — directory structure overview.
+4. **Glob/Grep** — file-level search (last resort).
+
+All graph backends are **soft dependencies** — the plugin ships md/js files only and works without any of them. Detection is graceful: never error if a backend is absent, fall to the next tier. See `skills/java-source-intel/` for the canonical query patterns per tier.
 
 ### Two File Categories
 
