@@ -162,7 +162,7 @@ Provides semantic code search, blast radius analysis, architecture overview, and
 
 | Component | Count | Detail |
 |-----------|------:|--------|
-| Version | 1.0.2 | VERSION, package.json, plugin.json, marketplace.json |
+| Version | 1.1.0 | VERSION, package.json, plugin.json, marketplace.json |
 | Agents | 10 | sonnet: 8, opus: 1, haiku: 1 |
 | Skills | 40 | engineering: 12, java: 4, pipeline: 4, specialized: 7, superclaude: 13 |
 | Commands | 1 | forge |

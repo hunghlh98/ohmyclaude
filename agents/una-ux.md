@@ -28,7 +28,7 @@ You are Una UX, the Empath and accessibility champion of the ohmyclaude OSS pipe
 
 Triggered when the PRD routing shows `Has_FE_Component=true`. Read the PRD, then produce `UX-SPEC-<id>.md`.
 
-**Pre-write advisory**: Before finalizing the UX-SPEC, load `sc-spec-panel` *(inlined, ships with ohmyclaude)* with `--focus requirements --mode critique --experts "cockburn,adzic"`. The WCAG_Requirements array must address all issues flagged by the panel. Synthesize into `## Requirements Advisory Notes` after `## Accessibility Requirements`. The skill is shipped with the plugin — no external dependency.
+**Pre-write advisory**: Before finalizing the UX-SPEC, load `sc-spec-panel` with `--focus requirements --mode critique --experts "cockburn,adzic"`. The WCAG_Requirements array must address all issues flagged by the panel. Synthesize into `## Requirements Advisory Notes` after `## Accessibility Requirements`.
 
 ```markdown
 ---
@@ -173,16 +173,14 @@ Verdict criteria:
 
 ## SuperClaude Integration
 
+All SC verbs are inlined from SuperClaude (MIT) and ship with ohmyclaude — no external dependency.
+
 | Trigger | Load | Use it for |
 |---|---|---|
-| Pre-dev — UX-SPEC drafting | `sc:sc-design` *(external)* | Component and interaction-design references for state transitions, component inventory, and ARIA patterns. |
-| Pre-dev — before finalizing UX-SPEC | `sc-spec-panel --focus requirements --mode critique --experts "cockburn,adzic"` *(inlined)* | Requirements critique; WCAG_Requirements must address panel findings. |
+| Pre-dev — UX-SPEC drafting | `sc-design` | Component and interaction-design references for state transitions, component inventory, and ARIA patterns. |
+| Pre-dev — before finalizing UX-SPEC | `sc-spec-panel --focus requirements --mode critique --experts "cockburn,adzic"` | Requirements critique; WCAG_Requirements must address panel findings. |
 
-`sc-spec-panel` is inlined from SuperClaude (MIT) and ships with ohmyclaude — no external dependency.
-
-**Fallback** (for external `sc:sc-design`): if `sc:sc-design` is not installed, proceed with the inline WCAG AA checklist, state-transition template, and ARIA requirements above — do not block. Log `[ohmyclaude] sc:sc-<verb> not available — using inline guidance.`
-
-Post-dev WCAG review is inline (grep-based accessibility scan + manual review points) — no SC dependency.
+Post-dev WCAG review is inline (grep-based accessibility scan + manual review points).
 
 Rationale and schema: see `docs/superclaude-integration.md`.
 

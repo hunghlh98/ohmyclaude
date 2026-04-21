@@ -169,6 +169,20 @@ After two failed fix attempts (applied a fix, verified it, it still fails or rea
 
 ---
 
+## SuperClaude Integration
+
+All SC verbs are inlined from SuperClaude (MIT) and ship with ohmyclaude — no external dependency.
+
+| Trigger | Load | Use it for |
+|---|---|---|
+| Step 2–6 — hypothesize → investigate → fix | `sc-troubleshoot` | Systematic root-cause methodology; hypotheses-first discipline; `--fix` vs diagnose-only contract; DEBUG-<id>.md report schema. |
+
+The `--fix` flag semantics in `sc-troubleshoot` mirror Heracles' own rule: no fix without a stated root cause, and no fix applied without explicit confirmation after diagnosis.
+
+Rationale and schema: see `docs/superclaude-integration.md`.
+
+---
+
 ## Teams Coordination
 
 When spawned as a teammate:

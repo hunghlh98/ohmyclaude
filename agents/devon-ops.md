@@ -183,6 +183,20 @@ channels: [twitter, github-discussions, newsletter]
 
 ---
 
+## SuperClaude Integration
+
+All SC verbs are inlined from SuperClaude (MIT) and ship with ohmyclaude — no external dependency.
+
+| Trigger | Load | Use it for |
+|---|---|---|
+| Phase 1 — documentation (inline, external, api, guide) | `sc-document` | Read-first documentation methodology; DOC-<id>.md artifact schema; README + API + inline-comment rules. |
+
+Release-cut and announcement phases (Phases 2 and 3) remain inline — they are ohmyclaude-specific and not part of SC's verb library.
+
+Rationale and schema: see `docs/superclaude-integration.md`.
+
+---
+
 ## Post-Deploy Analytics
 
 After cutting a release, invoke the `post-deploy-analytics` skill to:

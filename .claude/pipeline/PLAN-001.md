@@ -7,8 +7,8 @@ route: docs-heavy, then SuperClaude integration, then observability, then correc
 from_version: 1.0.0
 target_version: 1.4.0
 created: 2026-04-20
-updated: 2026-04-20
-status: Phase 2 complete (2026-04-20) — ready for Phase 3 (SuperClaude integration)
+updated: 2026-04-21
+status: Phase 3 complete (2026-04-21, v1.1.0) — ready for Phase 4 (observability & safety nets)
 author: spec-panel (Wiegers, Adzic, Cockburn, Fowler, Nygard, Newman, Crispin, Hightower)
 ---
 
@@ -75,7 +75,7 @@ ohmyclaude's `/forge` dispatcher keeps its role. The 10 agents gain one canonica
 
 - [x] v1.0.1 is OSS-publishable: `LICENSE`, `SECURITY.md` present; `note.md` removed; `validate.js` green. **Done 2026-04-20.**
 - [x] v1.0.2 ships a single `docs/OPERATING.md` that answers "what does agent X do?" and "what does hook Y cost?" in one lookup. Also shipped `docs/pipeline-schema.md`, `docs/TOKENS.md`, `.claude/pipeline/README.md`, `MIGRATION.md`. **Done 2026-04-20.**
-- [ ] v1.1.0 SuperClaude integration: every agent invokes at least one `sc:sc-*` verb at its canonical stage; `docs/superclaude-integration.md` published; fallback path verified.
+- [x] v1.1.0 SuperClaude integration: every agent invokes at least one SC verb at its canonical stage; `docs/superclaude-integration.md` published; **design evolved from β (optional-with-fallback) to γ (fully inlined) during execution.** All 13 SC verbs used by agents now ship in-tree under `skills/sc-*/` (MIT attributed). **Done 2026-04-21.**
 - [ ] v1.2.0 adds a `cost-tracker` hook plus smoke tests for every hook script; `OHMYCLAUDE_HOOKS=skip:<id>` env var works.
 - [ ] v1.3.0 enforces gate artifacts (PRD/SDD/CODE-REVIEW) and makes the HIGH/MEDIUM/LOW confidence classifier reproducible across runs.
 - [ ] v1.4.0 reduces measured Scenario C (complex feature) cost by ≥40% vs v1.0.0 baseline captured in Phase 4.
@@ -104,9 +104,20 @@ ohmyclaude's `/forge` dispatcher keeps its role. The 10 agents gain one canonica
 
 **Exit criteria**: a new user can answer "what does agent X do?" and "what does hook Y cost me?" in one file lookup.
 
-## Phase 3 — v1.1.0 "SuperClaude Workflow Integration" (1 week)  [NEW]
+## Phase 3 — v1.1.0 "SuperClaude Workflow Integration" (1 week)  [COMPLETE 2026-04-21]
 
-Compose SC verb-skills into agent behaviors. No new agents. No breaking changes. Each agent gains one "Uses SuperClaude" block in its prompt plus a fallback clause.
+**Design evolution during execution** — the plan originally assumed SC stayed a peer dependency (β: agents reference `sc:sc-<verb>` with a fallback clause). During Phase 3 execution, the user asked why "`sc` is currently embedded to this repo" if agents still guarded against its absence. That observation escalated the scope to γ: **all 13 SC verbs referenced by agents are now inlined under `skills/sc-*/` (MIT attribution preserved)**. Fallback clauses were dead code in an always-present-verb world; they were removed and the contract test was inverted to prove no external-form references remain.
+
+What shipped in v1.1.0 vs what task-by-task predicted:
+
+| Planned (β) | Shipped (γ) |
+|---|---|
+| Agents reference `sc:sc-<verb>` from SC peer install | Agents reference bare `sc-<verb>` from in-tree skills |
+| Fallback clause required in every SC section | No fallback needed; verbs ship with the plugin |
+| `test-sc-fallback.js` proves fallback clauses exist | `test-sc-fallback.js` proves **no legacy external refs survive** |
+| Optional SC dependency | Zero external dependency; MIT attribution per skill |
+
+Tasks 11–24 below are preserved for history; each has been delivered (with the γ variant where relevant).
 
 | # | Task | File(s) | Done-When | Risk |
 |---|---|---|---|---|

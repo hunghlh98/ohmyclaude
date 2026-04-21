@@ -124,6 +124,29 @@ Artifact naming: `{STAGE}-{id}.md` (e.g., `PRD-001.md`, `CODE-REVIEW-001.md`).
 
 ---
 
+## SuperClaude Verb Map
+
+All 13 SC verbs are inlined from SuperClaude v4.3.0 (MIT) and ship with ohmyclaude — no external dependency, no fallback clause needed. Skills live under `skills/sc-*/`.
+
+| Stage | Primary agent | Verb(s) |
+|---|---|---|
+| Route / plan | @paige-product | `sc-brainstorm`, `sc-pm`, `sc-estimate` |
+| Architecture / design | @artie-arch | `sc-research`, `sc-design`, `sc-spec-panel` |
+| UX spec | @una-ux | `sc-design`, `sc-spec-panel` |
+| Security review | @sam-sec | `sc-analyze`, `sc-spec-panel` |
+| Backend impl | @beck-backend | `sc-implement`, `sc-build` |
+| Frontend impl | @effie-frontend | `sc-implement`, `sc-build` |
+| Testing | @quinn-qa | `sc-test` |
+| Code review | @stan-standards | `sc-analyze`, `sc-improve` |
+| Debugging | @heracles | `sc-troubleshoot` |
+| Documentation | @devon-ops | `sc-document` |
+
+Verbs are the **how**; agents are the **who**; pipeline artifacts are the **what**. Each agent's own `## SuperClaude Integration` section specifies the exact triggers and flags.
+
+Full mapping, attribution, and versioning: see `docs/superclaude-integration.md`.
+
+---
+
 ## Conflict Resolution
 
 ### Domain Dictator Hierarchy

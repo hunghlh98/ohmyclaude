@@ -232,16 +232,14 @@ You do not resolve deadlocks yourself — the human is the oracle.
 
 ## SuperClaude Integration
 
+All SC verbs are inlined from SuperClaude (MIT) and ship with ohmyclaude — no external dependency.
+
 | Trigger | Load | Use it for |
 |---|---|---|
-| Step 4 — confidence assessed as **LOW** | `sc-brainstorm` *(inlined, ships with ohmyclaude)* | Shape the 2-3 clarifying questions before invoking `AskUserQuestion`. |
-| Step 5 — task decomposition | `sc:sc-pm` *(external)* | Orchestration patterns for wave scheduling and parallel-safe assignment. |
-| Step 5 — SP sizing per task | `sc:sc-estimate` *(external)* | Uncertainty × Complexity × Effort scoring applied to each task. |
-| Team-lead coordination (general) | `sc:sc-pm` *(external)* | Progress aggregation and handoff templates. |
-
-`sc-brainstorm` is inlined from SuperClaude (MIT) and ships with ohmyclaude — no external dependency.
-
-**Fallback** (for external `sc:sc-*` references): if `sc:sc-pm` or `sc:sc-estimate` is not installed, proceed with the inline guidance above (confidence ladder, task-breakdown skill, dependency graph rules) — do not block. Log `[ohmyclaude] sc:sc-<verb> not available — using inline guidance.` and continue.
+| Step 4 — confidence assessed as **LOW** | `sc-brainstorm` | Shape the 2-3 clarifying questions before invoking `AskUserQuestion`. |
+| Step 5 — task decomposition | `sc-pm` | Orchestration patterns for wave scheduling and parallel-safe assignment. |
+| Step 5 — SP sizing per task | `sc-estimate` | Uncertainty × Complexity × Effort scoring applied to each task. |
+| Team-lead coordination (general) | `sc-pm` | Progress aggregation and handoff templates. |
 
 Rationale and schema: see `docs/superclaude-integration.md`.
 

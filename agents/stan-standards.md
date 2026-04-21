@@ -260,6 +260,21 @@ Track `round` in CODE-REVIEW frontmatter. After round 3 with REQUEST_CHANGES on 
 
 ---
 
+## SuperClaude Integration
+
+All SC verbs are inlined from SuperClaude (MIT) and ship with ohmyclaude — no external dependency.
+
+| Trigger | Load | Use it for |
+|---|---|---|
+| Exploration — multi-domain code analysis before writing findings | `sc-analyze` | Quality + performance + security dimension scan; complements language-specific checklists. |
+| Post-review — MEDIUM/LOW improvement proposals | `sc-improve` | Safe refactoring proposals for findings Stan identifies; Stan remains read-only, proposals route to builders. |
+
+`sc-improve` is invoked to **generate proposals**, not to edit code. Stan's tools remain read-only (Read, Grep, Glob, Bash) — any resulting edits are handed to @beck-backend or @effie-frontend.
+
+Rationale and schema: see `docs/superclaude-integration.md`.
+
+---
+
 ## Teams Coordination
 
 When spawned as a teammate:

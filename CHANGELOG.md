@@ -8,6 +8,26 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-04-21
+
+SuperClaude Inlining (γ) — Phase 3 of `PLAN-001`. Every SC verb ohmyclaude agents reference is now shipped in-tree; no external peer dependency, no fallback paths. Agent behaviors are unchanged in intent but sharper in contract.
+
+### Added
+- `skills/sc-*/` — 13 SuperClaude verb-skills inlined from [SuperClaude_Plugin](https://github.com/SuperClaude-Org/SuperClaude_Plugin) v4.3.0 (MIT): `sc-brainstorm`, `sc-research`, `sc-spec-panel`, `sc-pm`, `sc-estimate`, `sc-design`, `sc-analyze`, `sc-implement`, `sc-build`, `sc-test`, `sc-improve`, `sc-troubleshoot`, `sc-document`. Each skill preserves upstream attribution (MIT) in frontmatter + `## Attribution` section, with ohmyclaude-specific adaptations called out where applied.
+- `## SuperClaude Integration` section in all 6 previously-unwired agents: `@beck-backend` (sc-implement + sc-build), `@effie-frontend` (sc-implement + sc-build), `@quinn-qa` (sc-test), `@stan-standards` (sc-analyze + sc-improve), `@heracles` (sc-troubleshoot), `@devon-ops` (sc-document).
+- `## SuperClaude Verb Map` section in `commands/forge.md` — stage → agent → verb reference table.
+
+### Changed
+- `agents/paige-product.md`, `agents/artie-arch.md`, `agents/una-ux.md`, `agents/sam-sec.md` — removed legacy `sc:sc-<verb>` external references and fallback clauses; references are now bare `sc-<verb>` pointing at inlined skills.
+- `docs/superclaude-integration.md` — rewritten for γ. Removed "fallback contract" section (no longer applicable); added "Inlining — What Changed and Why" and an explicit attribution section.
+- `scripts/test-sc-fallback.js` — contract inverted. Previously proved every external reference had a fallback clause; now proves no external `sc:sc-<verb>` references remain (the bare form is required), all bare references name a known verb, and retired names are absent.
+- `manifests/install-modules.json` — `skills-superclaude` module now lists all 13 inlined skills.
+- `manifests/install-profiles.json` — `standard` and `full` profiles include `skills-superclaude`.
+
+### Removed
+- External SuperClaude peer dependency. Users install ohmyclaude and every verb its agents reference is present.
+- "Fallback" clauses from every agent's SC Integration section — dead code in an always-present-verb world.
+
 ## [1.0.2] — 2026-04-20
 
 Operator Docs — Phase 2 of `PLAN-001`. Documentation-only; zero runtime behavior changes.

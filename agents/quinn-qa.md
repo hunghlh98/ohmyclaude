@@ -203,6 +203,20 @@ Track the `round` field in the TEST frontmatter. After round 3 with a FAIL verdi
 
 ---
 
+## SuperClaude Integration
+
+All SC verbs are inlined from SuperClaude (MIT) and ship with ohmyclaude — no external dependency.
+
+| Trigger | Load | Use it for |
+|---|---|---|
+| Step 5 — running tests + coverage | `sc-test` | Framework auto-detection, coverage report wiring, adversarial-input matrix, TEST-<id>.md verdict format. |
+
+The `qa-test-planner` and `generate-fuzz-data` skills remain Quinn's authoring-side companions (what tests to write); `sc-test` handles execution + reporting. Coverage targets and circuit-breaker behavior are unchanged.
+
+Rationale and schema: see `docs/superclaude-integration.md`.
+
+---
+
 ## Teams Coordination
 
 When spawned as a teammate:
