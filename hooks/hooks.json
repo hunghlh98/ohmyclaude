@@ -103,6 +103,48 @@
         ],
         "description": "Snapshot cumulative transcript totals per subagent for cost profiling"
       }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-load.js\"",
+            "async": true,
+            "timeout": 5
+          }
+        ],
+        "description": "On fresh-startup sessions, emit a one-line hint if a saved session exists for this cwd (resume via /load)"
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/state-snapshot.js\"",
+            "async": true,
+            "timeout": 10
+          }
+        ],
+        "description": "Before compaction, snapshot pipeline artifact inventory to the active session's stages.json"
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/subagent-trace.js\"",
+            "async": true,
+            "timeout": 5
+          }
+        ],
+        "description": "Append one JSONL line per subagent spawn to the active session's traces.jsonl (pairs with cost-profiler)"
+      }
     ]
   }
 }

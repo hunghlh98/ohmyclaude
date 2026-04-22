@@ -8,6 +8,31 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [2.2.0] — 2026-04-22
+
+Session Intelligence — introduces resumable per-cwd session state via `/save` and `/load`, plus three new hook events (`SessionStart`, `PreCompact`, `SubagentStart`) that keep the snapshot current between explicit saves. Ships as an opt-in bundle; not in the `standard` profile so users who don't want session state on disk aren't affected.
+
+### Added
+
+- **`/save` command + `skills/save/`** — captures the current session's pipeline state to `~/.claude/ohmyclaude/sessions/<session_id>/`. Idempotent per session_id. Writes `meta.json` (session id, cwd, model, lead agent, timestamps), `stages.json` (pipeline artifact inventory), and updates `_index.json` (cwd_hash → session_id map). Never captures transcripts, env vars, or secrets; writes only under `$HOME`, never into the repo.
+- **`/load` command + `skills/load/`** — read-only. Three forms: `/load` (look up session for current cwd), `/load <session_id>` (specific session), `/load --list` (enumerate all saved sessions). Cross-references saved `stages.json` against the live `.claude/pipeline/` to flag artifacts as intact / modified-since-save / missing.
+- **`hooks/scripts/session-load.js`** — `SessionStart` hook. On fresh-startup only (skips `resume`/`clear`/`compact` sources), emits a 1-line stderr hint when a saved session exists for the current cwd. Discoverability without interference.
+- **`hooks/scripts/state-snapshot.js`** — `PreCompact` hook. Before conversation compaction, snapshots pipeline artifact inventory into the active session's `stages.json` and bumps `meta.last_touch_ts`. Keeps `/load` accurate across compaction events.
+- **`hooks/scripts/subagent-trace.js`** — `SubagentStart` hook. Appends one JSONL line per subagent spawn to `traces.jsonl`. Pure telemetry, pairs with `cost-profiler.js` — the profiler records cost on SubagentStop; this records start timestamp + agent_type on SubagentStart. Scope reduced from original plan after docs verified SubagentStart is observational-only; context injection deferred to v2.3+ as a `PreToolUse`-on-`Task` hook.
+- **`hooks-session`, `skills-session`, `commands-session`** — three new install modules. All three are `defaultInstall: false` (opt-in). Rolled into the `full` profile; `standard` profile unchanged.
+- **`scripts/test-hooks.js`** — 10 new assertions across the 3 new hooks (37 total contract checks, up from 27 in v2.1.0). Tests cover: SessionStart source-filtering, PreCompact stages.json write, SubagentStart traces.jsonl append, plus graceful no-ops when no saved session exists for the cwd.
+
+### Changed
+
+- `hooks/hooks.json` — registers `SessionStart`, `PreCompact`, `SubagentStart` events. All three async, timeouts 5-10s, matcher `*`.
+- `manifests/install-profiles.json` — `full` profile expanded to include `hooks-session`, `skills-session`, `commands-session`.
+- `README.md` — new Hooks row for each of the 3 new hooks; new Commands entry for `/save`/`/load`; Project Inventory refreshed.
+- `ROADMAP.md` — v2.1+ backlog items for `/save`, `/load`, `SessionStart`, `PreCompact`, `SubagentStart` struck `[x]` with shipped annotations.
+
+### Philosophy
+
+Session state is host-local user preference, not plugin content. The opt-in placement (not in `standard`) matches the `hooks-graph`/`hooks-profiler` precedent — capabilities users can turn on when they want them, zero surface by default. The ROADMAP's "context injection" intent for SubagentStart was honestly reduced to telemetry once the docs verified the event is observational; that honesty is the v2.0.0 invariant in action.
+
 ## [2.1.0] — 2026-04-22
 
 Language Expansion + Distribution Hygiene — the first additive release after v2.0.0's restore-invariants cut. Executes the three "Tentative Cut Candidates" named in `ROADMAP.md`: TypeScript path-activated rules, a hermetic smoke test suite covering all 8 hook scripts, and a consolidated `AGENTS.md` reference. No new agents, commands, or runtime behavior. Infrastructure + docs only.

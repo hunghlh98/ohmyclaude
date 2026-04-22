@@ -22,16 +22,18 @@ Zero-setup. No `/setup` command, no config files, no shell aliases. Install and 
 
 One command. The pipeline figures out the rest.
 
-## The `/forge` Command
+## Commands
 
-| Subcommand | What it does |
-|------------|--------------|
-| `/forge <natural language>` | Route and execute any request (default) |
+| Command | What it does |
+|---------|--------------|
+| `/forge <natural language>` | Route and execute any request (default smart router) |
 | `/forge --dry-run <request>` | Simulate routing + cost, no agents invoked |
 | `/forge sprint [--size N]` | Execute sprint from backlog |
 | `/forge release` | Cut release |
 | `/forge commit` | Generate semantic commit message |
 | `/forge help` | Show help |
+| `/save` | Snapshot the current session state to `~/.claude/ohmyclaude/sessions/` (v2.2.0 — opt-in via `full` profile) |
+| `/load` | Resume a saved session — `/load`, `/load <session_id>`, or `/load --list` (v2.2.0) |
 
 ## How It Works
 
@@ -131,7 +133,7 @@ Path-activated language rules:
 | `rules/java/` | Coding style, patterns, security, testing (activates on `**/*.java`) |
 | `rules/typescript/` | Coding style, patterns, security, testing (activates on `**/*.ts` and `**/*.tsx`) |
 
-## Hooks (7)
+## Hooks (10)
 
 | Hook | Trigger | What it does |
 |------|---------|--------------|
@@ -139,9 +141,12 @@ Path-activated language rules:
 | `post-bash-lint` | PostToolUse Bash | Runs linter after bash edits source |
 | `backlog-tracker` | PostToolUse Write | Rebuilds BACKLOG.md when ISS-*.md written |
 | `graph-update` | PostToolUse Write/Edit | Incrementally updates source graph (optional) |
-| `session-summary` | Stop | Writes session log |
+| `session-summary` | Stop | Writes per-response JSONL log to `~/.claude/ohmyclaude/sessions/YYYY-MM-DD.jsonl` |
 | `team-cleanup` | Stop | Cleans orphaned teams older than 24h |
 | `cost-profiler` | SubagentStop + Stop | Writes `.claude/pipeline/PROFILE-<runId>.md` and rolling `baseline.json`; pair with `skills/profile-run` |
+| `session-load` | SessionStart | On fresh-startup only, emits a one-line hint when a saved session exists for this cwd (v2.2.0) |
+| `state-snapshot` | PreCompact | Snapshots pipeline artifact inventory to the active session's `stages.json` before compaction (v2.2.0) |
+| `subagent-trace` | SubagentStart | Appends one JSONL line per subagent spawn to `traces.jsonl`; pairs with `cost-profiler` for full per-agent lifecycle (v2.2.0) |
 
 ## Cost Profiler (harness observability)
 
@@ -179,21 +184,31 @@ The `hooks-graph` hook auto-detects which is present and syncs incrementally aft
 | Profile | Contents |
 |---------|----------|
 | Minimal | 10 agents + /forge |
-| Standard (default) | + 34 skills + Java rules + quality hooks |
-| Full | + source graph hooks + tracking hooks |
+| Standard (default) | + 34 skills + Java + TypeScript rules + quality hooks |
+| Full | + source graph hooks + tracking hooks + cost profiler + session intelligence (`/save`, `/load`, SessionStart/PreCompact/SubagentStart hooks) |
+
+## Session Intelligence (opt-in, v2.2.0)
+
+Resumable per-cwd session state for "picked up where I left off" workflows.
+
+- `/save` writes a structured snapshot to `~/.claude/ohmyclaude/sessions/<session_id>/` (never into the repo).
+- `/load` reads it and reports which pipeline artifacts are intact, modified-since-save, or missing.
+- Three companion hooks keep the snapshot fresh: `session-load` (discoverability on startup), `state-snapshot` (PreCompact checkpoint), `subagent-trace` (per-subagent telemetry pairing with `cost-profiler`).
+
+Opt-in via the `full` profile or by adding `hooks-session` / `skills-session` / `commands-session` modules individually. Host-local, never committed, no secrets.
 
 ## Project Inventory
 
 | Component | Count | Detail |
 |-----------|------:|--------|
-| Version | 2.1.0 | VERSION, package.json, plugin.json, marketplace.json |
+| Version | 2.2.0 | VERSION, package.json, plugin.json, marketplace.json |
 | Agents | 10 | sonnet: 8, opus: 1, haiku: 1 |
-| Skills | 34 | engineering: 12, java: 5, pipeline: 4, specialized: 8, superclaude: 5 |
-| Commands | 1 | forge |
+| Skills | 36 | engineering: 12, java: 5, pipeline: 4, specialized: 8, superclaude: 5, session: 2 |
+| Commands | 3 | forge, load, save |
 | Rules | 9 | common: 1, java: 4, typescript: 4 |
-| Hooks | 8 | backlog-tracker, cost-profiler, dry-run, graph-update, post-bash-lint, pre-write-check, session-summary, team-cleanup |
+| Hooks | 11 | backlog-tracker, cost-profiler, dry-run, graph-update, post-bash-lint, pre-write-check, session-load, session-summary, state-snapshot, subagent-trace, team-cleanup |
 | Profiles | 3 | minimal, standard (default), full |
-| Modules | 17 | agents: 4, skills: 5, rules: 3, commands: 1, hooks: 4 |
+| Modules | 20 | agents: 4, skills: 6, rules: 3, commands: 2, hooks: 5 |
 
 Run `node scripts/validate.js` to see the live inventory with per-agent detail.
 

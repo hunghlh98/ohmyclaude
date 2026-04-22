@@ -407,6 +407,178 @@ test('malformed stdin exits 0', () => {
   cleanup(r.sandbox);
 });
 
+// ── session-load.js (SessionStart; hint on saved sessions) ─────────────────
+console.log('\nsession-load.js — saved-session hint on startup:');
+
+test('exits 0 silently when sessions dir does not exist', () => {
+  const input = JSON.stringify({
+    hook_event_name: 'SessionStart',
+    source: 'startup',
+    cwd: '/tmp/anywhere',
+  });
+  const r = runHook('session-load.js', input);
+  assertEq(r.code, 0, 'exit code');
+  assertEq(r.stdout, input, 'passthrough');
+  assertEq(r.stderr, '', 'no hint when no sessions');
+  cleanup(r.sandbox);
+});
+
+test('skips hint when source is "resume" (not startup)', () => {
+  const sandbox = makeSandbox();
+  const sessRoot = path.join(sandbox, '.claude', 'ohmyclaude', 'sessions');
+  fs.mkdirSync(sessRoot, { recursive: true });
+  // Even if an index exists, resume should not emit a hint
+  const crypto = require('crypto');
+  const hash = crypto.createHash('sha256').update('/tmp/proj').digest('hex').slice(0, 16);
+  fs.writeFileSync(path.join(sessRoot, '_index.json'), JSON.stringify({ [hash]: 'sid1' }));
+  const sidDir = path.join(sessRoot, 'sid1');
+  fs.mkdirSync(sidDir, { recursive: true });
+  fs.writeFileSync(path.join(sidDir, 'meta.json'),
+    JSON.stringify({ last_touch_ts: new Date().toISOString() }));
+
+  const input = JSON.stringify({
+    hook_event_name: 'SessionStart',
+    source: 'resume',
+    cwd: '/tmp/proj',
+  });
+  const r = runHook('session-load.js', input, { sandbox });
+  assertEq(r.code, 0, 'exit code');
+  assertEq(r.stderr, '', 'no hint on resume');
+  cleanup(sandbox);
+});
+
+test('emits hint on startup when saved session exists for cwd', () => {
+  const sandbox = makeSandbox();
+  const sessRoot = path.join(sandbox, '.claude', 'ohmyclaude', 'sessions');
+  fs.mkdirSync(sessRoot, { recursive: true });
+  const crypto = require('crypto');
+  const targetCwd = '/tmp/proj-with-saved';
+  const hash = crypto.createHash('sha256').update(targetCwd).digest('hex').slice(0, 16);
+  fs.writeFileSync(path.join(sessRoot, '_index.json'), JSON.stringify({ [hash]: 'sidA' }));
+  const sidDir = path.join(sessRoot, 'sidA');
+  fs.mkdirSync(sidDir, { recursive: true });
+  fs.writeFileSync(path.join(sidDir, 'meta.json'),
+    JSON.stringify({ last_touch_ts: new Date().toISOString() }));
+
+  const input = JSON.stringify({
+    hook_event_name: 'SessionStart',
+    source: 'startup',
+    cwd: targetCwd,
+  });
+  const r = runHook('session-load.js', input, { sandbox });
+  assertEq(r.code, 0, 'exit code');
+  assertIncludes(r.stderr, 'Saved session available', 'hint stderr');
+  assertIncludes(r.stderr, '/load', 'mentions /load');
+  cleanup(sandbox);
+});
+
+test('exits 0 on malformed stdin', () => {
+  const r = runHook('session-load.js', 'garbage');
+  assertEq(r.code, 0, 'exit code');
+  cleanup(r.sandbox);
+});
+
+// ── state-snapshot.js (PreCompact; update stages.json) ──────────────────────
+console.log('\nstate-snapshot.js — pipeline cursor on PreCompact:');
+
+test('exits 0 silently when no saved session exists for cwd', () => {
+  const input = JSON.stringify({
+    hook_event_name: 'PreCompact',
+    cwd: '/tmp/unsaved',
+  });
+  const r = runHook('state-snapshot.js', input);
+  assertEq(r.code, 0, 'exit code');
+  cleanup(r.sandbox);
+});
+
+test('updates stages.json when session exists', () => {
+  const sandbox = makeSandbox();
+  const sessRoot = path.join(sandbox, '.claude', 'ohmyclaude', 'sessions');
+  fs.mkdirSync(sessRoot, { recursive: true });
+  const crypto = require('crypto');
+  const cwd = sandbox;                      // snapshot uses evt.cwd for pipeline scan
+  const hash = crypto.createHash('sha256').update(cwd).digest('hex').slice(0, 16);
+  fs.writeFileSync(path.join(sessRoot, '_index.json'), JSON.stringify({ [hash]: 'sidB' }));
+  const sidDir = path.join(sessRoot, 'sidB');
+  fs.mkdirSync(sidDir, { recursive: true });
+  fs.writeFileSync(path.join(sidDir, 'meta.json'),
+    JSON.stringify({ session_id: 'sidB', start_ts: '2026-01-01T00:00:00Z', last_touch_ts: '2026-01-01T00:00:00Z' }));
+  // Seed a pipeline artifact
+  const pipelineDir = path.join(cwd, '.claude', 'pipeline');
+  fs.mkdirSync(pipelineDir, { recursive: true });
+  fs.writeFileSync(path.join(pipelineDir, 'PRD-001.md'), '# PRD-001\n');
+
+  const input = JSON.stringify({ hook_event_name: 'PreCompact', cwd });
+  const r = runHook('state-snapshot.js', input, { sandbox, cwd });
+  assertEq(r.code, 0, 'exit code');
+  const stagesPath = path.join(sidDir, 'stages.json');
+  assertExists(stagesPath, 'stages.json written');
+  const stages = JSON.parse(fs.readFileSync(stagesPath, 'utf8'));
+  if (!Array.isArray(stages.artifacts) || stages.artifacts.length !== 1) {
+    throw new Error(`expected 1 artifact, got ${JSON.stringify(stages.artifacts)}`);
+  }
+  assertEq(stages.artifacts[0].artifact, 'PRD-001', 'artifact name');
+  // meta should be touched
+  const meta = JSON.parse(fs.readFileSync(path.join(sidDir, 'meta.json'), 'utf8'));
+  assertEq(meta.last_event, 'PreCompact', 'meta.last_event bumped');
+  cleanup(sandbox);
+});
+
+test('exits 0 on malformed stdin', () => {
+  const r = runHook('state-snapshot.js', 'not-json');
+  assertEq(r.code, 0, 'exit code');
+  cleanup(r.sandbox);
+});
+
+// ── subagent-trace.js (SubagentStart; telemetry) ────────────────────────────
+console.log('\nsubagent-trace.js — subagent telemetry:');
+
+test('exits 0 silently when no saved session exists for cwd', () => {
+  const input = JSON.stringify({
+    hook_event_name: 'SubagentStart',
+    cwd: '/tmp/unsaved-x',
+    agent_type: 'paige-product',
+  });
+  const r = runHook('subagent-trace.js', input);
+  assertEq(r.code, 0, 'exit code');
+  cleanup(r.sandbox);
+});
+
+test('appends one line to traces.jsonl when session exists', () => {
+  const sandbox = makeSandbox();
+  const sessRoot = path.join(sandbox, '.claude', 'ohmyclaude', 'sessions');
+  fs.mkdirSync(sessRoot, { recursive: true });
+  const crypto = require('crypto');
+  const cwd = '/tmp/proj-trace';
+  const hash = crypto.createHash('sha256').update(cwd).digest('hex').slice(0, 16);
+  fs.writeFileSync(path.join(sessRoot, '_index.json'), JSON.stringify({ [hash]: 'sidC' }));
+  const sidDir = path.join(sessRoot, 'sidC');
+  fs.mkdirSync(sidDir, { recursive: true });
+
+  const input = JSON.stringify({
+    hook_event_name: 'SubagentStart',
+    session_id: 'sidC',
+    cwd,
+    agent_type: 'beck-backend',
+  });
+  const r = runHook('subagent-trace.js', input, { sandbox });
+  assertEq(r.code, 0, 'exit code');
+  const tracesPath = path.join(sidDir, 'traces.jsonl');
+  assertExists(tracesPath, 'traces.jsonl written');
+  const lines = fs.readFileSync(tracesPath, 'utf8').trim().split('\n');
+  assertEq(lines.length, 1, 'one line appended');
+  const rec = JSON.parse(lines[0]);
+  assertEq(rec.agent_type, 'beck-backend', 'agent_type recorded');
+  assertEq(rec.event, 'SubagentStart', 'event recorded');
+  cleanup(sandbox);
+});
+
+test('exits 0 on malformed stdin', () => {
+  const r = runHook('subagent-trace.js', '{unclosed');
+  assertEq(r.code, 0, 'exit code');
+  cleanup(r.sandbox);
+});
+
 // ── dry-run.js (utility, not a hook — still asserted for v1.2.0 contract) ──
 console.log('\ndry-run.js — /forge --dry-run classifier:');
 

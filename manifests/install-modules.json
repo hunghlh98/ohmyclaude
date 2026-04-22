@@ -233,6 +233,43 @@
       "targets": ["claude"],
       "defaultInstall": false,
       "stability": "stable"
+    },
+    {
+      "id": "hooks-session",
+      "kind": "hooks",
+      "description": "Session intelligence hooks (v2.2.0): SessionStart hints at saved sessions via /load; PreCompact snapshots pipeline artifacts to the active session's stages.json; SubagentStart appends telemetry to traces.jsonl. Works with /save and /load skills. Opt-in (not in defaultInstall) — session state is a per-user preference, not a default.",
+      "paths": [
+        "hooks/scripts/session-load.js",
+        "hooks/scripts/state-snapshot.js",
+        "hooks/scripts/subagent-trace.js"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": false,
+      "stability": "stable"
+    },
+    {
+      "id": "skills-session",
+      "kind": "skills",
+      "description": "Session lifecycle skills (v2.2.0): /save captures session state to ~/.claude/ohmyclaude/sessions/, /load reads and resumes it. Pairs with hooks-session. Host-local only — no repo writes.",
+      "paths": [
+        "skills/save/",
+        "skills/load/"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": false,
+      "stability": "stable"
+    },
+    {
+      "id": "commands-session",
+      "kind": "commands",
+      "description": "User-invocable /save and /load commands for session lifecycle. Thin wrappers — real logic lives in skills-session.",
+      "paths": [
+        "commands/save.md",
+        "commands/load.md"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": false,
+      "stability": "stable"
     }
   ]
 }

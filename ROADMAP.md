@@ -100,6 +100,20 @@ Release gate additions (checked by `validate.js`):
 
 ---
 
+## v2.2.0 — Session Intelligence (Shipped 2026-04-22)
+
+Ships resumable per-cwd session state — the `/save` and `/load` commands, plus three new hook events (`SessionStart`, `PreCompact`, `SubagentStart`) that keep the snapshot current between explicit saves. Opt-in bundle: `hooks-session`, `skills-session`, and `commands-session` modules are `defaultInstall: false` and land in the `full` profile only, not `standard`.
+
+- [x] `/save` command + `skills/save/` — snapshot session state to `~/.claude/ohmyclaude/sessions/<session_id>/`. Writes `meta.json`, `stages.json`, updates `_index.json`. Idempotent, host-local.
+- [x] `/load` command + `skills/load/` — read-only resume. Three forms: `/load`, `/load <id>`, `/load --list`. Cross-references saved `stages.json` with live `.claude/pipeline/`.
+- [x] `SessionStart` hook (`hooks/scripts/session-load.js`) — fresh-startup only (source-filtered); emits discoverability hint when saved session exists for this cwd.
+- [x] `PreCompact` hook (`hooks/scripts/state-snapshot.js`) — updates `stages.json` + `meta.last_touch_ts` before compaction.
+- [x] `SubagentStart` hook (`hooks/scripts/subagent-trace.js`) — telemetry only. Original ROADMAP intent was context-injection; the event is observational per Claude Code docs, so scope was reduced honestly rather than shipping something broken. Context-injection deferred to v2.3+ via `PreToolUse`-on-`Task` (separate design).
+
+Smoke suite grew from 27 → 37 contract assertions.
+
+---
+
 ## v2.1+ — Deferred From Original v1.1/v1.2 Roadmap
 
 These items were listed in the original ROADMAP for v1.1–v1.3 but never shipped. Each is annotated with a decision status: **still desired** (planned), **superseded** (better approach found), or **dropped** (no longer in scope).
@@ -119,13 +133,13 @@ These items were listed in the original ROADMAP for v1.1–v1.3 but never shippe
 
 ### From original v1.2 — Session Intelligence
 
-- [ ] **`/save` command** — snapshot session state to `~/.claude/ohmyclaude/sessions/<id>.json`. Still desired.
-- [ ] **`/load [id]` command** — restore context, resume from next pending stage. Still desired.
-- [ ] **SessionStart hook — auto-load previous session context.** Still desired; pairs with /save.
-- [ ] **PreCompact hook — save agent state before compaction.** Still desired.
+- [x] **`/save` command** — **shipped in v2.2.0** as `commands/save.md` + `skills/save/`. Snapshot layout under `~/.claude/ohmyclaude/sessions/<session_id>/` with `meta.json`, `stages.json`, `agents/`, `traces.jsonl`, plus `_index.json` for cwd lookup.
+- [x] **`/load [id]` command** — **shipped in v2.2.0** as `commands/load.md` + `skills/load/`. Three forms: current-cwd, by-id, `--list`. Cross-references saved pipeline state with live artifacts.
+- [x] **SessionStart hook** — **shipped in v2.2.0** as `hooks/scripts/session-load.js`. Emits a discoverability hint; does not auto-inject context (event is observational).
+- [x] **PreCompact hook** — **shipped in v2.2.0** as `hooks/scripts/state-snapshot.js`. Updates `stages.json` before compaction.
 - [ ] **Pre-implementation 5-dimension confidence scorecard** — still desired. Would gate `@paige-product`'s plan output.
 - [ ] **Wave orchestration with integration checkpoints** — partially shipped in v1.0.0 via `task-breakdown`; the explicit integration checkpoint is still an open gap.
-- [ ] **SubagentStart hook** — compact context block prepended per agent invocation. Still desired.
+- [~] **SubagentStart hook** — **partially shipped in v2.2.0** as `hooks/scripts/subagent-trace.js` (telemetry only — appends to `traces.jsonl`). Original intent of "compact context block prepended per agent invocation" is NOT possible via SubagentStart (event is observational per Claude Code docs); context-injection capability **deferred to v2.3+** as a `PreToolUse`-on-`Task` hook — needs separate design.
 
 ### From original v1.3 — Distribution & Testing
 

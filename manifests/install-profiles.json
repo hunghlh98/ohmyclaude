@@ -39,7 +39,7 @@
     {
       "id": "full",
       "name": "Full",
-      "description": "Everything — standard profile + source graph integration + tracking hooks (backlog, session summary, team cleanup) + cost profiler (measures /forge runs).",
+      "description": "Everything — standard profile + source graph integration + tracking hooks (backlog, session summary, team cleanup) + cost profiler + session intelligence (save/load + SessionStart/PreCompact/SubagentStart hooks).",
       "modules": [
         "agents-core",
         "agents-governance",
@@ -50,14 +50,17 @@
         "skills-pipeline",
         "skills-specialized",
         "skills-superclaude",
+        "skills-session",
         "rules-common",
         "rules-java",
         "rules-typescript",
         "commands",
+        "commands-session",
         "hooks-quality",
         "hooks-graph",
         "hooks-tracking",
-        "hooks-profiler"
+        "hooks-profiler",
+        "hooks-session"
       ]
     }
   ]
