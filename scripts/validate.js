@@ -171,6 +171,57 @@ try {
   console.log(`  ⚠ ROADMAP.md missing — add it to document shipped vs planned work`);
 }
 
+// ── Language rule frontmatter (v2.1.0+) ─────────────────────────────────────
+// Every rules/<lang>/*.md must have a paths: array in frontmatter. This is
+// what activates the rule on matching files. rules/java/ is the reference.
+console.log('\nLanguage rule frontmatter:');
+const rulesDir = path.join(root, 'rules');
+if (fs.existsSync(rulesDir)) {
+  for (const lang of fs.readdirSync(rulesDir).sort()) {
+    const langDir = path.join(rulesDir, lang);
+    if (!fs.statSync(langDir).isDirectory()) continue;
+    for (const file of fs.readdirSync(langDir)) {
+      if (!file.endsWith('.md')) continue;
+      const rel = path.join('rules', lang, file);
+      const content = fs.readFileSync(path.join(langDir, file), 'utf8');
+      const hasFrontmatter = content.startsWith('---');
+      const hasPaths = /\n\s*paths:\s*\n(\s+-\s+.+\n)+/.test(content.slice(0, 400));
+      check(rel, hasFrontmatter && hasPaths, 'missing `paths:` array in frontmatter');
+    }
+  }
+}
+
+// ── AGENTS.md consolidated reference (v2.1.0+) ──────────────────────────────
+// AGENTS.md is the agent directory-entry index. Each agent declared in
+// plugin.json must have a section in AGENTS.md, so a new contributor can
+// find the full reference without grep.
+console.log('\nAGENTS.md consolidated reference:');
+const agentsMdPath = path.join(root, 'AGENTS.md');
+if (!fs.existsSync(agentsMdPath)) {
+  check('AGENTS.md', false, 'missing at repo root');
+} else {
+  const agentsMd = fs.readFileSync(agentsMdPath, 'utf8');
+  for (const agentPath of pluginJson.agents) {
+    const name = path.basename(agentPath, '.md');
+    // Must mention "@<name>" (as heading anchor) AND link to agents/<name>.md
+    const mentioned = new RegExp(`@${name}\\b`).test(agentsMd);
+    const linked    = agentsMd.includes(`agents/${name}.md`);
+    check(`AGENTS.md — @${name}`, mentioned && linked,
+      mentioned ? `no link to agents/${name}.md` : `no @${name} mention`);
+  }
+}
+
+// ── test:hooks wiring (v2.1.0+) ─────────────────────────────────────────────
+// The smoke test suite must be runnable via `npm run test:hooks`. Forces
+// parity between what CI runs and what contributors run locally.
+console.log('\nsmoke test wiring:');
+check('package.json scripts.test:hooks',
+  typeof pkg.scripts?.['test:hooks'] === 'string',
+  'missing "test:hooks" script');
+check('scripts/test-hooks.js exists',
+  fs.existsSync(path.join(root, 'scripts', 'test-hooks.js')),
+  'file not found');
+
 // ── Hook scripts parse as valid JS ───────────────────────────────────────────
 console.log('\nHook script syntax:');
 const hooksScriptsDir = path.join(root, 'hooks', 'scripts');

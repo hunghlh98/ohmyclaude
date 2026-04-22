@@ -162,6 +162,20 @@
       "stability": "stable"
     },
     {
+      "id": "rules-typescript",
+      "kind": "rules",
+      "description": "TypeScript rules — coding style, patterns, security, testing (path-activated on **/*.ts and **/*.tsx)",
+      "paths": [
+        "rules/typescript/coding-style.md",
+        "rules/typescript/patterns.md",
+        "rules/typescript/security.md",
+        "rules/typescript/testing.md"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
       "id": "commands",
       "kind": "commands",
       "description": "Single entry point: /forge (route, sprint, release, commit, help)",

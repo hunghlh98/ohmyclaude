@@ -31,6 +31,7 @@
         "skills-superclaude",
         "rules-common",
         "rules-java",
+        "rules-typescript",
         "commands",
         "hooks-quality"
       ]
@@ -51,6 +52,7 @@
         "skills-superclaude",
         "rules-common",
         "rules-java",
+        "rules-typescript",
         "commands",
         "hooks-quality",
         "hooks-graph",

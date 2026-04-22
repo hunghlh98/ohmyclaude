@@ -8,6 +8,33 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [2.1.0] — 2026-04-22
+
+Language Expansion + Distribution Hygiene — the first additive release after v2.0.0's restore-invariants cut. Executes the three "Tentative Cut Candidates" named in `ROADMAP.md`: TypeScript path-activated rules, a hermetic smoke test suite covering all 8 hook scripts, and a consolidated `AGENTS.md` reference. No new agents, commands, or runtime behavior. Infrastructure + docs only.
+
+### Added
+
+- `rules/typescript/` — 4 path-activated rule files (coding-style, patterns, security, testing) mirroring `rules/java/` exactly. Activates on `**/*.ts` and `**/*.tsx`. Second language in the rules system.
+- `scripts/test-hooks.js` — **hook smoke test suite**. 27 contract assertions across all 8 scripts under `hooks/scripts/`. Asserts exit codes, stdout pass-through, and side-effect sandboxing. Hermetic via `HOME` override — no production hook code was modified to enable tests. Wired to CI as a required step.
+- `AGENTS.md` — consolidated agent directory-entry index at repo root. One section per agent (purpose, when to invoke, what it will not do, example prompts) with cross-links to each `agents/<name>.md`. Complements `docs/OPERATING.md` (tabular operator view) without duplicating body content.
+- `scripts/validate.js` — three new checks:
+  - `paths:` frontmatter required on every `rules/<lang>/*.md` (activation is path-based; rules without `paths:` are dead).
+  - `AGENTS.md` must exist and mention+link each of the 10 agents in `plugin.json`.
+  - `package.json` must declare a `test:hooks` script (forces CI ↔ local parity).
+- `npm run test:hooks` — new script mapped to `node scripts/test-hooks.js`.
+- `.github/workflows/ci.yml` — CI now runs `validate.js`, `test-hooks.js`, and `test-sc-fallback.js` on every push to `main`/`develop` and every PR into `main`.
+
+### Changed
+
+- `manifests/install-modules.json` — new `rules-typescript` module (4 paths, `defaultInstall: true`).
+- `manifests/install-profiles.json` — `standard` and `full` profiles now include `rules-typescript`.
+- `README.md` — Rules section expanded with TypeScript entry; Project Inventory updated; new "Testing" section documents `test:hooks` and `test:sc-fallback`.
+- `ROADMAP.md` — `v2.1.0 — Tentative Cut Candidates` section converted to "Shipped" with `[x]` on each of the three items; carryover list trimmed.
+
+### Philosophy
+
+v2.1.0 adds capability without violating any v2.0.0 invariant. The smoke suite proves the plugin's own hook contracts hermetically — `HOME` override alone is enough because every hook already respected `os.homedir()` and `cwd`. That is a v1.0.0 harness-engineering payoff cashing in two point-releases later.
+
 ## [2.0.0] — 2026-04-22
 
 Restore Invariants — a subtractive refactor prompted by a spec-panel review that surfaced a 100% divergence between ROADMAP.md and what actually shipped in v1.1-v1.3, plus three SKILL.md files violating the plugin's own ≤400-line cap, plus 8 SuperClaude verb-wrapper skills that duplicated agent docstrings for zero added knowledge. No new features. Everything added in v2.0.0 is enforcement; everything removed is redundancy.

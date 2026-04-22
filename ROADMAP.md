@@ -85,6 +85,21 @@ The v2.0.0 refactor addresses drift between ohmyclaude's stated invariants and i
 
 ---
 
+## v2.1.0 — Language Expansion + Distribution Hygiene (Shipped 2026-04-22)
+
+All three items named below landed in v2.1.0. ROADMAP ↔ CHANGELOG symmetry honored (see `CHANGELOG.md` `## [2.1.0]`).
+
+- [x] `rules/typescript/` — 4 path-activated rule files (coding-style, patterns, security, testing). Second language in the rules system. Activates on `**/*.ts` / `**/*.tsx`. Mirrors `rules/java/` exactly.
+- [x] Smoke test suite for the 8 hooks — `scripts/test-hooks.js`, 27 contract assertions. Hermetic via `HOME` override; zero hook code modified. Wired into CI as required step.
+- [x] `AGENTS.md` consolidated reference — new file at repo root. One section per agent with purpose, triggers, hard boundaries, and example prompts. Complements `docs/OPERATING.md` without duplicating body content.
+
+Release gate additions (checked by `validate.js`):
+- `rules/<lang>/*.md` must declare a `paths:` array (dead otherwise).
+- `AGENTS.md` must mention + link every agent in `plugin.json`.
+- `package.json` must declare a `test:hooks` script.
+
+---
+
 ## v2.1+ — Deferred From Original v1.1/v1.2 Roadmap
 
 These items were listed in the original ROADMAP for v1.1–v1.3 but never shipped. Each is annotated with a decision status: **still desired** (planned), **superseded** (better approach found), or **dropped** (no longer in scope).
@@ -95,7 +110,7 @@ These items were listed in the original ROADMAP for v1.1–v1.3 but never shippe
 - [ ] **pre-commit-quality-gate hook** — superseded. `validate.js` + the release gate cover most of this; the remaining need (run tests + lint before Claude-initiated commits) can be a single PostToolUse on Bash.
 - [ ] **cost-tracker hook** — superseded by `cost-profiler.js` shipped in v1.2.0. The `.claude/metrics/baseline.json` replaces the JSONL log idea.
 - [ ] **prompt-injection-guard hook** — still desired. High-value safety. Scope a v2.1 design.
-- [ ] **TypeScript/JavaScript rules** (`rules/typescript/`) — still desired. Next language after Java.
+- [x] **TypeScript/JavaScript rules** (`rules/typescript/`) — **shipped in v2.1.0**.
 - [ ] **Go rules** (`rules/go/`) — still desired.
 - [ ] **Python rules** (`rules/python/`) — still desired.
 - [ ] **Kotlin rules** (`rules/kotlin/`) — still desired.
@@ -114,25 +129,25 @@ These items were listed in the original ROADMAP for v1.1–v1.3 but never shippe
 
 ### From original v1.3 — Distribution & Testing
 
-- [ ] **Smoke test suite** — fixture inputs through each hook script, asserting exit codes. Still desired. First candidate for v2.1.
+- [x] **Smoke test suite** — **shipped in v2.1.0**. `scripts/test-hooks.js`: 27 contract assertions covering all 8 hook scripts.
 - [ ] **`npm prepublishOnly` script** — runs `validate.js`, aborts on failure. Quick win for v2.1.
 - [ ] **Agent integration tests** — verify each agent's frontmatter, tools, example triggers. Still desired.
 - [ ] **`install.sh` verified on macOS (zsh + bash), Ubuntu 22.04, Windows WSL2** — still desired.
 - [ ] **`install.ps1` parity** — still desired; likely lower priority than shell.
-- [ ] **AGENTS.md reference** — all 10 agents: purpose, when to invoke, what it won't do, example prompts. Partially covered by `docs/OPERATING.md`; a consolidated reference still missing.
+- [x] **AGENTS.md reference** — **shipped in v2.1.0**. All 10 agents with purpose, triggers, hard boundaries, example prompts. Cross-links to `agents/<name>.md` canonical files.
 - [ ] **HOOKS.md reference** — all hooks: trigger, blocking vs async, env vars, how to disable. Same as above.
 
 ---
 
-## v2.1.0 — Tentative Cut Candidates
+## v2.1.0 — Tentative Cut Candidates (Shipped)
 
-Minimum viable additions to get language expansion moving without re-repeating the v1.x drift:
+All three candidates landed together on 2026-04-22 — see the `v2.1.0 — Language Expansion + Distribution Hygiene (Shipped)` section above for the final diff. Preserved here for continuity with the original plan text:
 
-1. `rules/typescript/` with path-activated rule loading — smallest valuable add, expands the "Java-first" story.
-2. Smoke test suite for the 8 hooks — closes the v1.3-was-promised-but-not-shipped gap.
-3. AGENTS.md consolidated reference — replaces scattered agent docs with one canonical file.
+1. ✓ `rules/typescript/` with path-activated rule loading — smallest valuable add, expanded the "Java-first" story.
+2. ✓ Smoke test suite for the 8 hooks — closed the v1.3-was-promised-but-not-shipped gap (27 assertions, hermetic via `HOME` override).
+3. ✓ AGENTS.md consolidated reference — new file at repo root, complements `docs/OPERATING.md` without duplicating body content.
 
-All three are in the "deferred from original v1.1" backlog and all three fit in a single point-release without churn.
+All three fit in a single point-release without churn, as the gate predicted.
 
 ---
 

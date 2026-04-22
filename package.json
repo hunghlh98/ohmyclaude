@@ -1,6 +1,6 @@
 {
   "name": "ohmyclaude",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "10-agent OSS pipeline for Claude Code — Agent Teams coordination, single /forge entry point, Java-first skills, source graph integration.",
   "author": "ohmyclaude contributors",
   "license": "MIT",
@@ -44,7 +44,8 @@
     "postinstall": "node scripts/postinstall.js",
     "validate": "node scripts/validate.js",
     "version:bump": "node scripts/bump-version.js",
-    "test:sc-fallback": "node scripts/test-sc-fallback.js"
+    "test:sc-fallback": "node scripts/test-sc-fallback.js",
+    "test:hooks": "node scripts/test-hooks.js"
   },
   "engines": {
     "node": ">=18"

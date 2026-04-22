@@ -129,6 +129,7 @@ Path-activated language rules:
 |------|-------|
 | `rules/common/` | Shared coding style (all files) |
 | `rules/java/` | Coding style, patterns, security, testing (activates on `**/*.java`) |
+| `rules/typescript/` | Coding style, patterns, security, testing (activates on `**/*.ts` and `**/*.tsx`) |
 
 ## Hooks (7)
 
@@ -185,16 +186,26 @@ The `hooks-graph` hook auto-detects which is present and syncs incrementally aft
 
 | Component | Count | Detail |
 |-----------|------:|--------|
-| Version | 2.0.0 | VERSION, package.json, plugin.json, marketplace.json |
+| Version | 2.1.0 | VERSION, package.json, plugin.json, marketplace.json |
 | Agents | 10 | sonnet: 8, opus: 1, haiku: 1 |
 | Skills | 34 | engineering: 12, java: 5, pipeline: 4, specialized: 8, superclaude: 5 |
 | Commands | 1 | forge |
-| Rules | 5 | common: 1, java: 4 |
+| Rules | 9 | common: 1, java: 4, typescript: 4 |
 | Hooks | 8 | backlog-tracker, cost-profiler, dry-run, graph-update, post-bash-lint, pre-write-check, session-summary, team-cleanup |
 | Profiles | 3 | minimal, standard (default), full |
-| Modules | 16 | agents: 4, skills: 5, rules: 2, commands: 1, hooks: 4 |
+| Modules | 17 | agents: 4, skills: 5, rules: 3, commands: 1, hooks: 4 |
 
 Run `node scripts/validate.js` to see the live inventory with per-agent detail.
+
+## Testing
+
+| Script | What it validates |
+|--------|-------------------|
+| `npm run validate` | Plugin structure, frontmatter, version symmetry, CHANGELOG↔VERSION gate, rule frontmatter, AGENTS.md, test:hooks wiring |
+| `npm run test:hooks` | 27 contract assertions across all 8 hook scripts (exit codes, stdout passthrough, side-effect sandboxing). Hermetic via `HOME` override. |
+| `npm run test:sc-fallback` | SuperClaude inlining contract — no legacy `sc:sc-<verb>` prefixed refs; no references to verb-wrappers removed in v2.0.0. |
+
+All three run in CI on every push to `main`/`develop` and every PR.
 
 ---
 

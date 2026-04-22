@@ -21,6 +21,12 @@ jobs:
       - name: Run plugin validation
         run: node scripts/validate.js
 
+      - name: Run hook smoke tests
+        run: node scripts/test-hooks.js
+
+      - name: Run SuperClaude fallback contract
+        run: node scripts/test-sc-fallback.js
+
       - name: Check version consistency
         run: |
           FILE_VER="$(cat VERSION | tr -d '[:space:]')"
