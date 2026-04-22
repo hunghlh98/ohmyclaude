@@ -14,25 +14,9 @@ Split into **product docs** (shipped with the plugin, user-facing) and **researc
 
 | Path | Purpose |
 |------|---------|
-| `docs/en/` | English source material (skill-authoring guides, Socratic prompting, Anthropic skill-design lessons) |
-| `docs/vi/` | Vietnamese translations / notes |
-| `docs/plan_v1.md`, `docs/review_skills.md`, `docs/skills_required_v1.md`, `docs/update_naming_v1.md` | v1.0.0 planning notes (historical) |
+| `docs/archive/` | v1.0.0 planning notes (historical) — `plan_v1.md`, `review_skills.md`, `skills_required_v1.md`, `update_naming_v1.md`. Kept as provenance for the 17→10 agent consolidation and initial skill roster; safe to read, not safe to act on |
 
-## English (`docs/en/`)
-
-| File | Summary |
-|------|---------|
-| `how_to_use_skills.txt` | Best practices for authoring and invoking Claude Code skills |
-| `socratic_prompting.txt` | Socratic questioning patterns; informs the HIGH/MEDIUM/LOW confidence model in `@paige-product` |
-| `lessons_from_building_claude_code_how_we_use_skill.md` | Anthropic-published lessons on skill design; source for the "progressive disclosure" principle applied across `skills/*/references/` |
-
-## Vietnamese (`docs/vi/`)
-
-| File | Summary |
-|------|---------|
-| `how_to_use_skills.txt` | VI translation of the skill authoring guide |
-| `socratic_prompting.txt` | VI translation of the Socratic pattern notes |
-| `obsidian_connector.txt` | Integration notes for the Obsidian second-brain workflow |
+> **Where did the external research material go?** The English source notes (Anthropic's skills lessons, Socratic prompting, Thariq's skill-authoring guide) were migrated into the second-brain vault at `~/second-brain/knowledge/` and `~/second-brain/research/`. Vietnamese translations were removed; the vault is English-only. Use `/recall` to query. The plugin repo now holds only plugin-authored product docs.
 
 ## Repo-Root Docs
 

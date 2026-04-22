@@ -136,6 +136,34 @@ All three are in the "deferred from original v1.1" backlog and all three fit in 
 
 ---
 
+## v2.2+ — New Initiatives (Exploratory)
+
+Forward-looking additions that are **not** carryover from the original v1.x backlog. Each must pass the "earn its spot" gate (*Guiding Principles*, last bullet) — i.e., show it's not duplicating an existing skill or agent capability.
+
+### UI/UX Intelligence Upgrade — `@una-ux` + `@effie-frontend` + `design-system`
+
+**Reference**: [`nextlevelbuilder/ui-ux-pro-max-skill`](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) (MIT) — 161 industry-specific design-reasoning rules, 67 UI style templates, 161 color palettes, 57 font pairings, 25 chart recommendations, and a hierarchical design-system retrieval pattern (`MASTER.md` + per-page overrides).
+
+**Why desired**: ohmyclaude's current `@una-ux` (UX research pre-dev) and `skills/design-system/` cover methodology but ship no content library. A designer asking `@una-ux` for "a dashboard for a fintech B2B product" today gets principles; ui-ux-pro-max would give a grounded palette + typography + component recommendations matched to the product category.
+
+**Architectural tension — must resolve before scoping**:
+ui-ux-pro-max installs via its own `uipro-cli`, writing Python scripts and CSV databases into the consumer's repo. This **conflicts with the v1.3.0 invariant** above: *"the plugin still ships md + js only, nothing installed on the client."* Taking the skill as a hard dependency would break that invariant.
+
+**Two candidate integration paths** (pick one in the v2.2 design spec):
+
+- **Path A — Soft-dependency tier** (mirrors the `codegraph → code-review-graph → tree → grep` exploration ladder). Detect if `~/.claude/skills/ui-ux-pro-max/` is present; if yes, `@una-ux` and `@effie-frontend` delegate to it for palette/typography queries; if no, fall back to the native `design-system` skill. Zero install footprint added by ohmyclaude itself; user opts in via `uipro init --ai claude --global`.
+- **Path B — Inspiration-only pattern port**. Adopt the *hierarchical design-system retrieval* pattern (MASTER.md global rules + `pages/[page].md` overrides) into `skills/design-system/references/` as a pure-markdown structure. No external dep, no Python, no auto-install. Loses the 161-rule reasoning engine but keeps ohmyclaude's purity invariant.
+
+**Acceptance criteria for v2.2 cut**:
+1. Design spec in `.claude/pipeline/DESIGN-ui-ux-intel.md` picks Path A or B with explicit rationale.
+2. If Path A: `hooks/ui-ux-probe.js` follows the pattern of `hooks/graph-update.js` — graceful no-op when absent, no errors.
+3. If Path B: `skills/design-system/SKILL.md` stays ≤400 lines; hierarchical pattern lives in `references/`.
+4. `@una-ux` and `@effie-frontend` frontmatter / prompts updated in the same commit; `docs/OPERATING.md` agent table annotated.
+
+**Status**: Not yet scoped. Open question: does the VNG Games internal design-system (a frequent user workflow) diverge enough from ui-ux-pro-max's 161 product categories that Path B is strictly better?
+
+---
+
 ## Guiding Principles
 
 **The model IS the agent. Build harnesses, not prompt chains.** Tools + knowledge + permissions = effective orchestration.
