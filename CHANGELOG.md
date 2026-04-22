@@ -8,6 +8,45 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [2.0.0] — 2026-04-22
+
+Restore Invariants — a subtractive refactor prompted by a spec-panel review that surfaced a 100% divergence between ROADMAP.md and what actually shipped in v1.1-v1.3, plus three SKILL.md files violating the plugin's own ≤400-line cap, plus 8 SuperClaude verb-wrapper skills that duplicated agent docstrings for zero added knowledge. No new features. Everything added in v2.0.0 is enforcement; everything removed is redundancy.
+
+### BREAKING
+
+- **8 SuperClaude verb-wrapper skills removed**: `sc-analyze`, `sc-build`, `sc-design`, `sc-document`, `sc-implement`, `sc-improve`, `sc-test`, `sc-troubleshoot`. Agents handle these verbs inline via their own instructions. Users who explicitly loaded any of these skill names must update to agent-native flows or install SuperClaude_Plugin standalone.
+- **`skills-superclaude` install module** shrinks from 13 to 5 paths. Any third-party manifest referencing the removed skills will fail `validate.js`.
+
+### Added
+
+- `scripts/validate.js` — **SKILL.md ≤400-line cap enforcement** (was stated in CLAUDE.md, not enforced). All `skills/*/SKILL.md` must comply; CI fails if any exceed 400 lines.
+- `scripts/validate.js` — **CHANGELOG ↔ VERSION release gate**: bumping VERSION requires a matching `## [X.Y.Z]` section in CHANGELOG.md. Hard fail.
+- `scripts/validate.js` — **ROADMAP ↔ VERSION advisory**: soft warning if ROADMAP.md doesn't reference the current version or the word "shipped". Surfaces the Process Invariant without blocking release.
+- `docs/OPERATING.md` — new "Part 3 — Release Gate" section documenting what the gate checks, what it does NOT check, and the canonical release flow.
+- `.claude/pipeline/REFACTOR-BASELINE-v1.3.0.md` — evidence artifact pinning pre-refactor state (line counts, reference maps, roadmap drift) so future audits can diff against it.
+
+### Changed
+
+- `ROADMAP.md` — **rewritten**. New structure: Process Invariant at top, truthful "What Actually Shipped (v1.0 → v1.3)" record, "v2.0.0 — Restore Invariants" work log, "v2.1+ — Deferred From Original v1.1/v1.2 Roadmap" backlog with per-item decision status.
+- `skills/qa-test-planner/SKILL.md` — split 758 → 258 lines. New `references/`: `test_plan_template.md`, `examples.md` (joining existing references/).
+- `skills/database-schema-designer/SKILL.md` — split 688 → 280 lines. New `references/`: `normalization.md`, `data-types.md`, `indexing.md`, `constraints.md`, `relationships.md`, `nosql.md`, `migrations.md`, `performance.md`.
+- `skills/design-system/SKILL.md` — split 604 → 171 lines. New `references/`: `tokens.md`, `components.md`, `a11y-patterns.md`, `theming.md`, `workflow.md`.
+- `commands/forge.md` — "SuperClaude Verb Map" renamed to "SuperClaude Knowledge Skills"; table shrunk from 10 rows (13-verb mapping) to 5 rows (5 knowledge-skill mapping). The distinction between knowledge and verb-wrapper is now explicit.
+- `docs/superclaude-integration.md` — rewritten with a "v2.0.0 Change — Subtract the Verb-Wrappers" section at top, Agent↔Skill mapping shrunk to the 4 agents still using SC (paige-product, artie-arch, una-ux, sam-sec), "Version Pinning" section updated to the 5-skill stable subset.
+- `docs/TOKENS.md` — "Structural wins (PLAN-001 Phase 3)" section rewritten around v2.0.0's skill subtraction and 400-line cap; cost-tracker forward-reference replaced with cost-profiler description shipped in v1.2.0.
+- `scripts/test-sc-fallback.js` — stable-subset list shrunk from 13 to 5; `RETIRED_NAMES` list extended with the 8 removed verb-wrappers; `HISTORY_DOC_EXEMPT` set added to exempt `docs/superclaude-integration.md` from retired-name and bare-ref checks (it authoritatively describes the removal).
+- `manifests/install-modules.json` — `skills-superclaude` description and paths array updated to 5 knowledge-skills.
+- `agents/heracles.md`, `agents/stan-standards.md`, `agents/beck-backend.md`, `agents/effie-frontend.md`, `agents/quinn-qa.md`, `agents/devon-ops.md` — entire `## SuperClaude Integration` section removed; these agents now fully self-contained.
+- `agents/artie-arch.md`, `agents/una-ux.md`, `agents/sam-sec.md` — `sc-design` / `sc-analyze` references pruned from the integration table; `sc-research` and `sc-spec-panel` retained.
+
+### Removed
+
+- `skills/sc-analyze/`, `skills/sc-build/`, `skills/sc-design/`, `skills/sc-document/`, `skills/sc-implement/`, `skills/sc-improve/`, `skills/sc-test/`, `skills/sc-troubleshoot/` — 8 verb-wrapper skills that duplicated agent docstrings for zero added knowledge. ~1,400 lines of upstream MIT drift surface gone.
+
+### Philosophy
+
+v2.0.0 is the version where the plugin lives up to its own stated invariants. The CLAUDE.md rules ("Skills stay under 400 lines", "Every new feature must be removable") had drifted from enforcement. The roadmap had drifted from reality. The SuperClaude inlining overshot its own thesis ("load knowledge on-demand"). This release doesn't add capability — it restores coherence. Additive work resumes at v2.1.
+
 ## [1.3.0] — 2026-04-21
 
 Graph Backend Pluralism — the exploration-tool tier list is now `codegraph → code-review-graph → tree → grep`, all soft-detected at runtime. The plugin ships exactly the same files; nothing new is installed on the client's machine. If the user has a graph backend (either one), agents use it; if not, they fall through to ripgrep. The new `java-source-intel` skill is the first consumer — it routes Java semantic queries to whichever backend is present.

@@ -124,21 +124,13 @@
     {
       "id": "skills-superclaude",
       "kind": "skills",
-      "description": "SuperClaude verb-skills inlined from SuperClaude_Plugin v4.3.0 (MIT). Full set of 13 verbs used by ohmyclaude agents: brainstorm, research, spec-panel, pm, estimate, design, analyze, implement, build, test, improve, troubleshoot, document. Ships with ohmyclaude — no external dependency on SuperClaude.",
+      "description": "SuperClaude knowledge-skills inlined from SuperClaude_Plugin v4.3.0 (MIT). Named-methodology skills only: spec-panel (10 expert personas), brainstorm (Socratic), pm (orchestration), research (adaptive), estimate (structured frames). Verb-wrappers (analyze/build/design/document/implement/improve/test/troubleshoot) removed in v2.0.0 — agents handle those inline. Ships with ohmyclaude — no external dependency.",
       "paths": [
         "skills/sc-brainstorm/",
         "skills/sc-research/",
         "skills/sc-spec-panel/",
         "skills/sc-pm/",
-        "skills/sc-estimate/",
-        "skills/sc-design/",
-        "skills/sc-analyze/",
-        "skills/sc-implement/",
-        "skills/sc-build/",
-        "skills/sc-test/",
-        "skills/sc-improve/",
-        "skills/sc-troubleshoot/",
-        "skills/sc-document/"
+        "skills/sc-estimate/"
       ],
       "targets": ["claude"],
       "defaultInstall": true,

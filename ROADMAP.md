@@ -1,116 +1,138 @@
 # ohmyclaude Roadmap
 
-## v1.0.0 — Harness Engineering Overhaul ✅ Complete
+## Process Invariant
 
-Major architectural transformation: Agent Teams coordination, single entry point, Java-first skills, source graph integration, token-conscious design.
+**Every release must diff against this file in the same commit.** If the release ships something not listed here, either (a) update ROADMAP.md to reflect the shipped scope, or (b) hold the release until the planning doc catches up. Enforced via `scripts/validate.js` as an advisory check.
 
-### Agent Teams Model
-- [x] TeamCreate/SendMessage/TaskList for runtime agent coordination
-- [x] @paige-product as team lead (absorbs scout-sprint's planning duties)
-- [x] Dynamic routing replaces rigid Routes A-E
-- [x] Circuit Breaker via AskUserQuestion (replaces DEADLOCK files)
-- [x] Task dependency graph with parallel wave execution
-
-### Agent Consolidation (17 → 10)
-- [x] `paige-product` absorbs `scout-sprint` — Grand Router + Planner + Oracle
-- [x] `stan-standards` absorbs `percy-perf` + `polyglot-reviewer` — unified reviewer
-- [x] `devon-ops` absorbs `dora-docs` + `evan-evangelist` — docs + release + announcement
-- [x] `anna-analytics` converted to `post-deploy-analytics` skill
-- [x] `build-resolver` absorbed into `beck-backend` / `effie-frontend`
-- [x] All agents: `color` field, `<example>` blocks, descriptions ≤30 words
-
-### Single Entry Point
-- [x] `/forge` as the only command — absorbs /review, /debug, /commit
-- [x] Shell aliases and contexts removed (zero-setup model)
-- [x] Smart UX: 3-level confidence model (HIGH/MEDIUM/LOW)
-- [x] Progress display during team execution
-
-### Java-First Skills & Rules
-- [x] 4 Java/Spring Boot skills: java-coding-standards, springboot-patterns, springboot-tdd, springboot-security
-- [x] `rules/java/` with path-based activation (coding-style, patterns, security, testing)
-- [x] `rules/common/` shared coding style
-
-### New Skills (7)
-- [x] `task-breakdown` — dependency graph with parallel waves, SP estimation, Trigger break
-- [x] `project-discovery` — language/framework detection, source graph querying
-- [x] `post-deploy-analytics` — post-deploy telemetry (replaces anna-analytics agent)
-- [x] `java-coding-standards` — Java 17+ conventions
-- [x] `springboot-patterns` — REST APIs, layered architecture, JPA, validation
-- [x] `springboot-tdd` — JUnit 5, Mockito, Testcontainers, JaCoCo
-- [x] `springboot-security` — Spring Security, OAuth, JWT, CSRF
-
-### Source Graph Integration
-- [x] code-review-graph MCP tools in all agent instructions (optional, graceful fallback)
-- [x] Exploration tool priority: tree-sitter > `tree` CLI > Glob/Grep
-- [x] `graph-update` hook for incremental graph updates after code changes
-- [x] `team-cleanup` hook for orphaned team cleanup
-
-### Infrastructure
-- [x] Install profiles simplified: 5 → 3 (minimal, standard, full)
-- [x] Install modules restructured for 10-agent model
-- [x] validate.js: enhanced dead-reference check (retired agent names)
-- [x] postinstall.js: zero-setup, print-only
-- [x] Document artifacts kept for human review (PRD, SDD, CODE-REVIEW, RELEASE)
+**No two minor releases within 24 hours** without an explicit `RELEASE-CUT.md` artifact in `.claude/pipeline/`. A fast cadence is fine; an invisible cadence is not.
 
 ---
 
-## v1.1.0 — Hook Depth & Language Expansion
+## What Actually Shipped (v1.0 → v1.3)
 
-### New hooks
-- [ ] **console-log-auditor** — scan for debug statements by language
-- [ ] **pre-commit-quality-gate** — run lint + tests before Claude-initiated commits
-- [ ] **cost-tracker** — estimated USD cost per session to `~/.claude/ohmyclaude/costs.jsonl`
-- [ ] **prompt-injection-guard** — detect injection patterns in writes
+Truthful record of the three minor releases that landed on 2026-04-21. The plan-vs-reality drift was discovered during the v2.0.0 spec-panel review and is the primary motivation for the "restore invariants" refactor.
 
-### Hook infrastructure
-- [ ] `OHMYCLAUDE_HOOKS=skip:<id>` env var — disable individual hooks at runtime
-- [ ] `hooks-extended` module in install-modules.json
+### v1.0.0 — Harness Engineering Overhaul (2026-04-08)
 
-### Language expansion (rules + skills)
-- [ ] TypeScript/JavaScript rules (`rules/typescript/`)
-- [ ] Go rules (`rules/go/`)
-- [ ] Python rules (`rules/python/`)
-- [ ] Kotlin rules (`rules/kotlin/`)
+- Agent Teams coordination model (TeamCreate / SendMessage / TaskList)
+- Single `/forge` entry point absorbs /review, /debug, /commit
+- 17 agents consolidated to 10 (Corporate Slack personas)
+- Java-first skills (4) + path-activated rules for `rules/java/`
+- Document-driven pipeline with 10 named artifact types
+- 3-level confidence UX (HIGH / MEDIUM / LOW)
+- code-review-graph MCP soft-integration
+- Install profiles simplified to 3 (minimal, standard, full)
 
-### Forge flags
-- [ ] `/forge sprint --think` — explore ≥3 approaches before committing to plan
-- [ ] `/forge sprint --delegate` — pause after plan for human approval before implementation
+### v1.1.0 — SuperClaude Inlining γ (2026-04-21)
 
----
+- 13 SuperClaude verb-skills inlined from upstream v4.3.0 (MIT)
+- Every `sc-<verb>` reference resolves in-tree — no external peer dependency
+- Agents' SuperClaude Integration sections rewritten to reference inlined forms
+- `scripts/test-sc-fallback.js` inverted: proves no external `sc:sc-<verb>` remains
 
-## v1.2.0 — Session Intelligence
+### v1.2.0 — Cost Profiler + Dry-Run Simulator (2026-04-21)
 
-### Session lifecycle
-- [ ] **/save** — snapshot session state to `~/.claude/ohmyclaude/sessions/<id>.json`
-- [ ] **/load [id]** — restore context, resume from next pending stage
-- [ ] SessionStart hook — auto-load previous session context
-- [ ] PreCompact hook — save agent state before context compaction
+- `cost-profiler.js` hook (SubagentStop + Stop) writes `PROFILE-<runId>.md` per run and a rolling `baseline.json`
+- `profile-run` skill interprets profiles and surfaces anomaly flags (`turn_explosion`, `cost_over_p95`, `cache_miss_spike`, `opus_budget_breach`)
+- `dry-run.js` pure-Node classifier + router + cost estimator
+- `/forge --dry-run <request>` simulates routing without spawning agents
 
-### Confidence gate
-- [ ] Pre-implementation 5-dimension scorecard (requirements, coverage, risk, test plan, rollback)
-- [ ] Score < 80 → pause, targeted clarifying questions
+### v1.3.0 — Dual-Graph Backend + java-source-intel (2026-04-21)
 
-### Wave orchestration
-- [ ] Group implementation phases into parallel waves with integration checkpoints
-- [ ] SubagentStart hook — prepend compact context block before each agent invocation
+- Exploration tier list: `codegraph → code-review-graph → tree → grep`
+- `graph-update.js` probes codegraph first, code-review-graph second, silently skips if neither present
+- `skills/java-source-intel/` — Java semantic-query skill with 6 canonical patterns (callers, `@Transactional` boundaries, Spring bean inventory, impact radius, endpoint→DB traces, interface inheritors)
+- All graph backends are opt-in: the plugin still ships md + js only, nothing installed on the client
 
 ---
 
-## v1.3.0 — Distribution & Testing
+## v2.0.0 — Restore Invariants (In Progress, 2026-04-22)
 
-### Validation & testing
-- [ ] Smoke test suite: fixture inputs through each hook script, asserting exit codes
-- [ ] `npm prepublishOnly` script: runs `npm run validate`, aborts on failure
-- [ ] Agent integration tests: verify each agent's frontmatter, tools, and example triggers
+The v2.0.0 refactor addresses drift between ohmyclaude's stated invariants and its shipped state. Strictly subtractive: no new skills, agents, or hooks. Additive work stays in v2.1+.
 
-### Distribution
-- [ ] `install.sh` verified on macOS (zsh + bash), Ubuntu 22.04, Windows WSL2
-- [ ] `install.ps1` parity with `install.sh` for native Windows PowerShell
-- [ ] Marketplace listing updated with v1.0.0 screenshots and examples
+**Finding 1 — Roadmap fiction (CRITICAL)**: v1.1 / v1.2 / v1.3 shipped nothing from their listed items. This file is now rewritten to be truthful, with the Process Invariant at the top to prevent recurrence.
 
-### Documentation
-- [ ] `AGENTS.md` — all 10 agents: purpose, when to invoke, what it won't do, example prompts
-- [ ] `HOOKS.md` — all hooks: trigger, blocking vs async, env vars, how to disable
+**Finding 2 — Skills violated the ≤400-line cap (HIGH)**: 3 SKILL.md files exceeded the cap (`qa-test-planner` 758, `database-schema-designer` 688, `design-system` 604). All three split into compliant SKILL.md + expanded `references/`.
+
+**Finding 3 — SuperClaude inlining added drift surface for low value (HIGH)**: 8 of 13 inlined sc-* skills were verb-wrappers duplicating agent docstrings. Removed: `sc-analyze`, `sc-build`, `sc-design`, `sc-document`, `sc-implement`, `sc-improve`, `sc-test`, `sc-troubleshoot`. Kept 5 knowledge-methodology skills: `sc-spec-panel`, `sc-brainstorm`, `sc-pm`, `sc-research`, `sc-estimate`. ~1,400 lines of MIT-drift surface removed.
+
+**Finding 4 — Three releases in one day with no gate (MEDIUM)**: Added release gate to `validate.js` — VERSION bump requires a matching `## [VERSION]` section in CHANGELOG.md, plus an advisory ROADMAP↔VERSION cross-check.
+
+### What changed
+
+- [x] `scripts/validate.js` — enforces ≤400-line cap on all `skills/*/SKILL.md`
+- [x] `scripts/validate.js` — enforces CHANGELOG↔VERSION symmetry (hard)
+- [x] `scripts/validate.js` — advises ROADMAP↔VERSION symmetry (soft warning)
+- [x] `skills/qa-test-planner/` split (758 → 258 lines in SKILL.md)
+- [x] `skills/database-schema-designer/` split (688 → 280 lines in SKILL.md)
+- [x] `skills/design-system/` split (604 → 171 lines in SKILL.md)
+- [x] 8 sc-* verb-wrapper skills deleted
+- [x] 9 agent files updated to drop deleted-verb references
+- [x] `commands/forge.md` SuperClaude section rewritten around the 5 knowledge skills
+- [x] `docs/superclaude-integration.md` rewritten with "subtract the verb-wrappers" rationale
+- [x] `scripts/test-sc-fallback.js` updated with new stable subset and removed-verb list
+- [x] `manifests/install-modules.json` `skills-superclaude` shrunk 13 → 5
+- [x] `ROADMAP.md` rewritten (this file)
+- [x] `docs/OPERATING.md` — release gate documented
+- [x] CHANGELOG entry for v2.0.0 — subtractive refactor summary
+
+### What is NOT in v2.0.0 (intentional)
+
+- No new skills, agents, hooks, or rules
+- No filesystem re-boundary of `skills/` categories (deferred to v2.1)
+- No language expansion (see v2.1+ backlog)
+- No session intelligence features (see v2.1+ backlog)
+
+---
+
+## v2.1+ — Deferred From Original v1.1/v1.2 Roadmap
+
+These items were listed in the original ROADMAP for v1.1–v1.3 but never shipped. Each is annotated with a decision status: **still desired** (planned), **superseded** (better approach found), or **dropped** (no longer in scope).
+
+### From original v1.1 — Hook Depth & Language Expansion
+
+- [ ] **console-log-auditor hook** — still desired. Language-aware scan for debug statements. Low priority.
+- [ ] **pre-commit-quality-gate hook** — superseded. `validate.js` + the release gate cover most of this; the remaining need (run tests + lint before Claude-initiated commits) can be a single PostToolUse on Bash.
+- [ ] **cost-tracker hook** — superseded by `cost-profiler.js` shipped in v1.2.0. The `.claude/metrics/baseline.json` replaces the JSONL log idea.
+- [ ] **prompt-injection-guard hook** — still desired. High-value safety. Scope a v2.1 design.
+- [ ] **TypeScript/JavaScript rules** (`rules/typescript/`) — still desired. Next language after Java.
+- [ ] **Go rules** (`rules/go/`) — still desired.
+- [ ] **Python rules** (`rules/python/`) — still desired.
+- [ ] **Kotlin rules** (`rules/kotlin/`) — still desired.
+- [ ] **`/forge sprint --think`** — explore ≥3 approaches before committing. Still desired.
+- [ ] **`/forge sprint --delegate`** — pause after plan for human approval. Still desired.
+
+### From original v1.2 — Session Intelligence
+
+- [ ] **`/save` command** — snapshot session state to `~/.claude/ohmyclaude/sessions/<id>.json`. Still desired.
+- [ ] **`/load [id]` command** — restore context, resume from next pending stage. Still desired.
+- [ ] **SessionStart hook — auto-load previous session context.** Still desired; pairs with /save.
+- [ ] **PreCompact hook — save agent state before compaction.** Still desired.
+- [ ] **Pre-implementation 5-dimension confidence scorecard** — still desired. Would gate `@paige-product`'s plan output.
+- [ ] **Wave orchestration with integration checkpoints** — partially shipped in v1.0.0 via `task-breakdown`; the explicit integration checkpoint is still an open gap.
+- [ ] **SubagentStart hook** — compact context block prepended per agent invocation. Still desired.
+
+### From original v1.3 — Distribution & Testing
+
+- [ ] **Smoke test suite** — fixture inputs through each hook script, asserting exit codes. Still desired. First candidate for v2.1.
+- [ ] **`npm prepublishOnly` script** — runs `validate.js`, aborts on failure. Quick win for v2.1.
+- [ ] **Agent integration tests** — verify each agent's frontmatter, tools, example triggers. Still desired.
+- [ ] **`install.sh` verified on macOS (zsh + bash), Ubuntu 22.04, Windows WSL2** — still desired.
+- [ ] **`install.ps1` parity** — still desired; likely lower priority than shell.
+- [ ] **AGENTS.md reference** — all 10 agents: purpose, when to invoke, what it won't do, example prompts. Partially covered by `docs/OPERATING.md`; a consolidated reference still missing.
+- [ ] **HOOKS.md reference** — all hooks: trigger, blocking vs async, env vars, how to disable. Same as above.
+
+---
+
+## v2.1.0 — Tentative Cut Candidates
+
+Minimum viable additions to get language expansion moving without re-repeating the v1.x drift:
+
+1. `rules/typescript/` with path-activated rule loading — smallest valuable add, expands the "Java-first" story.
+2. Smoke test suite for the 8 hooks — closes the v1.3-was-promised-but-not-shipped gap.
+3. AGENTS.md consolidated reference — replaces scattered agent docs with one canonical file.
+
+All three are in the "deferred from original v1.1" backlog and all three fit in a single point-release without churn.
 
 ---
 
@@ -118,10 +140,12 @@ Major architectural transformation: Agent Teams coordination, single entry point
 
 **The model IS the agent. Build harnesses, not prompt chains.** Tools + knowledge + permissions = effective orchestration.
 
-**Skills are reference material, not instructions.** Progressive disclosure: SKILL.md is concise, references/ has depth.
+**Skills are reference material, not instructions.** Progressive disclosure: SKILL.md is concise (≤400 lines, enforced), `references/` has depth.
 
 **Hooks are defensive infrastructure.** Clear failure mode, deterministic exit code, graceful no-op when dependency absent.
 
 **Every new feature must be removable.** Delete one file or comment one line in hooks.json.
 
-**Token budgets are explicit.** Skills ≤400 lines, agent descriptions ≤30 words, model selection justified.
+**Token budgets are explicit.** Skill ≤400 lines, agent description ≤30 words, model selection justified in PR.
+
+**Subtract before adding.** v2.0.0's refactor was subtractive: remove verb-wrappers, enforce caps, honest ROADMAP. Additive work earns its spot by showing it's not duplicating what already exists.

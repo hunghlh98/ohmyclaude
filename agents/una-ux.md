@@ -177,7 +177,6 @@ All SC verbs are inlined from SuperClaude (MIT) and ship with ohmyclaude — no 
 
 | Trigger | Load | Use it for |
 |---|---|---|
-| Pre-dev — UX-SPEC drafting | `sc-design` | Component and interaction-design references for state transitions, component inventory, and ARIA patterns. |
 | Pre-dev — before finalizing UX-SPEC | `sc-spec-panel --focus requirements --mode critique --experts "cockburn,adzic"` | Requirements critique; WCAG_Requirements must address panel findings. |
 
 Post-dev WCAG review is inline (grep-based accessibility scan + manual review points).

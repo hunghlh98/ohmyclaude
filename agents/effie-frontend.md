@@ -194,19 +194,6 @@ Tests:          run after every change
 
 ---
 
-## SuperClaude Integration
-
-All SC verbs are inlined from SuperClaude (MIT) and ship with ohmyclaude — no external dependency.
-
-| Trigger | Load | Use it for |
-|---|---|---|
-| Step 2 — implementation workflow | `sc-implement` | Framework-aware component/page implementation patterns; state handling (loading/empty/error/success); ARIA wiring. |
-| Step 2 — multi-component scaffolding | `sc-build` | Project-aware build/scaffold patterns for new pages, design-system components, or route groups. |
-
-Rationale and schema: see `docs/superclaude-integration.md`.
-
----
-
 ## Teams Coordination
 
 When spawned as a teammate:

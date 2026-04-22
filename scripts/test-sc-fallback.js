@@ -3,32 +3,33 @@
  * test-sc-fallback.js
  *
  * Enforces the SuperClaude inlining contract defined in
- * docs/superclaude-integration.md (γ, v1.1.0+):
+ * docs/superclaude-integration.md (v2.0.0+):
  *
- *   All 13 SC verbs are inlined from SuperClaude v4.3.0 (MIT) under
- *   skills/sc-*\/. Agents and commands reference them as bare
- *   "sc-<verb>" — never as the legacy plugin-prefixed "sc:sc-<verb>"
+ *   5 SC knowledge-skills are inlined from SuperClaude v4.3.0 (MIT)
+ *   under skills/sc-*\/. Agents and commands reference them as bare
+ *   "sc-<skill>" — never as the legacy plugin-prefixed "sc:sc-<skill>"
  *   form, which implied an external peer dependency.
+ *
+ *   v2.0.0 removed 8 verb-wrapper skills (sc-analyze, sc-build,
+ *   sc-design, sc-document, sc-implement, sc-improve, sc-test,
+ *   sc-troubleshoot). Those names must not appear in runtime-invocation
+ *   files; they remain valid in CHANGELOG/ROADMAP/pipeline history docs.
  *
  * Contract (what this test enforces):
  *   1. NO agent, command, or operating/integration doc contains a
- *      legacy prefixed "sc:sc-<verb>" reference. The only exception
- *      is the dispatcher token "sc:sc-sc" itself (SC's top-level
- *      slash command), which is not a verb.
- *   2. Every bare "sc-<verb>" skill reference (wrapped in backticks)
- *      names a verb ohmyclaude recognizes — either inlined (13) or
- *      a known-upstream-but-deferred verb discussed as future work.
- *   3. No file references a retired skill name (e.g. sc-adviser).
+ *      legacy prefixed "sc:sc-<skill>" reference. The only exception
+ *      is the dispatcher token "sc:sc-sc" itself.
+ *   2. Every bare "sc-<skill>" reference (wrapped in backticks) names
+ *      a skill ohmyclaude recognizes — one of the 5 inlined skills or
+ *      a known-upstream-but-deferred skill discussed as future work.
+ *   3. No file references a retired skill name (e.g. sc-adviser) or a
+ *      v2.0.0-removed verb-wrapper.
  *
  * Scope (runtime-invocation surface only — keeps the signal high):
  *   - agents/*.md             — full check
  *   - commands/*.md           — full check
  *   - docs/OPERATING.md       — full check
  *   - docs/superclaude-integration.md — full check
- *
- * Research material and historical planning docs are not scanned:
- * they may reference the legacy form when describing the β→γ
- * transition, and false positives there would be noise.
  *
  * Exit 0 = contract holds. Exit 1 = violation.
  */
@@ -41,12 +42,10 @@ const path = require('path');
 const root = path.resolve(__dirname, '..');
 
 // Inlined in skills/sc-*/ — shipped with ohmyclaude, v4.3.0 MIT.
+// Named-methodology skills only after v2.0.0 removed verb-wrappers.
 const INLINED_SC_VERBS = new Set([
   'brainstorm', 'research', 'spec-panel',
-  'pm', 'estimate', 'design',
-  'analyze', 'implement', 'build',
-  'test', 'improve', 'troubleshoot',
-  'document',
+  'pm', 'estimate',
 ]);
 
 // Known upstream verbs — may be referenced in docs as future work /
@@ -57,7 +56,13 @@ const DEFERRED_SC_VERBS = new Set([
 
 const KNOWN_SC_VERBS = new Set([...INLINED_SC_VERBS, ...DEFERRED_SC_VERBS]);
 
-const RETIRED_NAMES = ['sc-adviser'];
+// Retired: sc-adviser (pre-v1). Removed in v2.0.0: verb-wrappers that
+// duplicated agent docstrings without adding named methodology.
+const RETIRED_NAMES = [
+  'sc-adviser',
+  'sc-analyze', 'sc-build', 'sc-design', 'sc-document',
+  'sc-implement', 'sc-improve', 'sc-test', 'sc-troubleshoot',
+];
 
 // The dispatcher token "sc:sc-sc" — SC's top-level slash command.
 // Not a verb, so "sc" as the matched group is tolerated.
@@ -90,16 +95,27 @@ if (TARGETS.length === 0) {
   process.exit(1);
 }
 
+// The integration doc legitimately references removed/retired names when
+// explaining the v2.0.0 subtraction (what was removed and why). It's the
+// authoritative historical record, so retired-name and bare-ref checks
+// do not apply to it. Runtime-invocation surfaces (agents/, commands/,
+// docs/OPERATING.md) remain strictly scoped to the current stable subset.
+const HISTORY_DOC_EXEMPT = new Set([
+  'docs/superclaude-integration.md',
+]);
+
 for (const rel of TARGETS) {
   const abs = path.join(root, rel);
   const content = fs.readFileSync(abs, 'utf8');
   filesChecked++;
 
-  // Rule 3 — retired names
-  for (const retired of RETIRED_NAMES) {
-    const re = new RegExp(`\\b${retired.replace(/-/g, '\\-')}\\b`);
-    if (re.test(content)) {
-      fail(`${rel}: references retired skill "${retired}".`);
+  // Rule 3 — retired names (skip docs that intentionally reference history)
+  if (!HISTORY_DOC_EXEMPT.has(rel)) {
+    for (const retired of RETIRED_NAMES) {
+      const re = new RegExp(`\\b${retired.replace(/-/g, '\\-')}\\b`);
+      if (re.test(content)) {
+        fail(`${rel}: references retired skill "${retired}".`);
+      }
     }
   }
 
@@ -117,6 +133,7 @@ for (const rel of TARGETS) {
   }
 
   // Rule 2 — bare backtick-wrapped `sc-<verb>` references must be known
+  // (history docs exempt; they legitimately name removed skills for context)
   const bareRefs = [...content.matchAll(/`sc-([a-z][a-z0-9-]*)`/g)];
   const seenBare = new Set();
   let bareOK = 0;
@@ -125,6 +142,10 @@ for (const rel of TARGETS) {
     if (seenBare.has(verb)) continue;
     seenBare.add(verb);
     if (!KNOWN_SC_VERBS.has(verb)) {
+      if (HISTORY_DOC_EXEMPT.has(rel)) {
+        // Historical mention — not a contract violation.
+        continue;
+      }
       fail(`${rel}: unknown sc-verb "sc-${verb}". Inlined: ${[...INLINED_SC_VERBS].sort().join(', ')}. Deferred: ${[...DEFERRED_SC_VERBS].sort().join(', ')}.`);
     } else {
       bareOK++;

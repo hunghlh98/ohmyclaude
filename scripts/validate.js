@@ -116,6 +116,61 @@ if (fs.existsSync(skillsDir)) {
   }
 }
 
+// ── SKILL.md 400-line cap (stated invariant in CLAUDE.md) ───────────────────
+// v2.0.0: enforce the cap validate.js used to merely promise.
+console.log('\nSKILL.md line cap (≤400):');
+const SKILL_LINE_CAP = 400;
+if (fs.existsSync(skillsDir)) {
+  const offenders = [];
+  for (const skill of fs.readdirSync(skillsDir).sort()) {
+    const skillFile = path.join(skillsDir, skill, 'SKILL.md');
+    if (!fs.existsSync(skillFile)) continue;
+    const lineCount = fs.readFileSync(skillFile, 'utf8').split('\n').length;
+    if (lineCount > SKILL_LINE_CAP) {
+      offenders.push({ skill, lineCount });
+    }
+  }
+  if (offenders.length === 0) {
+    console.log(`  ✓ All SKILL.md files ≤${SKILL_LINE_CAP} lines`);
+  } else {
+    for (const o of offenders) {
+      console.error(`  ✗ skills/${o.skill}/SKILL.md exceeds cap: ${o.lineCount} lines (cap ${SKILL_LINE_CAP}). Move depth to references/.`);
+      errors++;
+    }
+  }
+}
+
+// ── Release gate: CHANGELOG must have an entry for VERSION ──────────────────
+// v2.0.0: the release gate — bumping VERSION requires a CHANGELOG section.
+console.log('\nRelease gate (CHANGELOG ↔ VERSION):');
+try {
+  const changelog = fs.readFileSync(path.join(root, 'CHANGELOG.md'), 'utf8');
+  const versionHeader = new RegExp(`^##\\s*\\[${versionFile.replace(/\./g, '\\.')}\\]`, 'm');
+  if (versionHeader.test(changelog)) {
+    console.log(`  ✓ CHANGELOG.md has entry for v${versionFile}`);
+  } else {
+    console.error(`  ✗ CHANGELOG.md has no "## [${versionFile}]" section. Add a dated entry before releasing.`);
+    errors++;
+  }
+} catch (e) {
+  console.error(`  ✗ Could not read CHANGELOG.md: ${e.message}`);
+  errors++;
+}
+
+// ── Advisory: ROADMAP should reference the current VERSION ──────────────────
+// Warning only. Encourages ROADMAP/CHANGELOG symmetry; doesn't fail the build.
+console.log('\nROADMAP ↔ VERSION advisory:');
+try {
+  const roadmap = fs.readFileSync(path.join(root, 'ROADMAP.md'), 'utf8');
+  if (roadmap.includes(versionFile) || roadmap.toLowerCase().includes('shipped')) {
+    console.log(`  ✓ ROADMAP.md references v${versionFile} or "shipped"`);
+  } else {
+    console.log(`  ⚠ ROADMAP.md does not mention v${versionFile} — consider updating to reflect what shipped`);
+  }
+} catch (_) {
+  console.log(`  ⚠ ROADMAP.md missing — add it to document shipped vs planned work`);
+}
+
 // ── Hook scripts parse as valid JS ───────────────────────────────────────────
 console.log('\nHook script syntax:');
 const hooksScriptsDir = path.join(root, 'hooks', 'scripts');

@@ -95,23 +95,31 @@ Never more than 3 questions. Circuit breaker: 3 rejection rounds triggers human 
 | Release vs stability | @devon-ops (ultimate trump card) |
 | UX vs velocity | @una-ux on WCAG failures |
 
-## Skills (27)
+## Skills (34)
+
+All SKILL.md files are capped at ≤400 lines (enforced by `validate.js` since v2.0.0). Depth lives in each skill's `references/` directory, loaded on-demand.
 
 ### General Engineering (12)
 
 `api-design` `c4-architecture` `code-review` `commit-work` `database-schema-designer` `datadog-cli` `design-system` `error-handling` `game-changing-features` `generate-fuzz-data` `git-workflow` `tdd-patterns`
 
-### Java / Spring Boot (4)
+### Java / Spring Boot (5)
 
-`java-coding-standards` `springboot-patterns` `springboot-tdd` `springboot-security`
+`java-coding-standards` `springboot-patterns` `springboot-tdd` `springboot-security` `java-source-intel`
 
 ### Pipeline Artifact Writers (4)
 
 `write-sdd` `write-code-review` `write-security-review` `write-ux-spec`
 
-### Specialized (7)
+### Specialized (8)
 
-`task-breakdown` `project-discovery` `post-deploy-analytics` `qa-test-planner` `readme-templates` `reducing-entropy` `requirements-clarity`
+`task-breakdown` `project-discovery` `post-deploy-analytics` `qa-test-planner` `readme-templates` `reducing-entropy` `requirements-clarity` `profile-run`
+
+### SuperClaude Knowledge Skills (5)
+
+Inlined from [SuperClaude_Plugin](https://github.com/SuperClaude-Org/SuperClaude_Plugin) v4.3.0 (MIT). v2.0.0 removed 8 verb-wrapper skills that duplicated agent docstrings; only the named-methodology skills remain.
+
+`sc-spec-panel` (10 expert review panel) · `sc-brainstorm` (Socratic discovery) · `sc-pm` (project orchestration) · `sc-research` (adaptive research) · `sc-estimate` (structured estimation)
 
 ## Rules System
 
@@ -170,16 +178,16 @@ The `hooks-graph` hook auto-detects which is present and syncs incrementally aft
 | Profile | Contents |
 |---------|----------|
 | Minimal | 10 agents + /forge |
-| Standard (default) | + 27 skills + Java rules + quality hooks |
+| Standard (default) | + 34 skills + Java rules + quality hooks |
 | Full | + source graph hooks + tracking hooks |
 
 ## Project Inventory
 
 | Component | Count | Detail |
 |-----------|------:|--------|
-| Version | 1.3.0 | VERSION, package.json, plugin.json, marketplace.json |
+| Version | 2.0.0 | VERSION, package.json, plugin.json, marketplace.json |
 | Agents | 10 | sonnet: 8, opus: 1, haiku: 1 |
-| Skills | 42 | engineering: 12, java: 5, pipeline: 4, specialized: 8, superclaude: 13 |
+| Skills | 34 | engineering: 12, java: 5, pipeline: 4, specialized: 8, superclaude: 5 |
 | Commands | 1 | forge |
 | Rules | 5 | common: 1, java: 4 |
 | Hooks | 8 | backlog-tracker, cost-profiler, dry-run, graph-update, post-bash-lint, pre-write-check, session-summary, team-cleanup |

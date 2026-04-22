@@ -81,14 +81,14 @@ Without Opus on @artie-arch (running it on Sonnet for simple features): total dr
 5. **Keep agent descriptions ≤30 words** — they load on every auto-trigger attempt, not just when the agent is spawned. Bloat here is expensive. `validate.js` does not yet enforce this; planned in PLAN-001 Phase 6.
 6. **Write lean artifacts** — a 500-token SDD is clearer than a 3,000-token one. Output tokens are the expensive half of a Sonnet call.
 
-### Structural wins (PLAN-001 Phase 3)
+### Structural wins (applied in v2.0.0)
 
-7. **Compose SuperClaude verbs** instead of inlining their content in agent prompts. Each SC verb (`sc:sc-implement`, `sc:sc-test`, `sc:sc-analyze`, etc.) lives in the user's skill library and loads on demand. Phase 3 of `PLAN-001` wires these in.
-8. **Drop duplicated local content** once SC verbs cover the same ground (Phase 6, task 36). Expected saving: 20–30% per spawn for `@artie-arch` and `@stan-standards`.
+7. **Keep SuperClaude surface small.** v2.0.0 removed 8 verb-wrapper skills (`sc-analyze`, `sc-build`, `sc-design`, `sc-document`, `sc-implement`, `sc-improve`, `sc-test`, `sc-troubleshoot`) that duplicated agent docstrings. Agents invoke verbs inline. The 5 remaining SC skills (`sc-spec-panel`, `sc-brainstorm`, `sc-pm`, `sc-research`, `sc-estimate`) encode named methodologies worth loading on-demand.
+8. **Cap SKILL.md at 400 lines.** Enforced by `validate.js` in v2.0.0. Depth lives in `references/`, loaded only when agents drill in.
 
-### Observability (PLAN-001 Phase 4)
+### Observability (shipped in v1.2.0)
 
-9. The planned `cost-tracker` hook (`PLAN-001` Phase 4, task 25) appends per-run token counts to `~/.claude/ohmyclaude/costs.jsonl`. Once it ships, you can grep your actual cost history instead of estimating.
+9. The `cost-profiler` hook (PostToolUse SubagentStop + Stop) writes per-run `PROFILE-<runId>.md` and a rolling `.claude/metrics/baseline.json` (N=20). Anomaly flags (`turn_explosion`, `cost_over_p95`, `cache_miss_spike`, `opus_budget_breach`) surface the real cost distribution. Pair with `skills/profile-run` to interpret.
 
 ---
 

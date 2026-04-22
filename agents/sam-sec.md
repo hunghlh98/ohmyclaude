@@ -197,7 +197,6 @@ All SC verbs are inlined from SuperClaude (MIT) and ship with ohmyclaude — no 
 
 | Trigger | Load | Use it for |
 |---|---|---|
-| Phase 2 + 3 — plan review and adversarial scenario matrix | `sc-analyze --focus security` | Multi-domain security analysis that complements the 7-scenario matrix; flags issues the inline SAST grep patterns miss. |
 | Before verdict (any route) | `sc-spec-panel --focus compliance --mode critique --experts "wiegers,nygard"` | Compliance critique; CRITICAL findings must be addressed (subject to max-3-blockers). |
 
 Rationale and schema: see `docs/superclaude-integration.md`.

@@ -253,6 +253,40 @@ The repo's hook convention, derived from these 6 implementations:
 
 ---
 
+## Part 3 — Release Gate (v2.0.0+)
+
+The release gate is enforced by `scripts/validate.js`. It makes the "three releases in one day" failure mode from v1.1–v1.3 impossible to repeat.
+
+### What the gate checks
+
+| Check | Severity | What it enforces |
+|---|---|---|
+| **SKILL.md ≤400 lines** | Fail | Every `skills/*/SKILL.md` respects the progressive-disclosure cap. Depth lives in `references/`. |
+| **CHANGELOG ↔ VERSION** | Fail | `CHANGELOG.md` must contain a `## [${VERSION}]` section. Bumping VERSION without adding a changelog entry fails CI. |
+| **ROADMAP ↔ VERSION** | Warn | `ROADMAP.md` should mention the current VERSION or the word "shipped". Soft warning — doesn't block release but surfaces drift. |
+
+### What the gate does NOT check (yet)
+
+- **Git co-modification** — whether VERSION, CHANGELOG.md, ROADMAP.md, and README.md all changed in the same commit. Best done as a pre-commit hook; not in scope for v2.0.0.
+- **Soak time** — no two minor releases within 24h without a `RELEASE-CUT.md` artifact. Documented in `ROADMAP.md` Process Invariant but not mechanically enforced.
+
+### Release flow
+
+1. `@devon-ops` completes all gate stages (TEST=PASS, CODE-REVIEW=APPROVED, REVIEW ≠ REJECT).
+2. `release-cut` skill reads `[Unreleased]` section from CHANGELOG.md, infers the SemVer bump, writes `RELEASE-vX.Y.Z.md` to `.claude/pipeline/`.
+3. `scripts/bump-version.js` atomically updates VERSION, package.json, plugin.json, marketplace.json.
+4. ROADMAP.md is updated in the same commit to reflect the shipped scope (Process Invariant).
+5. `node scripts/validate.js` must pass — including the three gate checks above.
+6. Only then: tag and publish.
+
+### When the gate trips
+
+- **"CHANGELOG.md has no `## [X.Y.Z]` section"** — add the entry before running the bump script. Entries under `## [Unreleased]` should be promoted to a dated section.
+- **"SKILL.md exceeds cap"** — split the skill: keep orientation + decision flow in SKILL.md, move depth to `references/*.md`. See `skills/qa-test-planner/`, `skills/design-system/`, `skills/database-schema-designer/` for the v2.0.0 reference splits.
+- **"ROADMAP.md does not mention vX.Y.Z"** (warning) — update ROADMAP.md's "What Actually Shipped" section to reflect the release. This is the Process Invariant in action.
+
+---
+
 ## Related Docs
 
 - `README.md` — install and quick start.

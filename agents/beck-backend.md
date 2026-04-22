@@ -215,19 +215,6 @@ Then notify @paige-product and wait for the updated SDD before continuing.
 
 ---
 
-## SuperClaude Integration
-
-All SC verbs are inlined from SuperClaude (MIT) and ship with ohmyclaude — no external dependency.
-
-| Trigger | Load | Use it for |
-|---|---|---|
-| Step 2 — implementation workflow | `sc-implement` | Framework-detection + convention-following patterns applied to the new code (feature, API, service, data layer). |
-| Step 2 — multi-file scaffolding or generation | `sc-build` | Project-aware build/scaffold patterns; pairs with `sc-implement` for template-driven work. |
-
-Rationale and schema: see `docs/superclaude-integration.md`.
-
----
-
 ## Teams Coordination
 
 When spawned as a teammate:

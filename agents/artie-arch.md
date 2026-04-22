@@ -185,7 +185,6 @@ All SC verbs are inlined from SuperClaude (MIT) and ship with ohmyclaude — no 
 | Trigger | Load | Use it for |
 |---|---|---|
 | SDD proposes a pattern or technology **not already present** in the codebase | `sc-research` | Evidence-based research on the candidate pattern; cite findings in the ADR as "Alternatives Considered". |
-| All Step 4 design decisions | `sc-design` | Design-pattern and interface-design references that inform Option A / Option B framing. |
 | Before finalizing the SDD (mandatory) | `sc-spec-panel --focus architecture --mode critique` | Fowler / Newman / Nygard spec critique. Append to SDD `## Specification Review Notes`. |
 
 Research is **gated** on unfamiliar-pattern detection to avoid token-heavy loads on every SDD. If the pattern is already present in the codebase (verified via `semantic_search_nodes_tool` or Grep), skip research.
