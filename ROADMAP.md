@@ -8,6 +8,14 @@
 
 ---
 
+## Current State (2026-04-22)
+
+- **Last shipped**: `v2.2.0` — session intelligence (`/save`, `/load`, `SessionStart`/`PreCompact`/`SubagentStart` hooks).
+- **Nothing scheduled**. The backlog below is an honest inventory of what's *still desired* — not a release calendar. Items move from backlog → release only when explicitly planned in a plan file and executed in a session.
+- **Scope discipline**: each backlog item carries one of four statuses — `[ ]` still desired · `[x]` shipped · `[~]` partially shipped · `[-]` superseded / dropped. No item lists a target version until the moment it's being implemented. v2.0.0's whole thesis was that aspirational version pins cause drift.
+
+---
+
 ## What Actually Shipped (v1.0 → v1.3)
 
 Truthful record of the three minor releases that landed on 2026-04-21. The plan-vs-reality drift was discovered during the v2.0.0 spec-panel review and is the primary motivation for the "restore invariants" refactor.
@@ -46,7 +54,7 @@ Truthful record of the three minor releases that landed on 2026-04-21. The plan-
 
 ---
 
-## v2.0.0 — Restore Invariants (In Progress, 2026-04-22)
+## v2.0.0 — Restore Invariants (Shipped 2026-04-22)
 
 The v2.0.0 refactor addresses drift between ohmyclaude's stated invariants and its shipped state. Strictly subtractive: no new skills, agents, or hooks. Additive work stays in v2.1+.
 
@@ -108,66 +116,56 @@ Ships resumable per-cwd session state — the `/save` and `/load` commands, plus
 - [x] `/load` command + `skills/load/` — read-only resume. Three forms: `/load`, `/load <id>`, `/load --list`. Cross-references saved `stages.json` with live `.claude/pipeline/`.
 - [x] `SessionStart` hook (`hooks/scripts/session-load.js`) — fresh-startup only (source-filtered); emits discoverability hint when saved session exists for this cwd.
 - [x] `PreCompact` hook (`hooks/scripts/state-snapshot.js`) — updates `stages.json` + `meta.last_touch_ts` before compaction.
-- [x] `SubagentStart` hook (`hooks/scripts/subagent-trace.js`) — telemetry only. Original ROADMAP intent was context-injection; the event is observational per Claude Code docs, so scope was reduced honestly rather than shipping something broken. Context-injection deferred to v2.3+ via `PreToolUse`-on-`Task` (separate design).
+- [x] `SubagentStart` hook (`hooks/scripts/subagent-trace.js`) — telemetry only. Original ROADMAP intent was context-injection; the event is observational per Claude Code docs, so scope was reduced honestly rather than shipping something broken. Context-injection capability remains in the backlog below (needs a `PreToolUse`-on-`Task` design, not `SubagentStart`).
 
 Smoke suite grew from 27 → 37 contract assertions.
 
 ---
 
-## v2.1+ — Deferred From Original v1.1/v1.2 Roadmap
+## Backlog — Still Desired, Not Scheduled
 
-These items were listed in the original ROADMAP for v1.1–v1.3 but never shipped. Each is annotated with a decision status: **still desired** (planned), **superseded** (better approach found), or **dropped** (no longer in scope).
+Carryover from the original v1.1–v1.3 ROADMAP. Items move from this list into a release only when a plan file is written and the work is actually executed. Nothing here is promised against a version number.
 
-### From original v1.1 — Hook Depth & Language Expansion
+### Hooks
 
-- [ ] **console-log-auditor hook** — still desired. Language-aware scan for debug statements. Low priority.
-- [ ] **pre-commit-quality-gate hook** — superseded. `validate.js` + the release gate cover most of this; the remaining need (run tests + lint before Claude-initiated commits) can be a single PostToolUse on Bash.
-- [ ] **cost-tracker hook** — superseded by `cost-profiler.js` shipped in v1.2.0. The `.claude/metrics/baseline.json` replaces the JSONL log idea.
-- [ ] **prompt-injection-guard hook** — still desired. High-value safety. Scope a v2.1 design.
-- [x] **TypeScript/JavaScript rules** (`rules/typescript/`) — **shipped in v2.1.0**.
-- [ ] **Go rules** (`rules/go/`) — still desired.
-- [ ] **Python rules** (`rules/python/`) — still desired.
-- [ ] **Kotlin rules** (`rules/kotlin/`) — still desired.
-- [ ] **`/forge sprint --think`** — explore ≥3 approaches before committing. Still desired.
-- [ ] **`/forge sprint --delegate`** — pause after plan for human approval. Still desired.
+- [ ] **console-log-auditor** — language-aware scan for debug statements (`console.log` / `print(` / `System.out.println` / `fmt.Println`) in `PostToolUse`. Advisory, never blocks. Low priority.
+- [ ] **prompt-injection-guard** — `PreToolUse` on tools that ingest external content (`WebFetch`, `Read` outside cwd, MCP tool results). Blocks on known injection markers. High-value safety; needs heuristic-tuning care to avoid false positives.
+- [ ] **Subagent context-injection** — the original intent behind the "SubagentStart hook" line in the v1.2 backlog. Cannot be done via `SubagentStart` (that event is observational); needs a `PreToolUse`-on-`Task` hook design that mutates `tool_input` before the subagent's prompt is locked. Separate design cycle.
+- [-] **pre-commit-quality-gate** — *superseded*. `validate.js` + the release gate cover most of this; the remaining run-tests-before-commit need can be a single `PostToolUse` on `Bash`.
+- [-] **cost-tracker** — *superseded* by `cost-profiler.js` shipped in v1.2.0. `.claude/metrics/baseline.json` replaces the JSONL log idea.
 
-### From original v1.2 — Session Intelligence
+### Language Rules
 
-- [x] **`/save` command** — **shipped in v2.2.0** as `commands/save.md` + `skills/save/`. Snapshot layout under `~/.claude/ohmyclaude/sessions/<session_id>/` with `meta.json`, `stages.json`, `agents/`, `traces.jsonl`, plus `_index.json` for cwd lookup.
-- [x] **`/load [id]` command** — **shipped in v2.2.0** as `commands/load.md` + `skills/load/`. Three forms: current-cwd, by-id, `--list`. Cross-references saved pipeline state with live artifacts.
-- [x] **SessionStart hook** — **shipped in v2.2.0** as `hooks/scripts/session-load.js`. Emits a discoverability hint; does not auto-inject context (event is observational).
-- [x] **PreCompact hook** — **shipped in v2.2.0** as `hooks/scripts/state-snapshot.js`. Updates `stages.json` before compaction.
-- [ ] **Pre-implementation 5-dimension confidence scorecard** — still desired. Would gate `@paige-product`'s plan output.
-- [ ] **Wave orchestration with integration checkpoints** — partially shipped in v1.0.0 via `task-breakdown`; the explicit integration checkpoint is still an open gap.
-- [~] **SubagentStart hook** — **partially shipped in v2.2.0** as `hooks/scripts/subagent-trace.js` (telemetry only — appends to `traces.jsonl`). Original intent of "compact context block prepended per agent invocation" is NOT possible via SubagentStart (event is observational per Claude Code docs); context-injection capability **deferred to v2.3+** as a `PreToolUse`-on-`Task` hook — needs separate design.
+- [x] **TypeScript** (`rules/typescript/`) — shipped in v2.1.0.
+- [ ] **Go** (`rules/go/`) — still desired.
+- [ ] **Python** (`rules/python/`) — still desired.
+- [ ] **Kotlin** (`rules/kotlin/`) — still desired.
 
-### From original v1.3 — Distribution & Testing
+Each follows the `rules/java/` template: 4 files (coding-style, patterns, security, testing), each ≤40 lines, `paths:` frontmatter activates on file extension.
 
-- [x] **Smoke test suite** — **shipped in v2.1.0**. `scripts/test-hooks.js`: 27 contract assertions covering all 8 hook scripts.
-- [ ] **`npm prepublishOnly` script** — runs `validate.js`, aborts on failure. Quick win for v2.1.
-- [ ] **Agent integration tests** — verify each agent's frontmatter, tools, example triggers. Still desired.
-- [ ] **`install.sh` verified on macOS (zsh + bash), Ubuntu 22.04, Windows WSL2** — still desired.
-- [ ] **`install.ps1` parity** — still desired; likely lower priority than shell.
-- [x] **AGENTS.md reference** — **shipped in v2.1.0**. All 10 agents with purpose, triggers, hard boundaries, example prompts. Cross-links to `agents/<name>.md` canonical files.
-- [ ] **HOOKS.md reference** — all hooks: trigger, blocking vs async, env vars, how to disable. Same as above.
+### Command Depth
 
----
+- [ ] **`/forge sprint --think`** — explore ≥3 approaches in `PLAN.md` before task-breakdown, each with explicit trade-offs. Leans on `sc-spec-panel` skill.
+- [ ] **`/forge sprint --delegate`** — pause after `PLAN.md` for human approval via a `HOLD.md` marker in `.claude/pipeline/`. Resume with `/forge sprint --resume`.
 
-## v2.1.0 — Tentative Cut Candidates (Shipped)
+### Pipeline Discipline
 
-All three candidates landed together on 2026-04-22 — see the `v2.1.0 — Language Expansion + Distribution Hygiene (Shipped)` section above for the final diff. Preserved here for continuity with the original plan text:
+- [ ] **Pre-implementation 5-dimension confidence scorecard** — would gate `@paige-product`'s plan output. **Needs a design spec** (`.claude/pipeline/DESIGN-confidence-scorecard.md`) naming the 5 dimensions, scoring rubric, and gate behavior before any code. Not scheduled — unscoped.
+- [ ] **Wave orchestration integration checkpoints** — partially shipped in v1.0.0 via `task-breakdown`; the explicit between-wave checkpoint is still an open gap. Likely surfaces as an addition to one of the existing session hooks once a concrete need lands.
 
-1. ✓ `rules/typescript/` with path-activated rule loading — smallest valuable add, expanded the "Java-first" story.
-2. ✓ Smoke test suite for the 8 hooks — closed the v1.3-was-promised-but-not-shipped gap (27 assertions, hermetic via `HOME` override).
-3. ✓ AGENTS.md consolidated reference — new file at repo root, complements `docs/OPERATING.md` without duplicating body content.
+### Distribution & Testing
 
-All three fit in a single point-release without churn, as the gate predicted.
+- [x] **Smoke test suite** — shipped in v2.1.0 (`scripts/test-hooks.js`, 37 contract assertions after v2.2.0's extension).
+- [x] **AGENTS.md reference** — shipped in v2.1.0.
+- [ ] **`npm prepublishOnly`** — one-line: run `validate.js` + `test-hooks.js` before `npm publish`. Small change.
+- [ ] **Agent integration tests** (`scripts/test-agents.js`) — verify each agent's frontmatter, tools, example triggers, read-only tool-list discipline.
+- [ ] **HOOKS.md consolidated reference** — parallel to AGENTS.md, but for hooks.
+- [ ] **`install.sh`** — cross-shell POSIX install script mirroring the 3 install profiles. Tested on macOS (zsh + bash), Ubuntu 22.04, Windows WSL2.
+- [ ] **`install.ps1`** — PowerShell parity for `install.sh`. Lower priority than the shell version.
 
 ---
 
-## v2.2+ — New Initiatives (Exploratory)
-
-Forward-looking additions that are **not** carryover from the original v1.x backlog. Each must pass the "earn its spot" gate (*Guiding Principles*, last bullet) — i.e., show it's not duplicating an existing skill or agent capability.
+Forward-looking ideas that are **not** carryover from the original v1.x backlog. Each must pass the "earn its spot" gate (*Guiding Principles*, last bullet) — i.e., show it's not duplicating an existing skill or agent capability. **None of these has a release slot**; each requires its own plan + design spec before any code lands.
 
 ### UI/UX Intelligence Upgrade — `@una-ux` + `@effie-frontend` + `design-system`
 
@@ -178,18 +176,18 @@ Forward-looking additions that are **not** carryover from the original v1.x back
 **Architectural tension — must resolve before scoping**:
 ui-ux-pro-max installs via its own `uipro-cli`, writing Python scripts and CSV databases into the consumer's repo. This **conflicts with the v1.3.0 invariant** above: *"the plugin still ships md + js only, nothing installed on the client."* Taking the skill as a hard dependency would break that invariant.
 
-**Two candidate integration paths** (pick one in the v2.2 design spec):
+**Two candidate integration paths** (a future design spec picks one):
 
 - **Path A — Soft-dependency tier** (mirrors the `codegraph → code-review-graph → tree → grep` exploration ladder). Detect if `~/.claude/skills/ui-ux-pro-max/` is present; if yes, `@una-ux` and `@effie-frontend` delegate to it for palette/typography queries; if no, fall back to the native `design-system` skill. Zero install footprint added by ohmyclaude itself; user opts in via `uipro init --ai claude --global`.
-- **Path B — Inspiration-only pattern port**. Adopt the *hierarchical design-system retrieval* pattern (MASTER.md global rules + `pages/[page].md` overrides) into `skills/design-system/references/` as a pure-markdown structure. No external dep, no Python, no auto-install. Loses the 161-rule reasoning engine but keeps ohmyclaude's purity invariant.
+- **Path B — Inspiration-only pattern port**. Adopt the *hierarchical design-system retrieval* pattern (`MASTER.md` global rules + `pages/[page].md` overrides) into `skills/design-system/references/` as a pure-markdown structure. No external dep, no Python, no auto-install. Loses the 161-rule reasoning engine but keeps ohmyclaude's purity invariant.
 
-**Acceptance criteria for v2.2 cut**:
-1. Design spec in `.claude/pipeline/DESIGN-ui-ux-intel.md` picks Path A or B with explicit rationale.
+**Acceptance criteria if scoped in**:
+1. Design spec at `.claude/pipeline/DESIGN-ui-ux-intel.md` picks Path A or B with explicit rationale.
 2. If Path A: `hooks/ui-ux-probe.js` follows the pattern of `hooks/graph-update.js` — graceful no-op when absent, no errors.
 3. If Path B: `skills/design-system/SKILL.md` stays ≤400 lines; hierarchical pattern lives in `references/`.
 4. `@una-ux` and `@effie-frontend` frontmatter / prompts updated in the same commit; `docs/OPERATING.md` agent table annotated.
 
-**Status**: Not yet scoped. Open question: does the VNG Games internal design-system (a frequent user workflow) diverge enough from ui-ux-pro-max's 161 product categories that Path B is strictly better?
+**Status**: Not scoped. Open question: does the VNG Games internal design-system (a frequent user workflow) diverge enough from ui-ux-pro-max's 161 product categories that Path B is strictly better?
 
 ---
 
