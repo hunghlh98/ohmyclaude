@@ -343,46 +343,76 @@ main { padding: 20px; max-width: 1480px; margin: 0 auto; }
   font-size: 10px;
 }
 .log-entry {
-  padding: 5px 0;
   border-bottom: 1px dashed var(--border);
-  white-space: pre-wrap;
-  word-break: break-word;
+  cursor: pointer;
 }
 .log-entry:last-child { border-bottom: 0; }
-.log-entry .log-ts { color: var(--fg-dim); margin-right: 8px; }
+.log-entry:hover .log-line { background: var(--bg-3); }
+
+/* single-line summary: timestamp + src + level + message, clipped */
+.log-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.log-line .log-msg {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.log-line .log-caret {
+  color: var(--fg-dim);
+  font-size: 10px;
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+.log-entry.expanded .log-caret { transform: rotate(90deg); }
+
+.log-entry .log-ts { color: var(--fg-dim); flex-shrink: 0; }
 .log-entry .log-src {
   color: var(--fg-dim);
   font-size: 10px;
-  margin-right: 8px;
   padding: 0 4px;
   background: var(--bg-3);
   border-radius: 3px;
+  flex-shrink: 0;
 }
 .log-entry .log-level {
   display: inline-block;
   min-width: 44px;
   text-align: center;
-  margin-right: 6px;
   padding: 0 4px;
   border-radius: 3px;
   font-weight: 600;
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  flex-shrink: 0;
 }
 .log-entry .log-level.error { background: rgba(239, 68, 68, 0.2); color: var(--err); }
 .log-entry .log-level.warn  { background: rgba(245, 158, 11, 0.2); color: var(--warn); }
 .log-entry .log-level.info  { background: var(--bg-3); color: var(--fg-dim); }
-.log-entry .log-stack {
-  color: var(--fg-dim);
-  margin-top: 4px;
-  padding-left: 12px;
-  font-size: 10px;
+
+/* expanded detail — only shown when .log-entry has .expanded */
+.log-detail { display: none; padding: 6px 12px 10px 46px; background: var(--bg-3); }
+.log-entry.expanded .log-detail { display: block; }
+.log-detail .log-full {
+  color: var(--fg);
+  margin-bottom: 6px;
   white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 11px;
 }
-.log-entry .log-ctx {
+.log-detail .log-stack,
+.log-detail .log-ctx {
   color: var(--fg-dim);
-  margin-top: 2px;
-  padding-left: 12px;
+  white-space: pre-wrap;
   font-size: 10px;
+  margin-top: 4px;
 }
+.log-detail .log-stack::before { content: "stack: "; color: var(--warn); }
+.log-detail .log-ctx::before   { content: "ctx:   "; color: var(--accent-2); }

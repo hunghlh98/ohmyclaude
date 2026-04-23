@@ -542,16 +542,25 @@ function renderLogs() {
   if (!filtered.length) { body.innerHTML = ""; return; }
 
   body.innerHTML = filtered.slice(-500).reverse().map((e) => {
+    const oneLine = (e.message || "").replace(/\s+/g, " ").trim();
+    const hasDetail = !!(e.stack || e.context || (e.message || "").includes("\n"));
+    const caret = hasDetail ? '<span class="log-caret">▸</span>' : '<span class="log-caret" style="visibility:hidden">▸</span>';
     const stack = e.stack ? `<div class="log-stack">${esc(e.stack)}</div>` : "";
     const ctx = e.context
       ? `<div class="log-ctx">${esc(JSON.stringify(e.context))}</div>`
       : "";
-    return `<div class="log-entry">
-      <span class="log-ts">${esc((e.ts || "").slice(11, 19))}</span>
-      <span class="log-src">${esc(e.source)}</span>
-      <span class="log-level ${esc(e.level)}">${esc(e.level)}</span>
-      ${esc(e.message)}
-      ${stack}${ctx}
+    const detail = hasDetail
+      ? `<div class="log-detail"><div class="log-full">${esc(e.message)}</div>${stack}${ctx}</div>`
+      : "";
+    return `<div class="log-entry" data-expandable="${hasDetail ? '1' : '0'}">
+      <div class="log-line">
+        <span class="log-ts">${esc((e.ts || "").slice(11, 19))}</span>
+        <span class="log-src">${esc(e.source)}</span>
+        <span class="log-level ${esc(e.level)}">${esc(e.level)}</span>
+        <span class="log-msg">${esc(oneLine)}</span>
+        ${caret}
+      </div>
+      ${detail}
     </div>`;
   }).join("");
 }
@@ -628,6 +637,12 @@ document.addEventListener("DOMContentLoaded", () => {
     LOG_STATE.unseenErrors = 0;
     updateLogsBadge();
     if (LOG_STATE.source === "client") renderLogs();
+  });
+  // click-to-expand for log rows (delegated; one listener for all entries)
+  el("log-body").addEventListener("click", (e) => {
+    const row = e.target.closest(".log-entry");
+    if (!row || row.dataset.expandable !== "1") return;
+    row.classList.toggle("expanded");
   });
   el("log-refresh").addEventListener("click", () => {
     if (LOG_STATE.source === "server") refreshServerLogs();
