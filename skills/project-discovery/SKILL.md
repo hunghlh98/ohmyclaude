@@ -47,11 +47,15 @@ mcp__codegraph__codegraph_status       → is graph indexed?
 
 **Tier 2 — code-review-graph** (check if MCP tools `mcp__plugin_code-review-graph__*` are loaded):
 ```
-list_graph_stats_tool → graph exists?
-  YES → get_minimal_context_tool (~100 tokens)
-      → get_architecture_overview_tool (communities, flows)
-  NO  → suggest once: "Run /code-review-graph:build-graph for enhanced analysis"
-        continue to tier 3
+list_graph_stats_tool → inspect files_count
+  files_count > 0 → get_minimal_context_tool (~100 tokens)
+                  → get_architecture_overview_tool (communities, flows)
+  files_count == 0 → build_or_update_graph_tool (bootstrap once per session)
+                     then retry stats + context calls above
+                     Skip the bootstrap and suggest the manual command
+                     /code-review-graph:build-graph if the repo is obviously
+                     large (> ~500 source files by tree count) — full builds
+                     on huge repos can be slow and should be user-initiated.
 ```
 
 **Tier 3 — tree CLI** (always available on macOS/Linux with `brew install tree` / `apt install tree`):

@@ -293,6 +293,42 @@ if (staleFound === 0) {
   console.log('  ✓ No stale agent name references found');
 }
 
+// ── Orphan-skill advisory (hygiene, not correctness) ───────────────────────
+// Skills can still be auto-discovered by description match, so an un-named
+// skill is not broken — but explicit references are more reliable than a
+// hope for auto-match. This advisory surfaces naming hygiene without failing.
+console.log('\nSkill reference audit (advisory):');
+if (fs.existsSync(skillsDir)) {
+  const skillNames = fs.readdirSync(skillsDir)
+    .filter(s => fs.existsSync(path.join(skillsDir, s, 'SKILL.md')))
+    .sort();
+
+  const agentFiles   = fs.readdirSync(path.join(root, 'agents'))
+    .filter(f => f.endsWith('.md')).map(f => path.join('agents', f));
+  const commandFilesList = fs.readdirSync(path.join(root, 'commands'))
+    .filter(f => f.endsWith('.md')).map(f => path.join('commands', f));
+  const skillFiles   = skillNames.map(s => path.join('skills', s, 'SKILL.md'));
+  const corpus = [...agentFiles, ...commandFilesList, ...skillFiles]
+    .map(f => ({ file: f, content: fs.readFileSync(path.join(root, f), 'utf8') }));
+
+  const orphans = [];
+  for (const skill of skillNames) {
+    const own = path.join('skills', skill, 'SKILL.md');
+    const boundary = new RegExp(`(^|[^a-z0-9_-])${skill}([^a-z0-9_-]|$)`, 'i');
+    const refCount = corpus.filter(c => c.file !== own && boundary.test(c.content)).length;
+    if (refCount === 0) orphans.push(skill);
+  }
+
+  if (orphans.length === 0) {
+    console.log(`  ✓ All ${skillNames.length} skills referenced by at least one agent/command/skill`);
+  } else {
+    console.log(`  ⚠ ${orphans.length}/${skillNames.length} skill(s) not named by any agent, command, or other skill:`);
+    for (const o of orphans) {
+      console.log(`    • skills/${o}  (still auto-discoverable by description match; consider naming it explicitly)`);
+    }
+  }
+}
+
 // ── Summary ──────────────────────────────────────────────────────────────────
 console.log('');
 if (errors === 0) {

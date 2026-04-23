@@ -216,7 +216,7 @@ Run `node scripts/validate.js` to see the live inventory with per-agent detail.
 
 | Script | What it validates |
 |--------|-------------------|
-| `npm run validate` | Plugin structure, frontmatter, version symmetry, CHANGELOG↔VERSION gate, rule frontmatter, AGENTS.md, test:hooks wiring |
+| `npm run validate` | Plugin structure, frontmatter, version symmetry, CHANGELOG↔VERSION gate, rule frontmatter, AGENTS.md, test:hooks wiring, skill reference audit (advisory) |
 | `npm run test:hooks` | 27 contract assertions across all 8 hook scripts (exit codes, stdout passthrough, side-effect sandboxing). Hermetic via `HOME` override. |
 | `npm run test:sc-fallback` | SuperClaude inlining contract — no legacy `sc:sc-<verb>` prefixed refs; no references to verb-wrappers removed in v2.0.0. |
 
