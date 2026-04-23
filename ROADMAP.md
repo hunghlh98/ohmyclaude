@@ -38,12 +38,10 @@ Truthful record of the three minor releases that landed on 2026-04-21. The plan-
 - Agents' SuperClaude Integration sections rewritten to reference inlined forms
 - `scripts/test-sc-fallback.js` inverted: proves no external `sc:sc-<verb>` remains
 
-### v1.2.0 — Cost Profiler + Dry-Run Simulator (2026-04-21)
+### v1.2.0 — Cost Profiler (2026-04-21)
 
 - `cost-profiler.js` hook (SubagentStop + Stop) writes `PROFILE-<runId>.md` per run and a rolling `baseline.json`
 - `profile-run` skill interprets profiles and surfaces anomaly flags (`turn_explosion`, `cost_over_p95`, `cache_miss_spike`, `opus_budget_breach`)
-- `dry-run.js` pure-Node classifier + router + cost estimator
-- `/forge --dry-run <request>` simulates routing without spawning agents
 
 ### v1.3.0 — Dual-Graph Backend + java-source-intel (2026-04-21)
 

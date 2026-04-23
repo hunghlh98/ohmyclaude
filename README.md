@@ -27,7 +27,6 @@ One command. The pipeline figures out the rest.
 | Command | What it does |
 |---------|--------------|
 | `/forge <natural language>` | Route and execute any request (default smart router) |
-| `/forge --dry-run <request>` | Simulate routing + cost, no agents invoked |
 | `/forge sprint [--size N]` | Execute sprint from backlog |
 | `/forge release` | Cut release |
 | `/forge commit` | Generate semantic commit message |
@@ -157,7 +156,7 @@ Every `/forge` run emits structured telemetry. Agents stay blind to it — all m
 - **Anomaly flags** — `turn_explosion`, `cost_over_p95`, `cache_miss_spike`, `opus_budget_breach`
 - **@paige-product** reads the latest PROFILE at team shutdown and surfaces a one-line cost summary in `SUMMARY-{timestamp}.md`
 - **`profile-run` skill** interprets PROFILE + baseline and recommends concrete tuning (ranked by ROI)
-- **Calibration** — `profile-run --calibrate` diffs observed means against dry-run priors; flag drift >25%
+- **Calibration** — `profile-run --calibrate` splits PROFILE artifacts into recent (≤30d) vs prior (30–90d) windows and diffs per-scenario means; flag drift >25%
 
 ## Source Graph Integration (all optional, all soft-detected)
 
@@ -201,12 +200,12 @@ Opt-in via the `full` profile or by adding `hooks-session` / `skills-session` / 
 
 | Component | Count | Detail |
 |-----------|------:|--------|
-| Version | 2.3.1 | VERSION, package.json, plugin.json, marketplace.json |
+| Version | 2.3.2 | VERSION, package.json, plugin.json, marketplace.json |
 | Agents | 10 | sonnet: 8, opus: 1, haiku: 1 |
 | Skills | 36 | engineering: 12, java: 5, pipeline: 4, specialized: 8, superclaude: 5, session: 2 |
 | Commands | 3 | forge, load, save |
 | Rules | 9 | common: 1, java: 4, typescript: 4 |
-| Hooks | 12 | backlog-tracker, cost-profiler, dry-run, graph-update, post-bash-lint, pre-write-check, session-load, session-summary, state-snapshot, subagent-trace, team-cleanup, usage-tracker |
+| Hooks | 11 | backlog-tracker, cost-profiler, graph-update, post-bash-lint, pre-write-check, session-load, session-summary, state-snapshot, subagent-trace, team-cleanup, usage-tracker |
 | Profiles | 3 | minimal, standard (default), full |
 | Modules | 21 | agents: 4, skills: 6, rules: 3, commands: 2, hooks: 6 |
 

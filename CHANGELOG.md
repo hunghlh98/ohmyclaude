@@ -8,6 +8,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [2.3.2] — 2026-04-24
+
+Subtractive patch. Removes `dry-run.js` and the `/forge --dry-run` subcommand because the pure-Node regex classifier duplicated `@paige-product`'s routing job with weaker heuristics — no CLAUDE.md, no source graph, no clarifying questions. Planning needs an agent; a second classifier only drifted from the real router. `profile-run`'s calibration mode is re-anchored to use temporal windows of existing artifacts instead of the removed priors.
+
+### Removed
+
+- **`/forge --dry-run` subcommand and `hooks/scripts/dry-run.js`** (−243 LOC in the script itself, ~319 LOC total across docs + tests). Users who want a pre-flight estimate should let `@paige-product` plan and abort before spawning builders — the lead agent has richer context than any regex router could.
+- **3 hook contract tests** in `scripts/test-hooks.js` that asserted the dry-run classifier interface. Hook test count: 49 → 46.
+- **Stale doc references**: `README.md` commands table + hooks inventory (count: 12 → 11), `commands/forge.md` subcommand menu + dedicated section + help text + example, `ROADMAP.md` v1.2.0 bullets.
+
+### Changed
+
+- **`profile-run` skill Mode 3 (`--calibrate`) re-anchored** — with `dry-run.js` removed, calibration no longer diffs observed means against hand-authored priors. Instead it splits `PROFILE-*.md` artifacts into two temporal windows (recent 30 days vs prior 30–90 days) and reports per-scenario drift. Zero new infrastructure — reuses artifacts the `cost-profiler.js` hook already writes. Skill stays within the 400-line cap (~86 lines).
+
 ## [2.3.1] — 2026-04-23
 
 Behavioral-telemetry follow-up to v2.3.0. Same four tracker wire-ups (SessionStart, UserPromptSubmit, PreToolUse, Stop), same privacy rules (prompt bodies never hit disk), but each event now carries three dimensions that v2.3.0 was capable of capturing and didn't: who initiated each skill call, which plugin namespace it belongs to, and whether the user's reply carried approval in addition to course-correction.

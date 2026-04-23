@@ -1,6 +1,6 @@
 ---
 name: profile-run
-description: Inspect and calibrate /forge run telemetry. Reads PROFILE-*.md artifacts and baseline.json to surface cost anomalies, drift vs dry-run headline numbers, and suggest harness tuning. Triggers on "profile run", "run cost", "calibrate baseline", "cost drift".
+description: Inspect and calibrate /forge run telemetry. Reads PROFILE-*.md artifacts and baseline.json to surface cost anomalies, drift vs prior baseline windows, and suggest harness tuning. Triggers on "profile run", "run cost", "calibrate baseline", "cost drift".
 origin: ohmyclaude
 ---
 
@@ -12,7 +12,7 @@ Use this skill to reason about the ohmyclaude pipeline's cost and efficiency, no
 
 - User asks "what did the last /forge run cost?"
 - User asks "which agent is most expensive?"
-- User wants to calibrate the dry-run cost model against reality
+- User wants to audit cost drift against a prior baseline window
 - Post-run review when paige's SUMMARY references an anomaly flag
 - Quarterly baseline audit
 
@@ -23,7 +23,6 @@ Use this skill to reason about the ohmyclaude pipeline's cost and efficiency, no
 | `.claude/pipeline/PROFILE-<runId>.md` | Per-run telemetry (frontmatter + per-agent table) |
 | `.claude/metrics/baseline.json` | Rolling N=20 means + p95 per scenario and per agent |
 | `.claude/metrics/runs/<runId>/snap-*.json` | Raw SubagentStop snapshots (for deep dives) |
-| Dry-run headline table in `~/.claude/plans/ethereal-imagining-gray.md` | Original priors — drift target |
 
 ## Inspection Modes
 
@@ -42,16 +41,16 @@ Diff two PROFILE artifacts. Useful for "did my prompt-tightening change reduce c
 
 ### Mode 3 — `--calibrate`
 
-Aggregate all PROFILE artifacts in the last 30 days. Compare observed means against the dry-run Headline Numbers table:
+Diff cost drift over time. Split all `PROFILE-*.md` artifacts into two windows — **recent** (last 30 days) and **prior** (30–90 days ago) — and compare per-scenario means:
 
 ```
-Scenario       Dry-run   Observed   Drift
-full-app       $1.40     $1.62      +16%   ← update prior
-feature        $0.68     $0.71      +4%    ← within tolerance
-hotfix         $0.38     $0.29      -24%   ← prior too high
+Scenario       Prior     Recent    Drift
+full-app       $1.40     $1.62     +16%   ← watch
+feature        $0.68     $0.71     +4%    ← within tolerance
+hotfix         $0.38     $0.29     -24%   ← improving
 ```
 
-Write the diff to `.claude/metrics/calibration-<date>.md`. Surface any drift >25% as an action item: either the dry-run doc is stale or the pipeline has changed.
+Write the diff to `.claude/metrics/calibration-<date>.md`. Surface any drift >25% as an action item — the pipeline has changed (agents added/removed, model swaps, artifact caps tightened). If the prior window has fewer than 3 runs per scenario, note the thin evidence and stop.
 
 ## Anomaly Flag Reference
 
@@ -83,4 +82,4 @@ When surfacing advice, prefer these ranked by ROI:
 
 - Interpret data; the hook produces it
 - All recommendations are measurable (propose a hypothesis + how to verify)
-- Drift >25% triggers a re-read of the dry-run cost doc, not silent baseline overwrite
+- Drift >25% triggers a review of the prior window composition (were agents added/swapped mid-window?), not silent baseline overwrite

@@ -858,35 +858,6 @@ test('PreToolUse(Skill) splits plugin prefix on colon', () => {
   cleanup(sandbox);
 });
 
-// ── dry-run.js (utility, not a hook — still asserted for v1.2.0 contract) ──
-console.log('\ndry-run.js — /forge --dry-run classifier:');
-
-test('usage error when called with no args', () => {
-  const result = spawnSync(process.execPath, [path.join(hooksDir, 'dry-run.js')], {
-    encoding: 'utf8', timeout: 10000, input: '',
-  });
-  assertEq(result.status, 1, 'exit code');
-});
-
-test('classifies a simple feature request and exits 0', () => {
-  const result = spawnSync(process.execPath,
-    [path.join(hooksDir, 'dry-run.js'), 'add a login form'],
-    { encoding: 'utf8', timeout: 10000, cwd: root });
-  assertEq(result.status, 0, 'exit code');
-  assertIncludes(result.stdout, 'agents', 'reports agent route');
-});
-
-test('--json flag produces parseable JSON', () => {
-  const result = spawnSync(process.execPath,
-    [path.join(hooksDir, 'dry-run.js'), '--json', 'fix the bug'],
-    { encoding: 'utf8', timeout: 10000, cwd: root });
-  assertEq(result.status, 0, 'exit code');
-  const parsed = JSON.parse(result.stdout);
-  if (typeof parsed !== 'object' || !parsed) {
-    throw new Error('JSON output is not an object');
-  }
-});
-
 // ── Summary ─────────────────────────────────────────────────────────────────
 console.log('');
 const total = pass + fail;
