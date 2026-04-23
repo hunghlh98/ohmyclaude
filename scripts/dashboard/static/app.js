@@ -2,10 +2,17 @@
 
 // ── client-side logging ────────────────────────────────────────────────────
 // Captures console.error, uncaught errors, unhandled promise rejections, and
-// manual logs. POSTs to /api/log (server persists under scripts/dashboard/logs/
-// dashboard.log). Also keeps the last N entries in-memory for the drawer.
+// manual logs. POSTs to /api/log (server persists under
+// scripts/dashboard/logs/dashboard.log). In-memory ring buffer powers the
+// Logs tab; a "refresh" action fetches the server tail on demand.
 const LOG_BUFFER = [];
 const LOG_BUFFER_MAX = 500;
+const LOG_STATE = {
+  source: "client",   // "client" | "server"
+  filter: "all",      // "all" | "error" | "warn" | "info"
+  serverTail: [],
+  unseenErrors: 0,
+};
 
 function pushLog(level, message, extra) {
   const entry = {
@@ -18,7 +25,13 @@ function pushLog(level, message, extra) {
   };
   LOG_BUFFER.push(entry);
   if (LOG_BUFFER.length > LOG_BUFFER_MAX) LOG_BUFFER.shift();
-  renderLogDrawer();
+
+  if (level === "error" && !isLogsTabActive()) {
+    LOG_STATE.unseenErrors += 1;
+    updateLogsBadge();
+  }
+  if (isLogsTabActive() && LOG_STATE.source === "client") renderLogs();
+
   // Best-effort POST; do not await, do not throw (logging must never fail).
   try {
     fetch("/api/log", {
@@ -463,51 +476,93 @@ function renderInsightsList(items) {
     .join("");
 }
 
-// ── log drawer rendering ───────────────────────────────────────────────────
-function renderLogDrawer() {
-  const body  = el("log-body");
+// ── tab + logs rendering ───────────────────────────────────────────────────
+function isLogsTabActive() {
+  const t = el("tab-logs");
+  return t && !t.classList.contains("hidden");
+}
+
+function updateLogsBadge() {
+  const badge = el("tab-logs-badge");
+  if (!badge) return;
+  if (LOG_STATE.unseenErrors > 0) {
+    badge.textContent = String(LOG_STATE.unseenErrors);
+    badge.classList.remove("hidden");
+  } else {
+    badge.classList.add("hidden");
+  }
+}
+
+function activateTab(name) {
+  document.querySelectorAll(".tab").forEach((b) => {
+    b.classList.toggle("active", b.dataset.tab === name);
+  });
+  document.querySelectorAll(".tab-content").forEach((c) => {
+    c.classList.toggle("hidden", c.id !== `tab-${name}`);
+  });
+  if (name === "logs") {
+    LOG_STATE.unseenErrors = 0;
+    updateLogsBadge();
+    renderLogs();
+  }
+}
+
+function normalizeEntry(e, source) {
+  return {
+    ts:      source === "server" ? (e.server_ts || e.client_ts || "") : (e.ts || ""),
+    level:   (e.level || "info").toLowerCase(),
+    message: e.message || "",
+    stack:   e.stack || "",
+    context: e.context || null,
+    url:     e.url || "",
+    source,
+  };
+}
+
+function renderLogs() {
+  const body = el("log-body");
   const count = el("log-count");
-  const badge = el("log-badge");
-  const toggle = el("log-toggle");
-  if (!body || !badge) return;
+  if (!body) return;
 
-  const errs = LOG_BUFFER.filter((e) => e.level === "error").length;
-  const total = LOG_BUFFER.length;
-  badge.textContent = String(total);
-  if (count) count.textContent = total ? `(${total} entries, ${errs} errors)` : "(empty)";
-  if (toggle) toggle.classList.toggle("has-err", errs > 0);
+  const entries = (LOG_STATE.source === "server" ? LOG_STATE.serverTail : LOG_BUFFER)
+    .map((e) => normalizeEntry(e, LOG_STATE.source));
 
-  if (!body.parentElement || body.parentElement.hidden) return; // don't rebuild if hidden
-  body.innerHTML = LOG_BUFFER.slice(-200).reverse().map((e) => {
+  const filtered = LOG_STATE.filter === "all"
+    ? entries
+    : entries.filter((e) => e.level === LOG_STATE.filter);
+
+  const errs = entries.filter((e) => e.level === "error").length;
+  const warns = entries.filter((e) => e.level === "warn").length;
+  if (count) {
+    count.textContent = entries.length
+      ? `${entries.length} entries · ${errs} errors · ${warns} warns`
+      : "(empty)";
+  }
+
+  if (!filtered.length) { body.innerHTML = ""; return; }
+
+  body.innerHTML = filtered.slice(-500).reverse().map((e) => {
     const stack = e.stack ? `<div class="log-stack">${esc(e.stack)}</div>` : "";
+    const ctx = e.context
+      ? `<div class="log-ctx">${esc(JSON.stringify(e.context))}</div>`
+      : "";
     return `<div class="log-entry">
-      <span class="log-ts">${esc(e.ts.slice(11, 19))}</span>
+      <span class="log-ts">${esc((e.ts || "").slice(11, 19))}</span>
+      <span class="log-src">${esc(e.source)}</span>
       <span class="log-level ${esc(e.level)}">${esc(e.level)}</span>
       ${esc(e.message)}
-      ${stack}
+      ${stack}${ctx}
     </div>`;
   }).join("");
 }
 
-async function showServerTail() {
+async function refreshServerLogs() {
   const body = el("log-body");
+  if (LOG_STATE.source !== "server") return;
   body.innerHTML = '<div class="dim">fetching server log…</div>';
   try {
-    const tail = await fetchJson("/api/logs?tail=200");
-    if (!tail.length) {
-      body.innerHTML = '<div class="dim">(server log empty)</div>';
-      return;
-    }
-    body.innerHTML = tail.reverse().map((e) => {
-      const msg = e.message || "";
-      const stack = e.stack ? `<div class="log-stack">${esc(e.stack)}</div>` : "";
-      return `<div class="log-entry">
-        <span class="log-ts">${esc((e.server_ts || "").slice(11, 19))}</span>
-        <span class="log-level ${esc(e.level || "info")}">${esc(e.level || "info")}</span>
-        ${esc(msg)}
-        ${stack}
-      </div>`;
-    }).join("");
+    LOG_STATE.serverTail = await fetchJson("/api/logs?tail=500");
+    renderLogs();
   } catch (err) {
     body.innerHTML = `<div class="dim">failed to fetch: ${esc(err.message)}</div>`;
   }
@@ -542,24 +597,52 @@ document.addEventListener("DOMContentLoaded", () => {
     el("run-detail-panel").hidden = true;
   });
 
-  // log drawer controls
-  const drawer = el("log-drawer");
-  el("log-toggle").addEventListener("click", () => {
-    drawer.hidden = !drawer.hidden;
-    if (!drawer.hidden) renderLogDrawer();
-  });
-  el("log-close").addEventListener("click", () => { drawer.hidden = true; });
-  el("log-clear").addEventListener("click", () => {
-    LOG_BUFFER.length = 0;
-    renderLogDrawer();
-  });
-  el("log-server").addEventListener("click", () => {
-    drawer.hidden = false;
-    showServerTail();
+  // tab switching
+  document.querySelectorAll(".tab").forEach((b) => {
+    b.addEventListener("click", () => activateTab(b.dataset.tab));
   });
 
+  // Logs tab: source (client/server) and level filters
+  document.querySelectorAll(".seg-btn[data-source]").forEach((b) => {
+    b.addEventListener("click", () => {
+      document.querySelectorAll(".seg-btn[data-source]")
+        .forEach((x) => x.classList.toggle("active", x === b));
+      LOG_STATE.source = b.dataset.source;
+      if (LOG_STATE.source === "server" && !LOG_STATE.serverTail.length) {
+        refreshServerLogs();
+      } else {
+        renderLogs();
+      }
+    });
+  });
+  document.querySelectorAll(".seg-btn[data-filter]").forEach((b) => {
+    b.addEventListener("click", () => {
+      document.querySelectorAll(".seg-btn[data-filter]")
+        .forEach((x) => x.classList.toggle("active", x === b));
+      LOG_STATE.filter = b.dataset.filter;
+      renderLogs();
+    });
+  });
+  el("log-clear").addEventListener("click", () => {
+    LOG_BUFFER.length = 0;
+    LOG_STATE.unseenErrors = 0;
+    updateLogsBadge();
+    if (LOG_STATE.source === "client") renderLogs();
+  });
+  el("log-refresh").addEventListener("click", () => {
+    if (LOG_STATE.source === "server") refreshServerLogs();
+    else renderLogs();
+  });
+
+  // surface the actual server log path if health returns it
+  fetchJson("/api/health").then((h) => {
+    if (h && h.log_file) {
+      const pathEl = el("log-file-path");
+      if (pathEl) pathEl.textContent = h.log_file;
+    }
+  }).catch(() => {});
+
   pushLog("info", "dashboard boot");
-  renderLogDrawer();
 
   // Auto-load if a saved path exists
   if (input.value.trim()) form.requestSubmit();
