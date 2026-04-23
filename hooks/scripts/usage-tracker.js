@@ -51,6 +51,9 @@ const path   = require('path');
 const crypto = require('crypto');
 
 const CORRECTION_RE = /^(no|nope|don'?t|do not|stop|wait|undo|revert|that'?s wrong|try again|actually|hmm|hold on|never mind|nvm|wrong|back|go back|cancel|retry|redo)\b/i;
+// Affirmation: explicit approval of the prior turn. Ordered so shortest
+// tokens ("ok", "yes") don't shadow multi-word phrases via early match.
+const AFFIRMATION_RE = /^(lgtm|ship it|looks good|that works|perfect|exactly|awesome|great|thanks?|thx|nice|yep|yeah|yes|sure|ok(ay)?)\b/i;
 
 // Matches Explanatory-style Insight blocks. Accepts optional surrounding
 // backticks (when the model emits the block as a code span). Body is
@@ -113,6 +116,20 @@ function parseSlash(prompt) {
 
 function detectCorrection(prompt) {
   return CORRECTION_RE.test((prompt || '').trimStart());
+}
+
+function detectAffirmation(prompt) {
+  return AFFIRMATION_RE.test((prompt || '').trimStart());
+}
+
+// Split a fully-qualified name like "sc:sc-analyze" or "pen-claude-ai:jira-log"
+// into { plugin, local }. If there's no colon, plugin is null and the whole
+// name is local — caller can decide how to group (report renders null as "core").
+function splitPlugin(name) {
+  const s = String(name || '');
+  const i = s.indexOf(':');
+  if (i <= 0) return { plugin: null, local: s };
+  return { plugin: s.slice(0, i), local: s.slice(i + 1) };
 }
 
 function gcOldSessionState(cwd, maxAgeMs = 30 * 24 * 60 * 60 * 1000) {
@@ -179,8 +196,14 @@ function onUserPromptSubmit(evt) {
   const prompt = evt.prompt || '';
   const ts     = new Date().toISOString();
 
-  const slash      = parseSlash(prompt);
-  const correction = detectCorrection(prompt);
+  const slash       = parseSlash(prompt);
+  const correction  = detectCorrection(prompt);
+  const affirmation = detectAffirmation(prompt);
+  // Correction wins when both fire — "no, yes that fixes it" is still a
+  // course correction signal that warrants attention in the rollup.
+  const sentiment = correction ? 'correction'
+                  : affirmation ? 'affirmation'
+                  : 'neutral';
 
   const ev = {
     ts,
@@ -190,17 +213,30 @@ function onUserPromptSubmit(evt) {
     word_count:       countWords(prompt),
     first_word:       firstWord(prompt),
     is_slash_command: slash.is_slash_command,
-    correction_signal: correction,
+    correction_signal:  correction,
+    affirmation_signal: affirmation,
+    sentiment,
   };
   if (slash.is_slash_command) {
     ev.command   = slash.command;
     ev.args_hint = slash.args_hint;
+    // Plugin dimension for slash commands too — "/sc:sc-analyze" → sc.
+    const parts = splitPlugin(slash.command);
+    if (parts.plugin) {
+      ev.command_plugin      = parts.plugin;
+      ev.command_local_name  = parts.local;
+    }
   }
   appendEvent(cwd, ev);
 
   bumpSession(cwd, sid, s => {
     s.user_prompts = (s.user_prompts || 0) + 1;
     if (correction) s.corrections = (s.corrections || 0) + 1;
+    if (affirmation) s.affirmations = (s.affirmations || 0) + 1;
+    // One-shot correlation slot for trigger provenance. Cleared (to null)
+    // at every new user_prompt so a stale slash can't leak into the next
+    // turn's skill_invoke. The next PreToolUse(Skill) consumes it.
+    s.pending_slash_skill = slash.is_slash_command ? slash.command : null;
   });
 }
 
@@ -214,30 +250,56 @@ function onPreToolUse(evt) {
 
   let agentType = null;
   let skillName = null;
+  let triggerForSkill = null;  // populated via session-state side effect
 
   if (tool === 'Task') {
     agentType = (input.subagent_type || 'unknown').slice(0, 64);
-    appendEvent(cwd, {
+    const parts = splitPlugin(agentType);
+    const spawn = {
       ts,
       event:           'agent_spawn',
       session_id:      sid,
       agent_type:      agentType,
       description_len: (input.description || '').length,
-    });
+    };
+    if (parts.plugin) {
+      spawn.agent_plugin     = parts.plugin;
+      spawn.agent_local_name = parts.local;
+    }
+    appendEvent(cwd, spawn);
   } else if (tool === 'Skill') {
     skillName = (input.skill || input.name || 'unknown').slice(0, 128);
-    appendEvent(cwd, {
+    const parts = splitPlugin(skillName);
+    // Correlate with the most recent user_prompt in this session. If the
+    // user typed `/<skillName>`, the pending slot will match — consume it
+    // so only the first matching skill_invoke in the turn is user_slash.
+    const state = readJson(sessionStateFile(cwd, sid));
+    const pending = state && state.pending_slash_skill;
+    triggerForSkill = (pending && pending === skillName) ? 'user_slash' : 'model_auto';
+
+    const invoke = {
       ts,
       event:      'skill_invoke',
       session_id: sid,
       skill_name: skillName,
-    });
+      trigger:    triggerForSkill,
+    };
+    if (parts.plugin) {
+      invoke.skill_plugin     = parts.plugin;
+      invoke.skill_local_name = parts.local;
+    }
+    appendEvent(cwd, invoke);
   }
 
   bumpSession(cwd, sid, s => {
     s.tool_calls[tool] = (s.tool_calls[tool] || 0) + 1;
     if (agentType) s.agent_spawns[agentType] = (s.agent_spawns[agentType] || 0) + 1;
-    if (skillName) s.skill_invokes[skillName] = (s.skill_invokes[skillName] || 0) + 1;
+    if (skillName) {
+      s.skill_invokes[skillName] = (s.skill_invokes[skillName] || 0) + 1;
+      // Consume the pending slot after we've decided trigger — any
+      // subsequent Skill call in the same turn is model_auto by design.
+      if (triggerForSkill === 'user_slash') s.pending_slash_skill = null;
+    }
   });
 }
 

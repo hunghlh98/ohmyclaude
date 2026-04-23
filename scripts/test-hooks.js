@@ -765,6 +765,99 @@ test('malformed stdin exits 0 without writing', () => {
   cleanup(sandbox);
 });
 
+test('UserPromptSubmit tags sentiment: affirmation', () => {
+  const sandbox = makeSandbox();
+  runHook('usage-tracker.js', JSON.stringify({
+    hook_event_name: 'SessionStart', session_id: 'utest-aff', cwd: sandbox,
+  }), { sandbox, cwd: sandbox });
+  const r = runHook('usage-tracker.js', JSON.stringify({
+    hook_event_name: 'UserPromptSubmit',
+    session_id: 'utest-aff',
+    cwd: sandbox,
+    prompt: 'perfect, thanks — ship it',
+  }), { sandbox, cwd: sandbox });
+  assertEq(r.code, 0, 'exit code');
+  const lines = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8').trim().split('\n');
+  const prompt = JSON.parse(lines[lines.length - 1]);
+  assertEq(prompt.affirmation_signal, true, 'affirmation detected');
+  assertEq(prompt.correction_signal, false, 'not a correction');
+  assertEq(prompt.sentiment, 'affirmation', 'sentiment tag');
+  cleanup(sandbox);
+});
+
+test('PreToolUse(Skill) stamps trigger=user_slash after matching /slash', () => {
+  const sandbox = makeSandbox();
+  runHook('usage-tracker.js', JSON.stringify({
+    hook_event_name: 'SessionStart', session_id: 'utest-trig1', cwd: sandbox,
+  }), { sandbox, cwd: sandbox });
+  runHook('usage-tracker.js', JSON.stringify({
+    hook_event_name: 'UserPromptSubmit',
+    session_id: 'utest-trig1',
+    cwd: sandbox,
+    prompt: '/simplify review this',
+  }), { sandbox, cwd: sandbox });
+  const r = runHook('usage-tracker.js', JSON.stringify({
+    hook_event_name: 'PreToolUse',
+    session_id: 'utest-trig1',
+    cwd: sandbox,
+    tool_name: 'Skill',
+    tool_input: { skill: 'simplify' },
+  }), { sandbox, cwd: sandbox });
+  assertEq(r.code, 0, 'exit code');
+  const lines = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8').trim().split('\n');
+  const invoke = JSON.parse(lines[lines.length - 1]);
+  assertEq(invoke.event, 'skill_invoke', 'event type');
+  assertEq(invoke.trigger, 'user_slash', 'trigger provenance');
+  cleanup(sandbox);
+});
+
+test('PreToolUse(Skill) stamps trigger=model_auto without prior /slash', () => {
+  const sandbox = makeSandbox();
+  runHook('usage-tracker.js', JSON.stringify({
+    hook_event_name: 'SessionStart', session_id: 'utest-trig2', cwd: sandbox,
+  }), { sandbox, cwd: sandbox });
+  // User's prompt is plain text — no slash command to correlate with.
+  runHook('usage-tracker.js', JSON.stringify({
+    hook_event_name: 'UserPromptSubmit',
+    session_id: 'utest-trig2',
+    cwd: sandbox,
+    prompt: 'please help me write this test',
+  }), { sandbox, cwd: sandbox });
+  const r = runHook('usage-tracker.js', JSON.stringify({
+    hook_event_name: 'PreToolUse',
+    session_id: 'utest-trig2',
+    cwd: sandbox,
+    tool_name: 'Skill',
+    tool_input: { skill: 'simplify' },
+  }), { sandbox, cwd: sandbox });
+  assertEq(r.code, 0, 'exit code');
+  const lines = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8').trim().split('\n');
+  const invoke = JSON.parse(lines[lines.length - 1]);
+  assertEq(invoke.trigger, 'model_auto', 'model_auto when no matching slash');
+  cleanup(sandbox);
+});
+
+test('PreToolUse(Skill) splits plugin prefix on colon', () => {
+  const sandbox = makeSandbox();
+  runHook('usage-tracker.js', JSON.stringify({
+    hook_event_name: 'SessionStart', session_id: 'utest-plug', cwd: sandbox,
+  }), { sandbox, cwd: sandbox });
+  const r = runHook('usage-tracker.js', JSON.stringify({
+    hook_event_name: 'PreToolUse',
+    session_id: 'utest-plug',
+    cwd: sandbox,
+    tool_name: 'Skill',
+    tool_input: { skill: 'sc:sc-analyze' },
+  }), { sandbox, cwd: sandbox });
+  assertEq(r.code, 0, 'exit code');
+  const lines = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8').trim().split('\n');
+  const invoke = JSON.parse(lines[lines.length - 1]);
+  assertEq(invoke.skill_plugin, 'sc', 'plugin prefix');
+  assertEq(invoke.skill_local_name, 'sc-analyze', 'local name');
+  assertEq(invoke.trigger, 'model_auto', 'no prior slash so auto');
+  cleanup(sandbox);
+});
+
 // ── dry-run.js (utility, not a hook — still asserted for v1.2.0 contract) ──
 console.log('\ndry-run.js — /forge --dry-run classifier:');
 

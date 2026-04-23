@@ -154,6 +154,37 @@ function compute(events) {
 
   const promptTotal = prompts.length;
   const corrections = prompts.filter(p => p.correction_signal).length;
+  const affirmations = prompts.filter(p => p.affirmation_signal).length;
+  const neutrals = promptTotal - corrections - affirmations;
+
+  // Skill trigger provenance (v2.3.1+). Events from older logs lack `trigger`
+  // and fall through to an "unknown" bucket so the ratio doesn't silently
+  // lie when someone upgrades mid-corpus.
+  const triggerCounts = { user_slash: 0, model_auto: 0, unknown: 0 };
+  const triggerBySkill = new Map();
+  for (const s of skills) {
+    const t = s.trigger || 'unknown';
+    triggerCounts[t] = (triggerCounts[t] || 0) + 1;
+    const key = s.skill_name || 'unknown';
+    const cur = triggerBySkill.get(key) || { user_slash: 0, model_auto: 0, unknown: 0 };
+    cur[t] = (cur[t] || 0) + 1;
+    triggerBySkill.set(key, cur);
+  }
+
+  // Plugin usage aggregation across skills + agents + slash commands. Null
+  // plugin (unprefixed) is rendered as "core" — that's the ohmyclaude own
+  // surface. Colon-prefixed names come from other installed plugins.
+  const pluginCounts = new Map();
+  const bump = (p, k, n = 1) => {
+    const key = p || 'core';
+    const cur = pluginCounts.get(key) || { skills: 0, agents: 0, commands: 0, total: 0 };
+    cur[k] += n;
+    cur.total += n;
+    pluginCounts.set(key, cur);
+  };
+  for (const e of skills)  bump(e.skill_plugin, 'skills');
+  for (const e of spawns)  bump(e.agent_plugin, 'agents');
+  for (const e of prompts.filter(p => p.is_slash_command)) bump(e.command_plugin, 'commands');
 
   const spawnSet = new Set(agentCounts.map(([n]) => n));
   const deadAgents = ALL_AGENTS.filter(a => !spawnSet.has(a));
@@ -224,7 +255,9 @@ function compute(events) {
     totals: {
       user_prompts: promptTotal,
       corrections,
-      correction_rate: promptTotal ? corrections / promptTotal : 0,
+      affirmations,
+      correction_rate:  promptTotal ? corrections / promptTotal : 0,
+      affirmation_rate: promptTotal ? affirmations / promptTotal : 0,
       agent_spawns: spawns.length,
       skill_invokes: skills.length,
       forge_runs: forgeRuns.length,
@@ -235,6 +268,21 @@ function compute(events) {
       insights_captured: insights.length,
       insights_unique:   uniqInsights.length,
     },
+    sentiment: {
+      correction: corrections,
+      affirmation: affirmations,
+      neutral: Math.max(0, neutrals),
+      total: promptTotal,
+    },
+    skill_triggers: {
+      totals: triggerCounts,
+      by_skill: [...triggerBySkill.entries()]
+        .sort((a, b) => (b[1].user_slash + b[1].model_auto) - (a[1].user_slash + a[1].model_auto))
+        .map(([name, c]) => ({ name, ...c, total: c.user_slash + c.model_auto + c.unknown })),
+    },
+    plugins: [...pluginCounts.entries()]
+      .sort((a, b) => b[1].total - a[1].total)
+      .map(([name, c]) => ({ name, ...c })),
     agents: {
       fired: agentCounts.map(([name, count]) => ({ name, count })),
       dead:  deadAgents,
@@ -286,6 +334,7 @@ function renderMd(summary) {
   lines.push(`|---|---:|`);
   lines.push(`| User prompts | ${t.user_prompts} |`);
   lines.push(`| Corrections | ${t.corrections} (${pct(t.corrections, t.user_prompts)}) |`);
+  lines.push(`| Affirmations | ${t.affirmations} (${pct(t.affirmations, t.user_prompts)}) |`);
   lines.push(`| Agent spawns | ${t.agent_spawns} |`);
   lines.push(`| Skill invocations | ${t.skill_invokes} |`);
   lines.push(`| /forge runs | ${t.forge_runs} |`);
@@ -333,6 +382,40 @@ function renderMd(summary) {
     lines.push('');
   }
 
+  lines.push(`## Skill triggers (v2.3.1+)`);
+  lines.push('');
+  const st = summary.skill_triggers;
+  const stTotal = st.totals.user_slash + st.totals.model_auto + st.totals.unknown;
+  if (stTotal === 0) {
+    lines.push('_No Skill tool invocations yet._');
+  } else {
+    lines.push(`Out of ${stTotal} Skill-tool invocations: **${st.totals.user_slash}** user-triggered (typed as a slash command) · **${st.totals.model_auto}** auto-triggered by Claude${st.totals.unknown ? ` · ${st.totals.unknown} from pre-v2.3.1 events (no trigger field)` : ''}.`);
+    lines.push('');
+    if (st.by_skill.length) {
+      lines.push(`| Skill | User-typed | Auto | Unknown |`);
+      lines.push(`|---|---:|---:|---:|`);
+      for (const r of st.by_skill.slice(0, 20)) {
+        lines.push(`| ${r.name} | ${r.user_slash} | ${r.model_auto} | ${r.unknown} |`);
+      }
+    }
+  }
+  lines.push('');
+
+  lines.push(`## Plugins (v2.3.1+)`);
+  lines.push('');
+  if (!summary.plugins.length) {
+    lines.push('_No plugin-namespaced skills/agents/commands observed yet._');
+  } else {
+    lines.push(`Usage grouped by name prefix (\`<plugin>:<name>\`). "core" is ohmyclaude itself (no prefix).`);
+    lines.push('');
+    lines.push(`| Plugin | Skills | Agents | Commands | Total |`);
+    lines.push(`|---|---:|---:|---:|---:|`);
+    for (const p of summary.plugins) {
+      lines.push(`| ${p.name} | ${p.skills} | ${p.agents} | ${p.commands} | ${p.total} |`);
+    }
+  }
+  lines.push('');
+
   lines.push(`## Commands`);
   lines.push('');
   if (summary.commands.length) {
@@ -354,6 +437,22 @@ function renderMd(summary) {
     for (const sc of summary.scenarios) lines.push(`| ${sc.name} | ${sc.count} |`);
   } else {
     lines.push('_No /forge runs recorded yet. Run a /forge to populate this._');
+  }
+  lines.push('');
+
+  lines.push(`## Prompt sentiment (v2.3.1+)`);
+  lines.push('');
+  const sent = summary.sentiment;
+  if (sent.total === 0) {
+    lines.push('_No user prompts yet._');
+  } else {
+    lines.push(`| Sentiment | Count | Share |`);
+    lines.push(`|---|---:|---:|`);
+    lines.push(`| correction | ${sent.correction} | ${pct(sent.correction, sent.total)} |`);
+    lines.push(`| affirmation | ${sent.affirmation} | ${pct(sent.affirmation, sent.total)} |`);
+    lines.push(`| neutral | ${sent.neutral} | ${pct(sent.neutral, sent.total)} |`);
+    lines.push('');
+    lines.push('_Detection is regex on the first token only — "no", "stop", "revert" → correction; "yes", "perfect", "lgtm", "ship it" → affirmation. Correction wins when both match._');
   }
   lines.push('');
 
@@ -444,7 +543,7 @@ function renderTerm(summary) {
   out.push('╭─ ohmyclaude usage insights');
   out.push(`│  events: ${summary.window.total_events}  ·  sessions: ${summary.window.sessions_started}  ·  /forge runs: ${t.forge_runs}`);
   out.push(`│  total spend: $${t.total_usd.toFixed(4)}  ·  avg/run: $${t.avg_usd_per_run.toFixed(4)}  ·  wall: ${fmtMs(t.total_wall_ms)}`);
-  out.push(`│  prompts: ${t.user_prompts}  ·  corrections: ${t.corrections} (${pct(t.corrections, t.user_prompts)})`);
+  out.push(`│  prompts: ${t.user_prompts}  ·  corrections: ${t.corrections} (${pct(t.corrections, t.user_prompts)})  ·  affirmations: ${t.affirmations} (${pct(t.affirmations, t.user_prompts)})`);
   out.push('╰─');
   out.push('');
 
@@ -471,6 +570,24 @@ function renderTerm(summary) {
     out.push('  (no Skill-tool invocations yet)');
   }
   out.push('');
+
+  const st = summary.skill_triggers.totals;
+  const stTotal = st.user_slash + st.model_auto + st.unknown;
+  if (stTotal > 0) {
+    out.push('Skill trigger mix:');
+    out.push(`  ${String(st.user_slash).padStart(5)}  user-typed (${pct(st.user_slash, stTotal)})`);
+    out.push(`  ${String(st.model_auto).padStart(5)}  auto by Claude (${pct(st.model_auto, stTotal)})`);
+    if (st.unknown) out.push(`  ${String(st.unknown).padStart(5)}  unknown (pre-v2.3.1)`);
+    out.push('');
+  }
+
+  if (summary.plugins.length) {
+    out.push('Plugin usage:');
+    for (const p of summary.plugins.slice(0, 8)) {
+      out.push(`  ${String(p.total).padStart(5)}  ${p.name}  (skills:${p.skills} agents:${p.agents} commands:${p.commands})`);
+    }
+    out.push('');
+  }
 
   out.push('Commands:');
   if (summary.commands.length) {

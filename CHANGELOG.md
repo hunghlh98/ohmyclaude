@@ -8,6 +8,29 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [2.3.1] — 2026-04-23
+
+Behavioral-telemetry follow-up to v2.3.0. Same four tracker wire-ups (SessionStart, UserPromptSubmit, PreToolUse, Stop), same privacy rules (prompt bodies never hit disk), but each event now carries three dimensions that v2.3.0 was capable of capturing and didn't: who initiated each skill call, which plugin namespace it belongs to, and whether the user's reply carried approval in addition to course-correction.
+
+### Added
+
+- **Skill trigger provenance** — `skill_invoke` events now carry `trigger: "user_slash" | "model_auto"`. Correlation is one-shot: when `UserPromptSubmit` sees `/skill-name`, the tracker writes `pending_slash_skill` into the session state; the next `PreToolUse(Skill)` whose name matches consumes the slot and stamps `user_slash`; anything else is `model_auto`. The slot is cleared at every new user prompt so stale slashes can't leak forward. Heuristic is ~95% accurate — if the user and Claude race to the same skill name in one turn, only the first call is labeled user.
+- **Plugin dimension** — `skill_invoke`, `agent_spawn`, and slash-command `user_prompt` events now include `{skill|agent|command}_plugin` and `{…}_local_name` when the name contains a `:` prefix (`sc:sc-analyze` → `sc` / `sc-analyze`; `pen-claude-ai:jira-log` → `pen-claude-ai` / `jira-log`). Unprefixed names omit the fields rather than carrying a fake `plugin` stamp; the report renders them as "core" = ohmyclaude itself.
+- **Affirmation signal** — `user_prompt` events now carry `affirmation_signal` (regex on first token: `yes|yep|yeah|perfect|nice|great|thanks|thx|lgtm|ship it|looks good|that works|exactly|awesome|sure|ok|okay`) and a derived `sentiment` tag (`correction | affirmation | neutral`; correction wins on ties). Lets the rollup distinguish what the user validated from what they course-corrected — you can tell which Claude decisions worked, not just which ones didn't.
+- **`scripts/usage-report.js` new sections** — "Skill triggers" table with per-skill user-vs-auto breakdown; "Plugins" usage table grouped by prefix with skills/agents/commands split; "Prompt sentiment" table with correction/affirmation/neutral shares. `aggregate.json` gains `sentiment`, `skill_triggers`, `plugins` top-level keys. Terminal renderer gains the same three panels.
+- **Dashboard `/api/summary` parity** — `scripts/dashboard/server.py` `compute_summary()` mirrors the JS aggregator: exposes `sentiment`, `skill_triggers`, `plugins` fields so any frontend (the existing dashboard UI, a future panel, or ad-hoc `curl`) can render the new dimensions without re-scanning the event log.
+- **4 new hook smoke tests** — affirmation sentiment detection, `trigger=user_slash` correlation, `trigger=model_auto` fallback, plugin colon-split. Total 49 hook contracts (up from 45 in v2.3.0). All existing 8 usage-tracker tests preserved verbatim.
+
+### Changed
+
+- `hooks/scripts/usage-tracker.js` — adds `AFFIRMATION_RE` alongside `CORRECTION_RE`; adds a `splitPlugin()` helper; session state gains `pending_slash_skill` (nullable, one-shot) and an `affirmations` counter.
+- `scripts/usage-report.js` — `compute()` emits three new top-level keys; both markdown and terminal renderers updated.
+- `scripts/dashboard/server.py` — parallel changes in the Python aggregator. Events are authoritative; older events (no `trigger` field) bucket into `unknown` rather than being silently recoded as `model_auto`.
+
+### Philosophy
+
+v2.3.0 answered "what happened." v2.3.1 answers "who asked for it, and how did the user feel about the result." Same event volume, same privacy rules — just richer per-event records. The design principle: every new field is additive and gracefully degrades on pre-v2.3.1 events (unknown trigger, null plugin, missing affirmation) so a repo can upgrade mid-corpus and the rollup stays honest instead of retroactively relabeling history.
+
 ## [2.3.0] — 2026-04-23
 
 Metrics Observability — two shipped features plus a transparent visualization layer. The v2.0.0 restore-invariants cut introduced the `cost-profiler.js` hook; v2.3 closes the loop: every `/forge` run now attributes cost per named agent (not `"unknown"`), every session emits privacy-preserving usage telemetry under `.claude/usage/`, and a zero-dep Python dashboard renders the data without any pip install.

@@ -163,7 +163,35 @@ def compute_summary(events: list[dict]) -> dict:
     )
     scenario_counts = Counter(e.get("scenario", "unknown") for e in forge_runs)
 
-    corrections = sum(1 for p in prompts if p.get("correction_signal"))
+    corrections  = sum(1 for p in prompts if p.get("correction_signal"))
+    affirmations = sum(1 for p in prompts if p.get("affirmation_signal"))
+    neutrals     = max(0, len(prompts) - corrections - affirmations)
+
+    # Skill trigger provenance (v2.4+). Events without `trigger` fall into
+    # the "unknown" bucket rather than being silently recoded as model_auto.
+    trigger_totals: Counter[str] = Counter()
+    trigger_by_skill: dict[str, Counter[str]] = defaultdict(Counter)
+    for s in skills:
+        t = s.get("trigger") or "unknown"
+        trigger_totals[t] += 1
+        trigger_by_skill[s.get("skill_name", "unknown")][t] += 1
+
+    # Plugin aggregation across skills + agents + slash commands. Unprefixed
+    # names collapse into "core" = ohmyclaude itself.
+    plugin_counts: dict[str, dict[str, int]] = defaultdict(
+        lambda: {"skills": 0, "agents": 0, "commands": 0, "total": 0}
+    )
+    def _bump_plugin(key: str | None, kind: str) -> None:
+        k = key or "core"
+        plugin_counts[k][kind] += 1
+        plugin_counts[k]["total"] += 1
+    for s in skills:
+        _bump_plugin(s.get("skill_plugin"), "skills")
+    for sp in spawns:
+        _bump_plugin(sp.get("agent_plugin"), "agents")
+    for p in prompts:
+        if p.get("is_slash_command"):
+            _bump_plugin(p.get("command_plugin"), "commands")
 
     # corrections by preceding agent (session-bounded 20-event lookback)
     corr_by_agent: Counter[str] = Counter()
@@ -227,7 +255,9 @@ def compute_summary(events: list[dict]) -> dict:
         "totals": {
             "user_prompts":       len(prompts),
             "corrections":        corrections,
+            "affirmations":       affirmations,
             "correction_rate":    (corrections / len(prompts)) if prompts else 0,
+            "affirmation_rate":   (affirmations / len(prompts)) if prompts else 0,
             "agent_spawns":       len(spawns),
             "skill_invokes":      len(skills),
             "forge_runs":         len(forge_runs),
@@ -238,6 +268,38 @@ def compute_summary(events: list[dict]) -> dict:
             "insights_captured":  len(insights),
             "insights_unique":    len(uniq),
         },
+        "sentiment": {
+            "correction":  corrections,
+            "affirmation": affirmations,
+            "neutral":     neutrals,
+            "total":       len(prompts),
+        },
+        "skill_triggers": {
+            "totals": {
+                "user_slash": trigger_totals.get("user_slash", 0),
+                "model_auto": trigger_totals.get("model_auto", 0),
+                "unknown":    trigger_totals.get("unknown", 0),
+            },
+            "by_skill": sorted(
+                [
+                    {
+                        "name":       name,
+                        "user_slash": counts.get("user_slash", 0),
+                        "model_auto": counts.get("model_auto", 0),
+                        "unknown":    counts.get("unknown", 0),
+                        "total":      sum(counts.values()),
+                    }
+                    for name, counts in trigger_by_skill.items()
+                ],
+                key=lambda r: r["user_slash"] + r["model_auto"],
+                reverse=True,
+            ),
+        },
+        "plugins": sorted(
+            [{"name": n, **c} for n, c in plugin_counts.items()],
+            key=lambda r: r["total"],
+            reverse=True,
+        ),
         "agents": {
             "fired": [{"name": n, "count": c} for n, c in agent_counts.most_common()],
             "dead":  dead_agents,
