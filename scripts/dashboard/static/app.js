@@ -1,6 +1,67 @@
 "use strict";
 
-// Chart.js global defaults — dark theme
+// ── client-side logging ────────────────────────────────────────────────────
+// Captures console.error, uncaught errors, unhandled promise rejections, and
+// manual logs. POSTs to /api/log (server persists under scripts/dashboard/logs/
+// dashboard.log). Also keeps the last N entries in-memory for the drawer.
+const LOG_BUFFER = [];
+const LOG_BUFFER_MAX = 500;
+
+function pushLog(level, message, extra) {
+  const entry = {
+    ts: new Date().toISOString(),
+    level,
+    message: String(message == null ? "" : message),
+    stack:   extra && extra.stack ? String(extra.stack) : "",
+    url:     location.href,
+    context: extra && extra.context ? extra.context : null,
+  };
+  LOG_BUFFER.push(entry);
+  if (LOG_BUFFER.length > LOG_BUFFER_MAX) LOG_BUFFER.shift();
+  renderLogDrawer();
+  // Best-effort POST; do not await, do not throw (logging must never fail).
+  try {
+    fetch("/api/log", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify(entry),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {}
+}
+
+// Wrap console.error so stray stack traces get captured.
+(function wrapConsole() {
+  const origError = console.error.bind(console);
+  const origWarn  = console.warn.bind(console);
+  console.error = function (...args) {
+    try {
+      const msg = args.map((a) => (a && a.stack) ? a.stack : String(a)).join(" ");
+      pushLog("error", msg);
+    } catch {}
+    return origError(...args);
+  };
+  console.warn = function (...args) {
+    try { pushLog("warn", args.map(String).join(" ")); } catch {}
+    return origWarn(...args);
+  };
+})();
+
+window.addEventListener("error", (e) => {
+  pushLog("error", e.message || "window error", {
+    stack: (e.error && e.error.stack) || "",
+    context: { filename: e.filename, lineno: e.lineno, colno: e.colno },
+  });
+});
+window.addEventListener("unhandledrejection", (e) => {
+  const reason = e.reason;
+  const msg    = reason && reason.message ? reason.message : String(reason);
+  const stack  = reason && reason.stack   ? reason.stack   : "";
+  pushLog("error", "unhandledrejection: " + msg, { stack });
+});
+
+
+// Chart.js global defaults — dark theme + no-animation (perf)
 (function setChartDefaults() {
   function apply() {
     if (!window.Chart) return false;
@@ -10,10 +71,16 @@
       'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
     Chart.defaults.font.size = 11;
     Chart.defaults.maintainAspectRatio = false;
+    Chart.defaults.responsive = true;
+    Chart.defaults.animation = false;        // 6 charts × animated resizes = visible stutter
+    Chart.defaults.plugins.legend.display = false;  // per-chart opt-in
     return true;
   }
   if (!apply()) window.addEventListener("load", apply);
 })();
+
+// Defensive caps — a 36-row horizontal bar renders tiny labels and chews CPU.
+const MAX_BAR_ROWS = 12;
 
 const PALETTE = [
   "#6ee7b7", "#60a5fa", "#f59e0b", "#f472b6",
@@ -54,13 +121,20 @@ function drawBar(canvasId, labels, data, color = PALETTE[0], horizontal = true) 
   const ctx = el(canvasId);
   if (!ctx) return;
   if (charts[canvasId]) charts[canvasId].destroy();
+  // cap to prevent unreadable / slow charts
+  if (labels.length > MAX_BAR_ROWS) {
+    labels = labels.slice(0, MAX_BAR_ROWS);
+    data   = data.slice(0, MAX_BAR_ROWS);
+  }
   charts[canvasId] = new Chart(ctx, {
     type: "bar",
     data: { labels, datasets: [{ data, backgroundColor: color, borderWidth: 0 }] },
     options: {
       indexAxis: horizontal ? "y" : "x",
-      plugins: { legend: { display: false } },
-      scales: { x: { grid: { color: "#30363d" } }, y: { grid: { color: "#30363d" } } },
+      scales: {
+        x: { grid: { color: "#30363d" }, ticks: { autoSkip: true, maxRotation: 0 } },
+        y: { grid: { color: "#30363d" }, ticks: { autoSkip: false } },
+      },
     },
   });
 }
@@ -72,7 +146,9 @@ function drawPie(canvasId, labels, data) {
     type: "doughnut",
     data: { labels, datasets: [{ data, backgroundColor: PALETTE, borderWidth: 0 }] },
     options: {
-      plugins: { legend: { position: "right", labels: { boxWidth: 10 } } },
+      plugins: {
+        legend: { display: true, position: "right", labels: { boxWidth: 10 } },
+      },
       cutout: "55%",
     },
   });
@@ -81,12 +157,17 @@ function drawLine(canvasId, points) {
   const ctx = el(canvasId);
   if (!ctx) return;
   if (charts[canvasId]) charts[canvasId].destroy();
+  // for very dense timelines, thin to ~40 points to keep rendering cheap
+  const maxPts = 40;
+  const sampled = points.length > maxPts
+    ? points.filter((_, i) => i % Math.ceil(points.length / maxPts) === 0)
+    : points;
   charts[canvasId] = new Chart(ctx, {
     type: "line",
     data: {
-      labels: points.map((p) => fmtTs(p.ts)),
+      labels: sampled.map((p) => fmtTs(p.ts)),
       datasets: [{
-        data: points.map((p) => p.total_usd),
+        data: sampled.map((p) => p.total_usd),
         borderColor: PALETTE[1],
         backgroundColor: "rgba(96,165,250,0.15)",
         fill: true,
@@ -96,13 +177,12 @@ function drawLine(canvasId, points) {
       }],
     },
     options: {
-      plugins: { legend: { display: false } },
       scales: {
         y: {
           ticks: { callback: (v) => `$${Number(v).toFixed(2)}` },
           grid: { color: "#30363d" },
         },
-        x: { grid: { color: "#30363d" } },
+        x: { grid: { color: "#30363d" }, ticks: { autoSkip: true, maxTicksLimit: 6 } },
       },
     },
   });
@@ -118,13 +198,23 @@ function setStatus(msg, kind = "") {
 }
 
 async function fetchJson(url) {
-  const r = await fetch(url);
+  let r;
+  try {
+    r = await fetch(url);
+  } catch (networkErr) {
+    pushLog("error", `fetch network failed: ${networkErr.message}`, {
+      stack: networkErr.stack || "",
+      context: { url },
+    });
+    throw networkErr;
+  }
   if (!r.ok) {
     let msg = `HTTP ${r.status}`;
     try {
       const body = await r.json();
       if (body && body.error) msg = body.error;
     } catch {}
+    pushLog("error", `fetch ${url} → ${msg}`, { context: { url, status: r.status } });
     throw new Error(msg);
   }
   return r.json();
@@ -373,6 +463,56 @@ function renderInsightsList(items) {
     .join("");
 }
 
+// ── log drawer rendering ───────────────────────────────────────────────────
+function renderLogDrawer() {
+  const body  = el("log-body");
+  const count = el("log-count");
+  const badge = el("log-badge");
+  const toggle = el("log-toggle");
+  if (!body || !badge) return;
+
+  const errs = LOG_BUFFER.filter((e) => e.level === "error").length;
+  const total = LOG_BUFFER.length;
+  badge.textContent = String(total);
+  if (count) count.textContent = total ? `(${total} entries, ${errs} errors)` : "(empty)";
+  if (toggle) toggle.classList.toggle("has-err", errs > 0);
+
+  if (!body.parentElement || body.parentElement.hidden) return; // don't rebuild if hidden
+  body.innerHTML = LOG_BUFFER.slice(-200).reverse().map((e) => {
+    const stack = e.stack ? `<div class="log-stack">${esc(e.stack)}</div>` : "";
+    return `<div class="log-entry">
+      <span class="log-ts">${esc(e.ts.slice(11, 19))}</span>
+      <span class="log-level ${esc(e.level)}">${esc(e.level)}</span>
+      ${esc(e.message)}
+      ${stack}
+    </div>`;
+  }).join("");
+}
+
+async function showServerTail() {
+  const body = el("log-body");
+  body.innerHTML = '<div class="dim">fetching server log…</div>';
+  try {
+    const tail = await fetchJson("/api/logs?tail=200");
+    if (!tail.length) {
+      body.innerHTML = '<div class="dim">(server log empty)</div>';
+      return;
+    }
+    body.innerHTML = tail.reverse().map((e) => {
+      const msg = e.message || "";
+      const stack = e.stack ? `<div class="log-stack">${esc(e.stack)}</div>` : "";
+      return `<div class="log-entry">
+        <span class="log-ts">${esc((e.server_ts || "").slice(11, 19))}</span>
+        <span class="log-level ${esc(e.level || "info")}">${esc(e.level || "info")}</span>
+        ${esc(msg)}
+        ${stack}
+      </div>`;
+    }).join("");
+  } catch (err) {
+    body.innerHTML = `<div class="dim">failed to fetch: ${esc(err.message)}</div>`;
+  }
+}
+
 // ── wire up ────────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   const form  = el("path-form");
@@ -389,14 +529,37 @@ document.addEventListener("DOMContentLoaded", () => {
     const v = input.value.trim();
     if (!v) return;
     try { localStorage.setItem("ohmyclaude-dashboard-path", v); } catch {}
+    pushLog("info", `loading path: ${v}`);
     loadPath(v);
   });
   el("reload-btn").addEventListener("click", () => {
-    if (currentPath) loadPath(currentPath);
+    if (currentPath) {
+      pushLog("info", `reload: ${currentPath}`);
+      loadPath(currentPath);
+    }
   });
   el("run-detail-close").addEventListener("click", () => {
     el("run-detail-panel").hidden = true;
   });
+
+  // log drawer controls
+  const drawer = el("log-drawer");
+  el("log-toggle").addEventListener("click", () => {
+    drawer.hidden = !drawer.hidden;
+    if (!drawer.hidden) renderLogDrawer();
+  });
+  el("log-close").addEventListener("click", () => { drawer.hidden = true; });
+  el("log-clear").addEventListener("click", () => {
+    LOG_BUFFER.length = 0;
+    renderLogDrawer();
+  });
+  el("log-server").addEventListener("click", () => {
+    drawer.hidden = false;
+    showServerTail();
+  });
+
+  pushLog("info", "dashboard boot");
+  renderLogDrawer();
 
   // Auto-load if a saved path exists
   if (input.value.trim()) form.requestSubmit();

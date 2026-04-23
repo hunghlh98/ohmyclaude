@@ -34,6 +34,10 @@ HERE = Path(__file__).resolve().parent
 PLUGIN_ROOT = HERE.parent.parent
 STATIC_DIR = HERE / "static"
 INDEX_HTML = HERE / "index.html"
+LOG_DIR = HERE / "logs"
+LOG_FILE = LOG_DIR / "dashboard.log"
+MAX_LOG_BYTES = 1_048_576  # 1 MiB; rotate to .1 past that
+MAX_LOG_POST_BYTES = 16_384  # reject bodies larger than 16 KB
 
 STOP_WORDS = {
     "the", "a", "an", "and", "or", "but", "is", "are", "was", "were", "be", "been",
@@ -278,8 +282,47 @@ def compute_summary(events: list[dict]) -> dict:
 # ── api endpoints ───────────────────────────────────────────────────────────
 
 
+def _ms_to_iso(v: Any) -> str | None:
+    if v is None:
+        return None
+    if isinstance(v, (int, float)):
+        from datetime import datetime, timezone
+        return datetime.fromtimestamp(v / 1000, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+    return str(v)
+
+
 def api_summary(claude_dir: Path) -> dict:
+    """Usage events are authoritative; when they're missing (legacy repos
+    that only have cost-profiler data), backfill forge_run_end events
+    from the runs table so totals / cost-timeline / scenarios still render."""
     events = read_jsonl(claude_dir / "usage" / "events.jsonl")
+    runs   = api_runs(claude_dir)
+
+    seen_run_ids = {
+        e.get("runId") for e in events
+        if e.get("event") == "forge_run_end" and e.get("runId")
+    }
+    for r in runs:
+        rid = r.get("runId")
+        if not rid or rid in seen_run_ids:
+            continue
+        events.append({
+            "ts":             _ms_to_iso(r.get("ended_at") or r.get("started_at")),
+            "event":          "forge_run_end",
+            "session_id":     rid,
+            "runId":          rid,
+            "scenario":       r.get("scenario") or "unknown",
+            "agents":         r.get("agents") or [],
+            "agents_count":   r.get("agents_count"),
+            "total_usd":      r.get("total_usd"),
+            "total_turns":    r.get("total_turns"),
+            "wall_ms":        r.get("wall_ms"),
+            "cache_hit_rate": r.get("cache_hit_rate"),
+            "tool_mix":       r.get("tool_mix"),
+            "_synthesized":   bool(r.get("_synthesized")),
+        })
+
+    events.sort(key=lambda e: e.get("ts") or "")
     return compute_summary(events)
 
 
@@ -354,7 +397,39 @@ def api_health() -> dict:
         "plugin_root": str(PLUGIN_ROOT),
         "agents_known": len(ALL_AGENTS),
         "skills_known": len(ALL_SKILLS),
+        "log_file": str(LOG_FILE),
     }
+
+
+def append_dashboard_log(entry: dict) -> None:
+    """Append a JSON log line to dashboard.log; rotate at MAX_LOG_BYTES."""
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        if LOG_FILE.is_file() and LOG_FILE.stat().st_size > MAX_LOG_BYTES:
+            rotated = LOG_DIR / "dashboard.log.1"
+            if rotated.exists():
+                rotated.unlink()
+            LOG_FILE.rename(rotated)
+    except OSError:
+        pass  # non-fatal
+    with LOG_FILE.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(entry, default=str) + "\n")
+
+
+def read_dashboard_log(tail: int = 200) -> list[dict]:
+    if not LOG_FILE.is_file():
+        return []
+    out: list[dict] = []
+    with LOG_FILE.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                out.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    return out[-tail:]
 
 
 # ── http server ─────────────────────────────────────────────────────────────
@@ -447,6 +522,45 @@ class Handler(BaseHTTPRequestHandler):
             if p is None:
                 return
             return self._send_json(200, api_baseline(p))
+
+        if route == "/api/logs":
+            tail = 200
+            try:
+                tail = min(1000, max(1, int((qs.get("tail") or ["200"])[0])))
+            except ValueError:
+                pass
+            return self._send_json(200, read_dashboard_log(tail))
+
+        self.send_error(404, "not found")
+
+    def do_POST(self) -> None:  # noqa: N802
+        parsed = urlparse(self.path)
+        route  = parsed.path
+
+        if route == "/api/log":
+            length = int(self.headers.get("Content-Length") or 0)
+            if length <= 0 or length > MAX_LOG_POST_BYTES:
+                return self._send_json(413, {"error": "payload too large or empty"})
+            try:
+                body = self.rfile.read(length).decode("utf-8", errors="replace")
+                payload = json.loads(body)
+            except (UnicodeError, json.JSONDecodeError):
+                return self._send_json(400, {"error": "invalid json"})
+            if not isinstance(payload, dict):
+                return self._send_json(400, {"error": "expected object"})
+
+            entry = {
+                "server_ts":  __import__("datetime").datetime.utcnow().isoformat() + "Z",
+                "client_ts":  str(payload.get("ts") or ""),
+                "level":      str(payload.get("level") or "info")[:16],
+                "message":    str(payload.get("message") or "")[:2000],
+                "stack":      str(payload.get("stack") or "")[:4000],
+                "url":        str(payload.get("url") or "")[:500],
+                "user_agent": (self.headers.get("User-Agent") or "")[:300],
+                "context":    payload.get("context") if isinstance(payload.get("context"), (dict, list, str)) else None,
+            }
+            append_dashboard_log(entry)
+            return self._send_json(200, {"ok": True})
 
         self.send_error(404, "not found")
 

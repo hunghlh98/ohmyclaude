@@ -40,29 +40,29 @@
     <section class="grid">
       <div class="panel">
         <h3>Cost per /forge run <span class="sub">over time</span></h3>
-        <canvas id="chart-cost" height="200"></canvas>
+        <div class="chart-box"><canvas id="chart-cost"></canvas></div>
       </div>
       <div class="panel">
         <h3>Agent spawns</h3>
-        <canvas id="chart-agents" height="200"></canvas>
+        <div class="chart-box"><canvas id="chart-agents"></canvas></div>
         <div id="dead-agents" class="dead"></div>
       </div>
       <div class="panel">
         <h3>Skill invocations <span class="sub">(via Skill tool)</span></h3>
-        <canvas id="chart-skills" height="200"></canvas>
+        <div class="chart-box"><canvas id="chart-skills"></canvas></div>
         <div id="dead-skills" class="dead"></div>
       </div>
       <div class="panel">
         <h3>Tool mix <span class="sub">(across /forge runs)</span></h3>
-        <canvas id="chart-tools" height="200"></canvas>
+        <div class="chart-box"><canvas id="chart-tools"></canvas></div>
       </div>
       <div class="panel">
         <h3>Scenario mix</h3>
-        <canvas id="chart-scenarios" height="200"></canvas>
+        <div class="chart-box"><canvas id="chart-scenarios"></canvas></div>
       </div>
       <div class="panel">
         <h3>Commands typed</h3>
-        <canvas id="chart-commands" height="200"></canvas>
+        <div class="chart-box"><canvas id="chart-commands"></canvas></div>
       </div>
     </section>
 
@@ -91,7 +91,7 @@
     <section class="grid">
       <div class="panel">
         <h3>Corrections <span class="sub">by preceding agent</span></h3>
-        <canvas id="chart-corrections" height="200"></canvas>
+        <div class="chart-box"><canvas id="chart-corrections"></canvas></div>
         <div id="corr-rate" class="dim"></div>
       </div>
       <div class="panel">
@@ -110,5 +110,18 @@
       <span id="window-info" class="dim"></span>
     </footer>
   </main>
+
+  <div id="log-drawer" class="log-drawer" hidden>
+    <div class="log-head">
+      <span>client logs <span id="log-count" class="dim"></span></span>
+      <span class="log-actions">
+        <button type="button" id="log-clear" class="inline">clear</button>
+        <button type="button" id="log-server" class="inline">server tail</button>
+        <button type="button" id="log-close"  class="inline">close</button>
+      </span>
+    </div>
+    <div id="log-body" class="log-body"></div>
+  </div>
+  <button type="button" id="log-toggle" class="log-toggle" title="Show client logs">● logs <span id="log-badge" class="log-badge">0</span></button>
 </body>
 </html>

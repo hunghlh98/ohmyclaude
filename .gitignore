@@ -7,3 +7,4 @@ dist/
 venv/
 *.pyc
 __pycache__/
+scripts/dashboard/logs/
