@@ -60,6 +60,7 @@
         "hooks-graph",
         "hooks-tracking",
         "hooks-profiler",
+        "hooks-usage",
         "hooks-session"
       ]
     }

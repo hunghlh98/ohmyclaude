@@ -579,6 +579,192 @@ test('exits 0 on malformed stdin', () => {
   cleanup(r.sandbox);
 });
 
+// ── usage-tracker.js (SessionStart + UserPromptSubmit + PreToolUse + Stop) ──
+console.log('\nusage-tracker.js — per-project usage telemetry:');
+
+test('SessionStart seeds per-session state and emits session_start', () => {
+  const sandbox = makeSandbox();
+  const evt = {
+    hook_event_name: 'SessionStart',
+    session_id: 'utest-1',
+    cwd: sandbox,
+    source: 'startup',
+  };
+  const r = runHook('usage-tracker.js', JSON.stringify(evt), { sandbox, cwd: sandbox });
+  assertEq(r.code, 0, 'exit code');
+  assertEq(r.stdout, JSON.stringify(evt), 'passthrough');
+  assertExists(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'events.jsonl created');
+  assertExists(path.join(sandbox, '.claude', 'usage', '.sessions', 'utest-1.json'), 'session state');
+  const line = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8').trim();
+  const ev = JSON.parse(line);
+  assertEq(ev.event, 'session_start', 'event type');
+  assertEq(ev.session_id, 'utest-1', 'session_id');
+  cleanup(sandbox);
+});
+
+test('UserPromptSubmit logs metadata only, detects /forge command', () => {
+  const sandbox = makeSandbox();
+  // Pre-seed session state so bumpSession works cleanly
+  runHook('usage-tracker.js', JSON.stringify({
+    hook_event_name: 'SessionStart', session_id: 'utest-2', cwd: sandbox, source: 'startup',
+  }), { sandbox, cwd: sandbox });
+
+  const evt = {
+    hook_event_name: 'UserPromptSubmit',
+    session_id: 'utest-2',
+    cwd: sandbox,
+    prompt: '/forge sprint --size 3\nimplement the login flow',
+  };
+  const r = runHook('usage-tracker.js', JSON.stringify(evt), { sandbox, cwd: sandbox });
+  assertEq(r.code, 0, 'exit code');
+  const lines = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8').trim().split('\n');
+  const prompt = JSON.parse(lines[lines.length - 1]);
+  assertEq(prompt.event, 'user_prompt', 'event type');
+  assertEq(prompt.is_slash_command, true, 'slash command detected');
+  assertEq(prompt.command, 'forge', 'command name');
+  assertIncludes(prompt.args_hint, '--size', 'flag captured');
+  if (typeof prompt.prompt === 'string' || prompt.prompt_body) {
+    throw new Error('prompt body leaked into event — privacy violation');
+  }
+  if (prompt.prompt_len !== evt.prompt.length) {
+    throw new Error(`prompt_len mismatch: got ${prompt.prompt_len}, want ${evt.prompt.length}`);
+  }
+  cleanup(sandbox);
+});
+
+test('UserPromptSubmit detects correction signal', () => {
+  const sandbox = makeSandbox();
+  runHook('usage-tracker.js', JSON.stringify({
+    hook_event_name: 'SessionStart', session_id: 'utest-3', cwd: sandbox,
+  }), { sandbox, cwd: sandbox });
+  const evt = {
+    hook_event_name: 'UserPromptSubmit',
+    session_id: 'utest-3',
+    cwd: sandbox,
+    prompt: "no, stop — revert that change please",
+  };
+  const r = runHook('usage-tracker.js', JSON.stringify(evt), { sandbox, cwd: sandbox });
+  assertEq(r.code, 0, 'exit code');
+  const lines = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8').trim().split('\n');
+  const prompt = JSON.parse(lines[lines.length - 1]);
+  assertEq(prompt.correction_signal, true, 'correction detected');
+  cleanup(sandbox);
+});
+
+test('PreToolUse(Task) emits agent_spawn with subagent_type', () => {
+  const sandbox = makeSandbox();
+  runHook('usage-tracker.js', JSON.stringify({
+    hook_event_name: 'SessionStart', session_id: 'utest-4', cwd: sandbox,
+  }), { sandbox, cwd: sandbox });
+  const evt = {
+    hook_event_name: 'PreToolUse',
+    session_id: 'utest-4',
+    cwd: sandbox,
+    tool_name: 'Task',
+    tool_input: { subagent_type: 'beck-backend', description: 'implement API' },
+  };
+  const r = runHook('usage-tracker.js', JSON.stringify(evt), { sandbox, cwd: sandbox });
+  assertEq(r.code, 0, 'exit code');
+  const lines = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8').trim().split('\n');
+  const spawn = JSON.parse(lines[lines.length - 1]);
+  assertEq(spawn.event, 'agent_spawn', 'event type');
+  assertEq(spawn.agent_type, 'beck-backend', 'agent_type');
+  cleanup(sandbox);
+});
+
+test('Stop captures ★ Insight blocks from transcript, dedups by hash', () => {
+  const sandbox = makeSandbox();
+  runHook('usage-tracker.js', JSON.stringify({
+    hook_event_name: 'SessionStart', session_id: 'utest-ins', cwd: sandbox,
+  }), { sandbox, cwd: sandbox });
+
+  const insightText = "Pricing reads dominate Opus cost when the codebase is large — every subagent reads ~1.7M cached tokens, at $1.50 per million that's $2.55 before any work.";
+  const body =
+    "Earlier paragraph.\n\n" +
+    "`★ Insight ─────────────────────────────────────`\n" +
+    insightText + "\n" +
+    "`─────────────────────────────────────────────────`\n\n" +
+    "More text after.";
+  const transcriptPath = path.join(sandbox, 'transcript.jsonl');
+  fs.writeFileSync(transcriptPath, JSON.stringify({
+    type: 'assistant',
+    message: { model: 'claude-opus-4-7', content: [{ type: 'text', text: body }] },
+  }) + '\n');
+
+  const evt = {
+    hook_event_name: 'Stop',
+    session_id: 'utest-ins',
+    cwd: sandbox,
+    transcript_path: transcriptPath,
+  };
+  const r = runHook('usage-tracker.js', JSON.stringify(evt), { sandbox, cwd: sandbox });
+  assertEq(r.code, 0, 'exit code');
+
+  const events = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8')
+    .trim().split('\n').map(l => JSON.parse(l));
+  const captured = events.filter(e => e.event === 'insight_captured');
+  assertEq(captured.length, 1, 'one insight captured');
+  assertIncludes(captured[0].text, 'Pricing reads dominate', 'insight text body');
+  assertExists(path.join(sandbox, '.claude', 'usage', 'insights.jsonl'), 'insights.jsonl sidecar');
+
+  // Fire Stop again with same transcript — hash dedup should suppress it
+  const r2 = runHook('usage-tracker.js', JSON.stringify(evt), { sandbox, cwd: sandbox });
+  assertEq(r2.code, 0, 'second Stop exit code');
+  const events2 = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8')
+    .trim().split('\n').map(l => JSON.parse(l));
+  const captured2 = events2.filter(e => e.event === 'insight_captured');
+  assertEq(captured2.length, 1, 'no duplicate insight event on second Stop');
+  cleanup(sandbox);
+});
+
+test('Stop joins runs/_index.jsonl into forge_run_end when runId matches', () => {
+  const sandbox = makeSandbox();
+  runHook('usage-tracker.js', JSON.stringify({
+    hook_event_name: 'SessionStart', session_id: 'utest-5', cwd: sandbox,
+  }), { sandbox, cwd: sandbox });
+  // Seed a run-index entry
+  const runsDir = path.join(sandbox, '.claude', 'metrics', 'runs');
+  fs.mkdirSync(runsDir, { recursive: true });
+  fs.writeFileSync(path.join(runsDir, '_index.jsonl'), JSON.stringify({
+    runId: 'utest-5', scenario: 'feature', agents: ['paige-product'],
+    agents_count: 1, total_usd: 0.42, total_turns: 7,
+    total_in_tokens: 10000, total_out_tokens: 500, cache_hit_rate: 0.8,
+    wall_ms: 60000, model_mix: { sonnet: 1 }, tool_mix: { Read: 5 },
+  }) + '\n');
+
+  const r = runHook('usage-tracker.js', JSON.stringify({
+    hook_event_name: 'Stop', session_id: 'utest-5', cwd: sandbox,
+  }), { sandbox, cwd: sandbox });
+  assertEq(r.code, 0, 'exit code');
+  const events = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8')
+    .trim().split('\n').map(l => JSON.parse(l));
+  const forge = events.find(e => e.event === 'forge_run_end');
+  if (!forge) throw new Error('forge_run_end event not written');
+  assertEq(forge.scenario, 'feature', 'scenario joined');
+  assertEq(forge.total_usd, 0.42, 'total_usd joined');
+  cleanup(sandbox);
+});
+
+test('OHMYCLAUDE_USAGE_TRACKING=off disables all writes', () => {
+  const sandbox = makeSandbox();
+  const evt = { hook_event_name: 'SessionStart', session_id: 'utest-off', cwd: sandbox };
+  const r = runHook('usage-tracker.js', JSON.stringify(evt), {
+    sandbox, cwd: sandbox,
+    extraEnv: { OHMYCLAUDE_USAGE_TRACKING: 'off' },
+  });
+  assertEq(r.code, 0, 'exit code');
+  assertAbsent(path.join(sandbox, '.claude', 'usage'), 'no usage dir when disabled');
+  cleanup(sandbox);
+});
+
+test('malformed stdin exits 0 without writing', () => {
+  const sandbox = makeSandbox();
+  const r = runHook('usage-tracker.js', 'not-json-at-all', { sandbox, cwd: sandbox });
+  assertEq(r.code, 0, 'exit code');
+  assertAbsent(path.join(sandbox, '.claude', 'usage'), 'no dir on malformed');
+  cleanup(sandbox);
+});
+
 // ── dry-run.js (utility, not a hook — still asserted for v1.2.0 contract) ──
 console.log('\ndry-run.js — /forge --dry-run classifier:');
 

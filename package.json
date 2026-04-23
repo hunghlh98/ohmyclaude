@@ -45,7 +45,8 @@
     "validate": "node scripts/validate.js",
     "version:bump": "node scripts/bump-version.js",
     "test:sc-fallback": "node scripts/test-sc-fallback.js",
-    "test:hooks": "node scripts/test-hooks.js"
+    "test:hooks": "node scripts/test-hooks.js",
+    "usage-report": "node scripts/usage-report.js"
   },
   "engines": {
     "node": ">=18"

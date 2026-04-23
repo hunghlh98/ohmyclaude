@@ -4,11 +4,18 @@
  *
  * Transcript-based measurement hook for the /forge Agent Teams pipeline.
  *
- * SubagentStop: snapshot cumulative token totals into
+ * SubagentStop: snapshot cumulative token totals + tool-use counts into
  *   .claude/metrics/runs/<runId>/snap-<ts>.json
+ *   Fields: ts, agent, wall_ms_since_last, cumulative {in,out,cacheR,
+ *   cacheW,usd,turns,model,tool_calls}.
+ *   Agent is resolved from evt.subagent_type → evt.agent_name → the
+ *   most recent Task tool_use in the transcript → "unknown".
  * Stop: diff consecutive snapshots into per-agent deltas, write
  *   .claude/pipeline/PROFILE-<runId>.md, update
- *   .claude/metrics/baseline.json (rolling N=20).
+ *   .claude/metrics/baseline.json (rolling N=20), and upsert one
+ *   summary line per runId into .claude/metrics/runs/_index.jsonl
+ *   for dashboard consumption (started_at, ended_at, wall_ms, agents,
+ *   total_usd, tokens, cache_hit_rate, model_mix, tool_mix).
  *
  * Non-fatal: any error exits 0 and passes stdin through. The profiler
  * never blocks /forge. Agents stay blind to it — no prompt changes.
@@ -50,19 +57,56 @@ function readJsonl(p) {
 }
 
 function cumulativeTotals(transcript) {
-  const t = { in: 0, out: 0, cacheR: 0, cacheW: 0, usd: 0, turns: 0, model: 'unknown' };
+  const t = {
+    in: 0, out: 0, cacheR: 0, cacheW: 0, usd: 0, turns: 0,
+    model: 'unknown',
+    tool_calls: {},
+  };
   for (const m of transcript) {
-    if (m.type !== 'assistant' || !m.message || !m.message.usage) continue;
+    if (m.type !== 'assistant' || !m.message) continue;
     const u = m.message.usage;
-    t.in     += u.input_tokens                || 0;
-    t.out    += u.output_tokens               || 0;
-    t.cacheR += u.cache_read_input_tokens     || 0;
-    t.cacheW += u.cache_creation_input_tokens || 0;
-    t.usd    += costOf(u, m.message.model);
-    t.turns  += 1;
-    t.model   = m.message.model || t.model;
+    if (u) {
+      t.in     += u.input_tokens                || 0;
+      t.out    += u.output_tokens               || 0;
+      t.cacheR += u.cache_read_input_tokens     || 0;
+      t.cacheW += u.cache_creation_input_tokens || 0;
+      t.usd    += costOf(u, m.message.model);
+      t.turns  += 1;
+      t.model   = m.message.model || t.model;
+    }
+    const content = m.message.content;
+    if (Array.isArray(content)) {
+      for (const b of content) {
+        if (b && b.type === 'tool_use' && b.name) {
+          t.tool_calls[b.name] = (t.tool_calls[b.name] || 0) + 1;
+        }
+      }
+    }
   }
   return t;
+}
+
+function inferAgentName(transcript) {
+  for (let i = transcript.length - 1; i >= 0; i--) {
+    const m = transcript[i];
+    const blocks = m && m.message && m.message.content;
+    if (!Array.isArray(blocks)) continue;
+    for (const b of blocks) {
+      if (b && b.type === 'tool_use' && b.name === 'Task' && b.input && b.input.subagent_type) {
+        return b.input.subagent_type;
+      }
+    }
+  }
+  return 'unknown';
+}
+
+function latestSnap(dir) {
+  try {
+    const files = fs.readdirSync(dir).filter(f => f.startsWith('snap-') && f.endsWith('.json'));
+    if (!files.length) return null;
+    files.sort();
+    return JSON.parse(fs.readFileSync(path.join(dir, files[files.length - 1]), 'utf8'));
+  } catch { return null; }
 }
 
 function mean(a) { return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0; }
@@ -84,34 +128,59 @@ function onSubagentStop(evt) {
   const transcript = readJsonl(evt.transcript_path);
   if (!transcript.length) return;
 
+  const dir  = runDir(cwd, runId);
+  const prev = latestSnap(dir);
+  const now  = Date.now();
+
   const snap = {
-    ts: Date.now(),
-    agent: evt.subagent_type || evt.agent_name || 'unknown',
+    ts: now,
+    agent: evt.subagent_type
+        || evt.agent_name
+        || inferAgentName(transcript)
+        || 'unknown',
+    wall_ms_since_last: prev ? Math.max(0, now - prev.ts) : null,
     cumulative: cumulativeTotals(transcript),
   };
   fs.writeFileSync(
-    path.join(runDir(cwd, runId), `snap-${snap.ts}.json`),
+    path.join(dir, `snap-${now}.json`),
     JSON.stringify(snap, null, 2)
   );
+}
+
+function diffCounts(curr, prev) {
+  const out = {};
+  const c = curr || {};
+  const p = prev || {};
+  for (const k of Object.keys(c)) {
+    const d = (c[k] || 0) - (p[k] || 0);
+    if (d > 0) out[k] = d;
+  }
+  return out;
 }
 
 function deltasByAgent(snapshots) {
   const sorted = [...snapshots].sort((a, b) => a.ts - b.ts);
   const rows = [];
-  let prev = { in: 0, out: 0, cacheR: 0, cacheW: 0, usd: 0, turns: 0 };
+  let prev = { in: 0, out: 0, cacheR: 0, cacheW: 0, usd: 0, turns: 0, tool_calls: {} };
+  let prevTs = null;
   for (const s of sorted) {
     const c = s.cumulative;
     rows.push({
-      agent:  s.agent,
-      model:  c.model,
-      turns:  Math.max(0, c.turns  - prev.turns),
-      input:  Math.max(0, c.in     - prev.in),
-      output: Math.max(0, c.out    - prev.out),
-      cacheR: Math.max(0, c.cacheR - prev.cacheR),
-      cacheW: Math.max(0, c.cacheW - prev.cacheW),
-      usd:    Math.max(0, c.usd    - prev.usd),
+      agent:      s.agent,
+      model:      c.model,
+      turns:      Math.max(0, c.turns  - prev.turns),
+      input:      Math.max(0, c.in     - prev.in),
+      output:     Math.max(0, c.out    - prev.out),
+      cacheR:     Math.max(0, c.cacheR - prev.cacheR),
+      cacheW:     Math.max(0, c.cacheW - prev.cacheW),
+      usd:        Math.max(0, c.usd    - prev.usd),
+      wall_ms:    prevTs != null
+                    ? Math.max(0, s.ts - prevTs)
+                    : (s.wall_ms_since_last != null ? s.wall_ms_since_last : null),
+      tool_calls: diffCounts(c.tool_calls, prev.tool_calls),
     });
-    prev = c;
+    prev   = c;
+    prevTs = s.ts;
   }
   return rows;
 }
@@ -172,8 +241,8 @@ function writeProfile(cwd, runId, scenario, perAgent, baseline) {
     lines.push(`delta_pct: ${delta > 0 ? '+' : ''}${delta}`);
   }
   lines.push('---', '', `# PROFILE-${runId}`, '',
-    '| Agent | Model | Turns | In | Out | Cache Hit | USD | Flags |',
-    '|---|---|---:|---:|---:|---:|---:|---|');
+    '| Agent | Model | Turns | In | Out | Cache Hit | USD | Wall | Tools | Flags |',
+    '|---|---|---:|---:|---:|---:|---:|---:|---|---|');
 
   const allFlags = new Set();
   for (const r of perAgent) {
@@ -183,8 +252,13 @@ function writeProfile(cwd, runId, scenario, perAgent, baseline) {
     const hit = (r.input + r.cacheR)
       ? (r.cacheR / (r.input + r.cacheR)).toFixed(2)
       : '0.00';
+    const wall = r.wall_ms != null ? `${(r.wall_ms / 1000).toFixed(1)}s` : '—';
+    const tools = Object.entries(r.tool_calls || {})
+      .sort((a, b) => b[1] - a[1])
+      .map(([k, v]) => `${k}:${v}`)
+      .join(' ') || '—';
     lines.push(
-      `| ${r.agent} | ${modelClass(r.model)} | ${r.turns} | ${r.input + r.cacheR} | ${r.output} | ${hit} | $${r.usd.toFixed(4)} | ${flags.join(', ') || '—'} |`
+      `| ${r.agent} | ${modelClass(r.model)} | ${r.turns} | ${r.input + r.cacheR} | ${r.output} | ${hit} | $${r.usd.toFixed(4)} | ${wall} | ${tools} | ${flags.join(', ') || '—'} |`
     );
   }
 
@@ -243,6 +317,19 @@ function updateBaseline(cwd, scenario, perAgent, totalUsd) {
   fs.writeFileSync(file, JSON.stringify(bl, null, 2));
 }
 
+function upsertRunIndex(cwd, entry) {
+  const p = path.join(cwd, '.claude', 'metrics', 'runs', '_index.jsonl');
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  let kept = [];
+  if (fs.existsSync(p)) {
+    kept = fs.readFileSync(p, 'utf8').split('\n').filter(Boolean).filter(l => {
+      try { return JSON.parse(l).runId !== entry.runId; } catch { return false; }
+    });
+  }
+  kept.push(JSON.stringify(entry));
+  fs.writeFileSync(p, kept.join('\n') + '\n');
+}
+
 function onStop(evt) {
   const cwd   = evt.cwd || process.cwd();
   const runId = evt.session_id || 'unknown';
@@ -255,7 +342,8 @@ function onStop(evt) {
       try { return JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')); }
       catch { return null; }
     })
-    .filter(Boolean);
+    .filter(Boolean)
+    .sort((a, b) => a.ts - b.ts);
   if (!snaps.length) return;
 
   const perAgent = deltasByAgent(snaps);
@@ -273,6 +361,36 @@ function onStop(evt) {
   writeProfile(cwd, runId, scenario, perAgent, baseline);
   const total = perAgent.reduce((s, r) => s + r.usd, 0);
   updateBaseline(cwd, scenario, perAgent, total);
+
+  const totalIn  = perAgent.reduce((s, r) => s + r.input + r.cacheR, 0);
+  const totalOut = perAgent.reduce((s, r) => s + r.output, 0);
+  const cacheR   = perAgent.reduce((s, r) => s + r.cacheR, 0);
+  const modelMix = perAgent.reduce((m, r) => {
+    const k = modelClass(r.model);
+    m[k] = (m[k] || 0) + 1;
+    return m;
+  }, {});
+  const toolMix = perAgent.reduce((m, r) => {
+    for (const [k, v] of Object.entries(r.tool_calls || {})) m[k] = (m[k] || 0) + v;
+    return m;
+  }, {});
+
+  upsertRunIndex(cwd, {
+    runId,
+    scenario,
+    started_at:      new Date(snaps[0].ts).toISOString(),
+    ended_at:        new Date(snaps[snaps.length - 1].ts).toISOString(),
+    wall_ms:         snaps[snaps.length - 1].ts - snaps[0].ts,
+    agents:          perAgent.map(r => r.agent),
+    agents_count:    perAgent.length,
+    total_usd:       Number(total.toFixed(6)),
+    total_turns:     perAgent.reduce((s, r) => s + r.turns, 0),
+    total_in_tokens: totalIn,
+    total_out_tokens: totalOut,
+    cache_hit_rate:  totalIn ? Number((cacheR / totalIn).toFixed(4)) : 0,
+    model_mix:       modelMix,
+    tool_mix:        toolMix,
+  });
 }
 
 let raw = '';

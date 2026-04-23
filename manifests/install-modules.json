@@ -235,6 +235,17 @@
       "stability": "stable"
     },
     {
+      "id": "hooks-usage",
+      "kind": "hooks",
+      "description": "Per-project usage telemetry (v2.3+): on SessionStart/UserPromptSubmit/PreToolUse/Stop, appends metadata events to <cwd>/.claude/usage/events.jsonl (prompt bodies never logged). Pairs with scripts/usage-report.js for insight rollups. Set OHMYCLAUDE_USAGE_TRACKING=off to disable.",
+      "paths": [
+        "hooks/scripts/usage-tracker.js"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": false,
+      "stability": "experimental"
+    },
+    {
       "id": "hooks-session",
       "kind": "hooks",
       "description": "Session intelligence hooks (v2.2.0): SessionStart hints at saved sessions via /load; PreCompact snapshots pipeline artifacts to the active session's stages.json; SubagentStart appends telemetry to traces.jsonl. Works with /save and /load skills. Opt-in (not in defaultInstall) — session state is a per-user preference, not a default.",

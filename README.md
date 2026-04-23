@@ -206,9 +206,9 @@ Opt-in via the `full` profile or by adding `hooks-session` / `skills-session` / 
 | Skills | 36 | engineering: 12, java: 5, pipeline: 4, specialized: 8, superclaude: 5, session: 2 |
 | Commands | 3 | forge, load, save |
 | Rules | 9 | common: 1, java: 4, typescript: 4 |
-| Hooks | 11 | backlog-tracker, cost-profiler, dry-run, graph-update, post-bash-lint, pre-write-check, session-load, session-summary, state-snapshot, subagent-trace, team-cleanup |
+| Hooks | 12 | backlog-tracker, cost-profiler, dry-run, graph-update, post-bash-lint, pre-write-check, session-load, session-summary, state-snapshot, subagent-trace, team-cleanup, usage-tracker |
 | Profiles | 3 | minimal, standard (default), full |
-| Modules | 20 | agents: 4, skills: 6, rules: 3, commands: 2, hooks: 5 |
+| Modules | 21 | agents: 4, skills: 6, rules: 3, commands: 2, hooks: 6 |
 
 Run `node scripts/validate.js` to see the live inventory with per-agent detail.
 
