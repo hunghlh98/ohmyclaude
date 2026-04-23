@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ohmyclaude · metrics dashboard</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header class="hdr">
+    <div class="hdr-title">
+      <span class="logo">◼</span>
+      <span>ohmyclaude · metrics</span>
+    </div>
+    <form id="path-form" class="path-form" autocomplete="off">
+      <label for="claude-path">.claude folder</label>
+      <input id="claude-path" name="path" type="text"
+             placeholder="/abs/path/to/project/.claude"
+             spellcheck="false" required>
+      <button type="submit">Load</button>
+      <button type="button" id="reload-btn" title="Reload current path">↻</button>
+    </form>
+    <div id="status" class="status">waiting for a path…</div>
+  </header>
+
+  <main id="main" class="hidden">
+    <section class="cards">
+      <div class="card"><div class="card-label">events</div>           <div id="c-events" class="card-value">—</div></div>
+      <div class="card"><div class="card-label">sessions</div>         <div id="c-sessions" class="card-value">—</div></div>
+      <div class="card"><div class="card-label">/forge runs</div>      <div id="c-runs" class="card-value">—</div></div>
+      <div class="card"><div class="card-label">total spend</div>      <div id="c-usd" class="card-value">—</div></div>
+      <div class="card"><div class="card-label">avg / run</div>        <div id="c-avg-usd" class="card-value">—</div></div>
+      <div class="card"><div class="card-label">correction rate</div>  <div id="c-corr" class="card-value">—</div></div>
+      <div class="card"><div class="card-label">wall-clock</div>       <div id="c-wall" class="card-value">—</div></div>
+      <div class="card"><div class="card-label">insights captured</div><div id="c-insights" class="card-value">—</div></div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h3>Cost per /forge run <span class="sub">over time</span></h3>
+        <canvas id="chart-cost" height="200"></canvas>
+      </div>
+      <div class="panel">
+        <h3>Agent spawns</h3>
+        <canvas id="chart-agents" height="200"></canvas>
+        <div id="dead-agents" class="dead"></div>
+      </div>
+      <div class="panel">
+        <h3>Skill invocations <span class="sub">(via Skill tool)</span></h3>
+        <canvas id="chart-skills" height="200"></canvas>
+        <div id="dead-skills" class="dead"></div>
+      </div>
+      <div class="panel">
+        <h3>Tool mix <span class="sub">(across /forge runs)</span></h3>
+        <canvas id="chart-tools" height="200"></canvas>
+      </div>
+      <div class="panel">
+        <h3>Scenario mix</h3>
+        <canvas id="chart-scenarios" height="200"></canvas>
+      </div>
+      <div class="panel">
+        <h3>Commands typed</h3>
+        <canvas id="chart-commands" height="200"></canvas>
+      </div>
+    </section>
+
+    <section class="panel wide">
+      <h3>/forge runs <span class="sub" id="runs-hint"></span></h3>
+      <div id="runs-wrap" class="runs-wrap">
+        <table class="runs-table">
+          <thead>
+            <tr>
+              <th>runId</th><th>started</th><th>scenario</th>
+              <th class="num">agents</th><th class="num">turns</th>
+              <th class="num">wall</th><th class="num">usd</th>
+              <th class="num">cache hit</th><th>tools</th>
+            </tr>
+          </thead>
+          <tbody id="runs-body"><tr><td colspan="9" class="dim">—</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel wide" id="run-detail-panel" hidden>
+      <h3>Run detail · <span id="run-detail-id" class="sub"></span> <button id="run-detail-close" class="inline">close</button></h3>
+      <div id="run-detail-body"></div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h3>Corrections <span class="sub">by preceding agent</span></h3>
+        <canvas id="chart-corrections" height="200"></canvas>
+        <div id="corr-rate" class="dim"></div>
+      </div>
+      <div class="panel">
+        <h3>Session latency</h3>
+        <div id="session-latency" class="latency"></div>
+      </div>
+    </section>
+
+    <section class="panel wide">
+      <h3>Explanatory-mode insights <span class="sub" id="insights-hint"></span></h3>
+      <div id="insight-themes" class="themes"></div>
+      <ul id="insights-list" class="insights-list"></ul>
+    </section>
+
+    <footer class="foot">
+      <span id="window-info" class="dim"></span>
+    </footer>
+  </main>
+</body>
+</html>

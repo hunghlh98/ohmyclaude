@@ -46,7 +46,8 @@
     "version:bump": "node scripts/bump-version.js",
     "test:sc-fallback": "node scripts/test-sc-fallback.js",
     "test:hooks": "node scripts/test-hooks.js",
-    "usage-report": "node scripts/usage-report.js"
+    "usage-report": "node scripts/usage-report.js",
+    "dashboard": "python3 scripts/dashboard/server.py"
   },
   "engines": {
     "node": ">=18"
