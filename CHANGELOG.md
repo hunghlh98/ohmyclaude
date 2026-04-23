@@ -8,6 +8,36 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [2.3.0] — 2026-04-23
+
+Metrics Observability — two shipped features plus a transparent visualization layer. The v2.0.0 restore-invariants cut introduced the `cost-profiler.js` hook; v2.3 closes the loop: every `/forge` run now attributes cost per named agent (not `"unknown"`), every session emits privacy-preserving usage telemetry under `.claude/usage/`, and a zero-dep Python dashboard renders the data without any pip install.
+
+### Added
+
+- **`hooks/scripts/usage-tracker.js`** — new hook covering `SessionStart`, `UserPromptSubmit`, `PreToolUse`, and `Stop`. Appends one JSON line per event to `<cwd>/.claude/usage/events.jsonl`. Captures slash-command names, correction signals (`"no"`, `"stop"`, `"revert"`, …), agent spawns (from Task tool calls), skill invocations (from Skill tool calls), and tool-use counts. Extracts Explanatory-mode `★ Insight` blocks from the Stop-time transcript with 16-char sha256 dedup per session, sidecared to `insights.jsonl`. Joins `runs/_index.jsonl` by session id to emit `forge_run_end` events with full cost/tool/model context. Privacy rule: prompt bodies, tool outputs, and file contents are never logged — only metadata (length, first word, flag-only args hint) + Claude's own visible Insight text. Opt out via `OHMYCLAUDE_USAGE_TRACKING=off`.
+- **`scripts/usage-report.js`** — pure-Node zero-dep reporter. Reads `events.jsonl`, writes `insights.md` + `aggregate.json`, prints a terminal summary. Surfaces: agents spawned vs never-spawned, skills invoked vs dead, command mix, scenario mix, correction rate with preceding-agent attribution, tool mix across runs, session latency p50/p95/max, Insight counts with keyword themes and recent entries. Supports `--cwd`, `--since <spec>` (`1h`, `7d`, …), and `--json`. Wired as `npm run usage-report`.
+- **`scripts/dashboard/`** — local-only single-page dashboard. `server.py` is pure Python stdlib (no Flask, no pip install); binds 127.0.0.1 only; refuses non-loopback hosts; validates paths through `Path.resolve()`. Endpoints: `/api/{health,summary,runs,run/<id>,insights,baseline,log,logs}`. UI is two tabs — **Metrics** (cards, Chart.js timeline/bar/doughnut charts, runs table with click-to-expand per-snap drill-down, Insight themes + recent list, session latency) and **Logs** (segmented source/level filters, single-line rows with click-to-expand stack + context, badge on tab for new errors). Runs against any `<project>/.claude` folder: synthesizes summary entries from pre-existing `metrics/runs/<id>/snap-*.json` dirs when `runs/_index.jsonl` doesn't exist yet (graceful handling of legacy data). Client-side `console.error` / `unhandledrejection` / fetch failures POST to `/api/log`; server persists to `scripts/dashboard/logs/dashboard.log`, rotates at 1 MiB, rejects bodies >16 KiB. Wired as `npm run dashboard`.
+- **`hooks-usage`** install module (`experimental` stability). Opted into the `full` profile only; `standard` and `minimal` unchanged. Tracker never runs by default — user must install the module or run `full`.
+- **Hook smoke tests** — 8 new assertions for `usage-tracker.js` (SessionStart seeding, UserPromptSubmit metadata + correction detection, PreToolUse agent_spawn emission, Stop insight capture with dedup, forge_run_end join via runs/_index.jsonl, opt-out env var, malformed stdin). Total 45 hook contracts (up from 37 in v2.2.0).
+
+### Changed
+
+- **`hooks/scripts/cost-profiler.js`** — subagent name resolution upgraded. When `SubagentStop` payload lacks `subagent_type` (Claude Code observational event), the profiler now walks the transcript backwards for the most recent `Task` tool_use and pulls its `subagent_type`. Result: per-agent baselines stop being pooled under `"unknown"`. Snapshots additionally record `wall_ms_since_last` and cumulative `tool_calls` per tool name; PROFILE markdown gains Wall and Tools columns. On `Stop`, the profiler now upserts one summary line per runId into `.claude/metrics/runs/_index.jsonl` (started_at, ended_at, wall_ms, agents, total_usd, tokens, cache_hit_rate, model_mix, tool_mix) — the canonical feed for the dashboard.
+- `hooks/hooks.json` — registers `UserPromptSubmit`; wires `usage-tracker.js` into `SessionStart`, `UserPromptSubmit`, `PreToolUse *`, `Stop`. All async, 5s timeout.
+- `manifests/install-modules.json` — new `hooks-usage` module.
+- `manifests/install-profiles.json` — `full` profile picks up `hooks-usage`.
+- `package.json` — new scripts: `usage-report`, `dashboard`.
+
+### Fixed
+
+- **Cost-profiler baselines under-report accuracy** — prior `"unknown"` pooling meant rolling p95 per agent was statistically meaningless. After the transcript-walk patch, baselines start accumulating under correct names; existing `baseline.json` files can be deleted to reseed cleanly.
+- **Dashboard empty-state on legacy repos** — `/api/summary` now folds runs data (including snap-directory synthesis) into the event stream as `forge_run_end` records, so dashboards loaded against pre-usage-tracker repos render totals, cost timeline, and scenarios instead of all zeros.
+- **Chart.js unbounded growth** — every `<canvas>` now lives in a fixed-height `.chart-box` wrapper (position:relative, height:220px) and global `Chart.defaults.animation = false`. Fixes the observed panel stretching and rendering stutter when multiple charts re-render on a data load.
+
+### Philosophy
+
+Three discipline moves: (1) **metadata-only telemetry** — prompt bodies and tool outputs are not logged, even locally, because what gets recorded today gets shared tomorrow; (2) **zero-dep dashboard** — the plugin already requires Node, but the dashboard avoids adding Python package dependencies so `python3 scripts/dashboard/server.py` works on any box with stdlib Python 3.7+; (3) **legacy-data graceful degradation** — the dashboard synthesizes summaries from the data that exists (snap files) rather than silently showing empty charts, so users with pre-v2.3 history still see value immediately.
+
 ## [2.2.0] — 2026-04-22
 
 Session Intelligence — introduces resumable per-cwd session state via `/save` and `/load`, plus three new hook events (`SessionStart`, `PreCompact`, `SubagentStart`) that keep the snapshot current between explicit saves. Ships as an opt-in bundle; not in the `standard` profile so users who don't want session state on disk aren't affected.

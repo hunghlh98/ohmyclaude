@@ -8,9 +8,9 @@
 
 ---
 
-## Current State (2026-04-22)
+## Current State (2026-04-23)
 
-- **Last shipped**: `v2.2.0` — session intelligence (`/save`, `/load`, `SessionStart`/`PreCompact`/`SubagentStart` hooks).
+- **Last shipped**: `v2.3.0` — metrics observability (usage-tracker hook, cost-profiler agent attribution, per-project `.claude/usage/` telemetry, usage-report CLI, zero-dep Python dashboard at `scripts/dashboard/`).
 - **Nothing scheduled**. The backlog below is an honest inventory of what's *still desired* — not a release calendar. Items move from backlog → release only when explicitly planned in a plan file and executed in a session.
 - **Scope discipline**: each backlog item carries one of four statuses — `[ ]` still desired · `[x]` shipped · `[~]` partially shipped · `[-]` superseded / dropped. No item lists a target version until the moment it's being implemented. v2.0.0's whole thesis was that aspirational version pins cause drift.
 
