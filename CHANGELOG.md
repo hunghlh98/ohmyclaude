@@ -8,6 +8,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [2.3.3] — 2026-04-24
+
+Follow-up patch that finishes the telemetry-seam simplification started in v2.3.2. Moves the seed priors that cost-profiler previously read from a shipped `.claude/metrics/baseline.json` into a `SEED_BASELINE` constant inside the hook itself. The live baseline file is now purely runtime state — written by the hook, read by `profile-run`, and never tracked in git.
+
+### Changed
+
+- **`hooks/scripts/cost-profiler.js`** — adds `SEED_BASELINE` constant (scenario + per-agent priors, same values as the previously-shipped baseline) and a `readBaselineMerged(cwd)` helper that layers the live rolling file on top of the seed via `{...SEED, ...live}` spread. Behaviorally equivalent to the prior committed-seed setup: day-1 PROFILE artifacts still show `baseline_usd` + `delta_pct`; any scenario the user hasn't exercised still falls through to its seed.
+- **`.gitignore`** — adds `.claude/metrics/` so the rolling baseline + run snapshots stop showing up as working-tree changes after every `/forge` run.
+
+### Removed
+
+- **`.claude/metrics/baseline.json`** (was untracked on main; removed from local workspace). No longer shipped as seed data — the hook now provides its own fallback, and the file is generated on demand by `cost-profiler.js` on first /forge Stop.
+
 ## [2.3.2] — 2026-04-24
 
 Subtractive patch. Removes `dry-run.js` and the `/forge --dry-run` subcommand because the pure-Node regex classifier duplicated `@paige-product`'s routing job with weaker heuristics — no CLAUDE.md, no source graph, no clarifying questions. Planning needs an agent; a second classifier only drifted from the real router. `profile-run`'s calibration mode is re-anchored to use temporal windows of existing artifacts instead of the removed priors.

@@ -32,6 +32,41 @@ const PRICING = {
   haiku:  { in:  1.00, out:  5.00, cache_read: 0.10, cache_write:  1.25 },
 };
 
+// Day-zero priors; overridden per-scenario/per-agent by rolling history in
+// `.claude/metrics/baseline.json` once real runs accumulate.
+const SEED_BASELINE = {
+  scenarios: {
+    'full-app': { n: 0, mean_usd: 1.43, p95_usd: 2.10, recent: [] },
+    feature:    { n: 0, mean_usd: 0.68, p95_usd: 1.15, recent: [] },
+    hotfix:     { n: 0, mean_usd: 0.38, p95_usd: 0.55, recent: [] },
+    docs:       { n: 0, mean_usd: 0.05, p95_usd: 0.10, recent: [] },
+  },
+  agents: {
+    'paige-product':  { n: 0, mean_in: 12000, mean_out: 4500, p95_usd: 0.16, turns_p95: 2 },
+    'artie-arch':     { n: 0, mean_in: 18000, mean_out: 5000, p95_usd: 0.72, turns_p95: 2 },
+    'una-ux':         { n: 0, mean_in: 17000, mean_out: 3500, p95_usd: 0.14, turns_p95: 2 },
+    'sam-sec':        { n: 0, mean_in: 17000, mean_out: 2500, p95_usd: 0.13, turns_p95: 2 },
+    'beck-backend':   { n: 0, mean_in: 38000, mean_out: 5500, p95_usd: 0.28, turns_p95: 3 },
+    'effie-frontend': { n: 0, mean_in: 38000, mean_out: 5000, p95_usd: 0.26, turns_p95: 3 },
+    'quinn-qa':       { n: 0, mean_in: 30000, mean_out: 4000, p95_usd: 0.20, turns_p95: 2 },
+    'stan-standards': { n: 0, mean_in: 32000, mean_out: 3500, p95_usd: 0.18, turns_p95: 2 },
+    'devon-ops':      { n: 0, mean_in: 18000, mean_out: 1500, p95_usd: 0.04, turns_p95: 1 },
+    heracles:         { n: 0, mean_in: 20000, mean_out: 3000, p95_usd: 0.15, turns_p95: 2 },
+  },
+};
+
+function readBaselineMerged(cwd) {
+  const file = path.join(cwd, '.claude', 'metrics', 'baseline.json');
+  let live = {};
+  if (fs.existsSync(file)) {
+    try { live = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { live = {}; }
+  }
+  return {
+    scenarios: { ...SEED_BASELINE.scenarios, ...(live.scenarios || {}) },
+    agents:    { ...SEED_BASELINE.agents,    ...(live.agents    || {}) },
+  };
+}
+
 function modelClass(m) {
   if (!m) return 'sonnet';
   if (m.includes('opus'))  return 'opus';
@@ -352,11 +387,7 @@ function onStop(evt) {
   const transcript = readJsonl(evt.transcript_path);
   const scenario   = inferScenario(transcript, perAgent.length);
 
-  let baseline = {};
-  const blPath = path.join(cwd, '.claude', 'metrics', 'baseline.json');
-  if (fs.existsSync(blPath)) {
-    try { baseline = JSON.parse(fs.readFileSync(blPath, 'utf8')); } catch { baseline = {}; }
-  }
+  const baseline = readBaselineMerged(cwd);
 
   writeProfile(cwd, runId, scenario, perAgent, baseline);
   const total = perAgent.reduce((s, r) => s + r.usd, 0);

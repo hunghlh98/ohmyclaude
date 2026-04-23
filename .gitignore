@@ -8,3 +8,6 @@ venv/
 *.pyc
 __pycache__/
 scripts/dashboard/logs/
+
+# Per-workspace runtime state written by hooks; not a plugin deliverable.
+.claude/metrics/
