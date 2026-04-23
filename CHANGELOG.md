@@ -8,6 +8,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [2.3.4] — 2026-04-24
+
+Dashboard UI refactor. The top-level Logs tab was showing dashboard self-diagnostic output (browser console + server log) — not user-facing telemetry — so it's been demoted behind a ⚙ icon in the header. The freed tab slot now belongs to a dedicated Insights view of captured ★ Insight blocks, with filtering and search.
+
+### Changed
+
+- **Logs → Settings drawer** — the top-level Logs tab is replaced with a gear button in the header that opens a right-edge drawer containing the same panel (client/server source toggle, level filters, expand-to-detail rows, refresh/clear). ESC or backdrop click closes. The error-count badge relocates from the Logs tab onto the gear icon, so new errors stay visible.
+- **Insights promoted to a top-level tab** — was a cramped section pinned to the bottom of the Metrics tab. Now has its own tab with:
+  - 3 hero cards (captured / unique / per-session) as the topline.
+  - Clickable theme pills — tap a keyword to filter to insights whose text contains it; tap again or use "clear" to reset.
+  - Free-text search box (case-insensitive substring, ANDed with any active theme filter).
+  - Card-based item list with preserved line breaks and `<mark>` highlighting for the theme + search matches.
+  - Empty state that explains what ★ Insight blocks are and how to enable them (Explanatory output style).
+- **`scripts/dashboard/server.py` `compute_summary()`** — raised `insights.recent` from 10 to 50 items now that there's room. Ordering unchanged (newest first); `unique` still reflects SHA-256 dedup.
+
 ## [2.3.3] — 2026-04-24
 
 Follow-up patch that finishes the telemetry-seam simplification started in v2.3.2. Moves the seed priors that cost-profiler previously read from a shipped `.claude/metrics/baseline.json` into a `SEED_BASELINE` constant inside the hook itself. The live baseline file is now purely runtime state — written by the hook, read by `profile-run`, and never tracked in git.

@@ -22,16 +22,19 @@
       <button type="submit">Load</button>
       <button type="button" id="reload-btn" title="Reload current path">↻</button>
     </form>
-    <div id="status" class="status">waiting for a path…</div>
+    <div class="hdr-tail">
+      <div id="status" class="status">waiting for a path…</div>
+      <button type="button" id="gear-btn" class="gear-btn" title="Dashboard settings &amp; logs" aria-label="Settings">
+        <span class="gear-icon">⚙</span>
+        <span id="gear-badge" class="gear-badge hidden">0</span>
+      </button>
+    </div>
   </header>
 
   <main id="main" class="hidden">
     <nav class="tabs" role="tablist">
       <button type="button" class="tab active" data-tab="metrics" role="tab">Metrics</button>
-      <button type="button" class="tab" data-tab="logs" role="tab">
-        Logs
-        <span id="tab-logs-badge" class="tab-badge hidden">0</span>
-      </button>
+      <button type="button" class="tab" data-tab="insights" role="tab">Insights</button>
     </nav>
 
     <div id="tab-metrics" class="tab-content">
@@ -109,35 +112,76 @@
       </div>
     </section>
 
-    <section class="panel wide">
-      <h3>Explanatory-mode insights <span class="sub" id="insights-hint"></span></h3>
-      <div id="insight-themes" class="themes"></div>
-      <ul id="insights-list" class="insights-list"></ul>
-    </section>
-
     <footer class="foot">
       <span id="window-info" class="dim"></span>
     </footer>
     </div><!-- /tab-metrics -->
 
-    <div id="tab-logs" class="tab-content hidden">
+    <div id="tab-insights" class="tab-content hidden">
+      <section class="insights-hero">
+        <div class="hero-card">
+          <div class="hero-label">captured</div>
+          <div id="i-total" class="hero-value">—</div>
+          <div class="hero-sub" id="i-total-sub">total ★ Insight blocks</div>
+        </div>
+        <div class="hero-card">
+          <div class="hero-label">unique</div>
+          <div id="i-unique" class="hero-value">—</div>
+          <div class="hero-sub" id="i-unique-sub">after SHA-256 dedup</div>
+        </div>
+        <div class="hero-card">
+          <div class="hero-label">per session</div>
+          <div id="i-per-session" class="hero-value">—</div>
+          <div class="hero-sub">average unique / session</div>
+        </div>
+      </section>
+
+      <section class="panel wide insights-controls">
+        <div class="controls-row">
+          <div class="control-label">Themes</div>
+          <div id="insights-themes" class="themes"></div>
+          <button type="button" id="insights-clear-theme" class="inline hidden">clear</button>
+        </div>
+        <div class="controls-row">
+          <div class="control-label">Search</div>
+          <input id="insights-search" type="search"
+                 placeholder="filter by keyword…"
+                 spellcheck="false" autocomplete="off">
+          <span id="insights-result-count" class="dim"></span>
+        </div>
+      </section>
+
       <section class="panel wide">
-        <div class="logs-head">
-          <h3 style="margin:0;">Logs <span id="log-count" class="sub"></span></h3>
-          <div class="logs-actions">
-            <span class="seg">
-              <button type="button" class="seg-btn active" data-source="client">client</button>
-              <button type="button" class="seg-btn" data-source="server">server</button>
-            </span>
-            <span class="seg">
-              <button type="button" class="seg-btn active" data-filter="all">all</button>
-              <button type="button" class="seg-btn" data-filter="error">errors</button>
-              <button type="button" class="seg-btn" data-filter="warn">warn</button>
-              <button type="button" class="seg-btn" data-filter="info">info</button>
-            </span>
-            <button type="button" id="log-refresh" class="inline">refresh</button>
-            <button type="button" id="log-clear"   class="inline">clear client</button>
-          </div>
+        <div id="insights-cards" class="insight-cards">
+          <div class="dim empty">no ★ Insight blocks captured yet — enable Explanatory output style in Claude Code.</div>
+        </div>
+      </section>
+    </div><!-- /tab-insights -->
+  </main>
+
+  <!-- ── Settings drawer (holds dashboard logs + diagnostics) ─────────── -->
+  <div id="drawer-backdrop" class="drawer-backdrop hidden" aria-hidden="true"></div>
+  <aside id="settings-drawer" class="drawer hidden" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+    <header class="drawer-head">
+      <h2 id="drawer-title">Settings</h2>
+      <button type="button" id="drawer-close" class="inline" aria-label="Close settings">close</button>
+    </header>
+    <div class="drawer-body">
+      <section class="drawer-section">
+        <h3>Dashboard logs <span id="log-count" class="sub"></span></h3>
+        <div class="logs-actions">
+          <span class="seg">
+            <button type="button" class="seg-btn active" data-source="client">client</button>
+            <button type="button" class="seg-btn" data-source="server">server</button>
+          </span>
+          <span class="seg">
+            <button type="button" class="seg-btn active" data-filter="all">all</button>
+            <button type="button" class="seg-btn" data-filter="error">errors</button>
+            <button type="button" class="seg-btn" data-filter="warn">warn</button>
+            <button type="button" class="seg-btn" data-filter="info">info</button>
+          </span>
+          <button type="button" id="log-refresh" class="inline">refresh</button>
+          <button type="button" id="log-clear"   class="inline">clear client</button>
         </div>
         <div id="log-body" class="log-body"></div>
         <div class="dim logs-foot">
@@ -146,7 +190,7 @@
           (rotates at 1 MiB)
         </div>
       </section>
-    </div><!-- /tab-logs -->
-  </main>
+    </div>
+  </aside>
 </body>
 </html>

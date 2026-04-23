@@ -333,7 +333,7 @@ def compute_summary(events: list[dict]) -> dict:
             "recent": [
                 {"ts": i.get("ts"), "session_id": i.get("session_id"),
                  "hash": i.get("hash"), "text": i.get("text", "")}
-                for i in insights[-10:][::-1]
+                for i in insights[-50:][::-1]
             ],
         },
         "cost_timeline": cost_timeline,

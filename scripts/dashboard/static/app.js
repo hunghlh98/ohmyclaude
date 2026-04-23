@@ -26,11 +26,11 @@ function pushLog(level, message, extra) {
   LOG_BUFFER.push(entry);
   if (LOG_BUFFER.length > LOG_BUFFER_MAX) LOG_BUFFER.shift();
 
-  if (level === "error" && !isLogsTabActive()) {
+  if (level === "error" && !isDrawerOpen()) {
     LOG_STATE.unseenErrors += 1;
-    updateLogsBadge();
+    updateDrawerBadge();
   }
-  if (isLogsTabActive() && LOG_STATE.source === "client") renderLogs();
+  if (isDrawerOpen() && LOG_STATE.source === "client") renderLogs();
 
   // Best-effort POST; do not await, do not throw (logging must never fail).
   try {
@@ -244,7 +244,7 @@ async function loadPath(rawPath) {
     currentPath = rawPath;
     renderSummary(summary);
     renderRuns(runs);
-    renderInsightsList(summary.insights.recent);
+    renderInsightsTab(summary.insights);
     el("main").classList.remove("hidden");
     setStatus(
       `loaded · ${summary.window.total_events} events · ${summary.totals.forge_runs} runs`,
@@ -339,13 +339,6 @@ function renderSummary(s) {
     <div class="lat-box"><div class="lat-label">p95</div><div class="lat-value">${fmtMs(sl.p95_ms)}</div></div>
     <div class="lat-box"><div class="lat-label">max</div><div class="lat-value">${fmtMs(sl.max_ms)}</div></div>
   `;
-
-  // themes
-  el("insight-themes").innerHTML = s.insights.keywords
-    .map((k) => `<span class="theme-pill">${esc(k.keyword)}<span class="count">${k.count}</span></span>`)
-    .join("");
-  el("insights-hint").textContent =
-    `${s.insights.total} total · ${s.insights.unique} unique · avg ${s.insights.per_session}/session`;
 
   // window footer
   el("window-info").textContent =
@@ -460,30 +453,90 @@ async function openRunDetail(runId) {
   }
 }
 
-function renderInsightsList(items) {
-  const ul = el("insights-list");
-  if (!items || !items.length) {
-    ul.innerHTML = '<li class="dim">no ★ Insight blocks captured yet — enable Explanatory output style</li>';
+// ── insights tab ───────────────────────────────────────────────────
+const INSIGHT_STATE = {
+  data: null,        // {total, unique, per_session, keywords, recent}
+  activeTheme: null, // string | null
+  query: "",
+};
+
+function renderInsightsTab(insights) {
+  INSIGHT_STATE.data = insights;
+  el("i-total").textContent       = insights.total;
+  el("i-unique").textContent      = insights.unique;
+  el("i-per-session").textContent = insights.per_session;
+  const dups = insights.total - insights.unique;
+  el("i-unique-sub").textContent =
+    dups > 0 ? `after SHA-256 dedup (−${dups} dupes)` : "after SHA-256 dedup";
+
+  const themesEl = el("insights-themes");
+  if (!insights.keywords || !insights.keywords.length) {
+    themesEl.innerHTML = '<span class="dim">no themes yet</span>';
+  } else {
+    themesEl.innerHTML = insights.keywords
+      .map((k) => {
+        const active = INSIGHT_STATE.activeTheme === k.keyword ? " active" : "";
+        return `<span class="theme-pill${active}" data-theme="${esc(k.keyword)}">${esc(k.keyword)}<span class="count">${k.count}</span></span>`;
+      })
+      .join("");
+  }
+  renderInsightCards();
+}
+
+function renderInsightCards() {
+  const data = INSIGHT_STATE.data;
+  const wrap = el("insights-cards");
+  if (!wrap || !data) return;
+
+  const theme = INSIGHT_STATE.activeTheme ? INSIGHT_STATE.activeTheme.toLowerCase() : null;
+  const query = INSIGHT_STATE.query.trim().toLowerCase();
+
+  const items = (data.recent || []).filter((i) => {
+    const text = (i.text || "").toLowerCase();
+    if (theme && !text.includes(theme)) return false;
+    if (query && !text.includes(query)) return false;
+    return true;
+  });
+
+  el("insights-result-count").textContent =
+    data.recent && data.recent.length
+      ? `${items.length} of ${data.recent.length}`
+      : "";
+  el("insights-clear-theme").classList.toggle("hidden", !INSIGHT_STATE.activeTheme);
+
+  if (!items.length) {
+    wrap.innerHTML = data.recent && data.recent.length
+      ? '<div class="dim empty">no matches</div>'
+      : '<div class="dim empty">no ★ Insight blocks captured yet — enable Explanatory output style in Claude Code.</div>';
     return;
   }
-  ul.innerHTML = items
-    .map(
-      (i) => `<li>
-      <div class="insight-meta">${fmtTs(i.ts)} · ${esc((i.session_id || "").slice(0, 8))} · <code>${esc(i.hash)}</code></div>
-      <div class="insight-body">${esc(i.text)}</div>
-    </li>`,
-    )
-    .join("");
+
+  wrap.innerHTML = items.map((i) => {
+    let body = esc(i.text || "");
+    const highlights = [theme, query].filter(Boolean);
+    for (const h of highlights) {
+      const re = new RegExp(`(${h.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+      body = body.replace(re, "<mark>$1</mark>");
+    }
+    const sid = (i.session_id || "").slice(0, 8);
+    return `<div class="insight-card">
+      <div class="i-meta">
+        <span>${esc(fmtTs(i.ts))}</span>
+        <span>session ${esc(sid)}</span>
+      </div>
+      <div class="i-body">${body}</div>
+    </div>`;
+  }).join("");
 }
 
-// ── tab + logs rendering ───────────────────────────────────────────────────
-function isLogsTabActive() {
-  const t = el("tab-logs");
-  return t && !t.classList.contains("hidden");
+// ── settings drawer + tabs ─────────────────────────────────────────
+function isDrawerOpen() {
+  const d = el("settings-drawer");
+  return d && !d.classList.contains("hidden");
 }
 
-function updateLogsBadge() {
-  const badge = el("tab-logs-badge");
+function updateDrawerBadge() {
+  const badge = el("gear-badge");
   if (!badge) return;
   if (LOG_STATE.unseenErrors > 0) {
     badge.textContent = String(LOG_STATE.unseenErrors);
@@ -493,6 +546,21 @@ function updateLogsBadge() {
   }
 }
 
+function openDrawer() {
+  el("settings-drawer").classList.remove("hidden");
+  el("drawer-backdrop").classList.remove("hidden");
+  el("gear-btn").classList.add("open");
+  LOG_STATE.unseenErrors = 0;
+  updateDrawerBadge();
+  renderLogs();
+}
+
+function closeDrawer() {
+  el("settings-drawer").classList.add("hidden");
+  el("drawer-backdrop").classList.add("hidden");
+  el("gear-btn").classList.remove("open");
+}
+
 function activateTab(name) {
   document.querySelectorAll(".tab").forEach((b) => {
     b.classList.toggle("active", b.dataset.tab === name);
@@ -500,11 +568,6 @@ function activateTab(name) {
   document.querySelectorAll(".tab-content").forEach((c) => {
     c.classList.toggle("hidden", c.id !== `tab-${name}`);
   });
-  if (name === "logs") {
-    LOG_STATE.unseenErrors = 0;
-    updateLogsBadge();
-    renderLogs();
-  }
 }
 
 function normalizeEntry(e, source) {
@@ -611,7 +674,34 @@ document.addEventListener("DOMContentLoaded", () => {
     b.addEventListener("click", () => activateTab(b.dataset.tab));
   });
 
-  // Logs tab: source (client/server) and level filters
+  // gear / settings drawer
+  el("gear-btn").addEventListener("click", () => {
+    if (isDrawerOpen()) closeDrawer(); else openDrawer();
+  });
+  el("drawer-close").addEventListener("click", closeDrawer);
+  el("drawer-backdrop").addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && isDrawerOpen()) closeDrawer();
+  });
+
+  // insights tab controls (theme filter + search)
+  el("insights-themes").addEventListener("click", (e) => {
+    const pill = e.target.closest(".theme-pill");
+    if (!pill || !pill.dataset.theme) return;
+    const kw = pill.dataset.theme;
+    INSIGHT_STATE.activeTheme = INSIGHT_STATE.activeTheme === kw ? null : kw;
+    renderInsightsTab(INSIGHT_STATE.data);
+  });
+  el("insights-clear-theme").addEventListener("click", () => {
+    INSIGHT_STATE.activeTheme = null;
+    renderInsightsTab(INSIGHT_STATE.data);
+  });
+  el("insights-search").addEventListener("input", (e) => {
+    INSIGHT_STATE.query = e.target.value;
+    renderInsightCards();
+  });
+
+  // Dashboard logs (inside Settings drawer): source + level filters
   document.querySelectorAll(".seg-btn[data-source]").forEach((b) => {
     b.addEventListener("click", () => {
       document.querySelectorAll(".seg-btn[data-source]")
