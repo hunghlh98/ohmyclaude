@@ -55,20 +55,13 @@
     {
       "id": "skills-engineering",
       "kind": "skills",
-      "description": "General engineering skills — useful standalone, outside the pipeline",
+      "description": "General engineering skills: c4-architecture, code-review, commit-work, datadog-cli, generate-fuzz-data",
       "paths": [
-        "skills/api-design/",
         "skills/c4-architecture/",
         "skills/code-review/",
         "skills/commit-work/",
-        "skills/database-schema-designer/",
         "skills/datadog-cli/",
-        "skills/design-system/",
-        "skills/error-handling/",
-        "skills/game-changing-features/",
-        "skills/generate-fuzz-data/",
-        "skills/git-workflow/",
-        "skills/tdd-patterns/"
+        "skills/generate-fuzz-data/"
       ],
       "targets": ["claude"],
       "defaultInstall": true,
@@ -77,12 +70,8 @@
     {
       "id": "skills-java",
       "kind": "skills",
-      "description": "Java / Spring Boot skills — coding standards, patterns, TDD, security, source intel (semantic queries via text-based tools: ripgrep + find + tree)",
+      "description": "Java source intel: canonical ripgrep + find + tree patterns for callers, impact, @Transactional scans, and call chains",
       "paths": [
-        "skills/java-coding-standards/",
-        "skills/springboot-patterns/",
-        "skills/springboot-tdd/",
-        "skills/springboot-security/",
         "skills/java-source-intel/"
       ],
       "targets": ["claude"],
@@ -106,15 +95,13 @@
     {
       "id": "skills-specialized",
       "kind": "skills",
-      "description": "Specialized skills: task breakdown, project discovery, post-deploy analytics, QA planning, templates, entropy reduction, requirements clarity, run profiling",
+      "description": "Specialized pipeline skills: task breakdown, project discovery, post-deploy analytics, QA planning, entropy reduction, run profiling",
       "paths": [
         "skills/task-breakdown/",
         "skills/project-discovery/",
         "skills/post-deploy-analytics/",
         "skills/qa-test-planner/",
-        "skills/readme-templates/",
         "skills/reducing-entropy/",
-        "skills/requirements-clarity/",
         "skills/profile-run/"
       ],
       "targets": ["claude"],
