@@ -78,7 +78,7 @@ process.stdin.on('end', () => {
 | Nature | Strategy |
 |---|---|
 | **Methodology / knowledge** (prompts, checklists, frames) | Embed as `skills/<name>/SKILL.md` with upstream attribution. |
-| **Executable tool** (CLI, server, binary) | Wrap as MCP. Plugin-owned servers (shipped to consumers, use `${CLAUDE_PLUGIN_ROOT}`) → `.claude-plugin/.mcp.json`. Repo-dev-only servers (available when working in this repo) → root `.mcp.json`. For wrappers, write a stdlib-only stdio server under `scripts/mcp-servers/`. Register as install module. |
+| **Executable tool** (CLI, server, binary) | Wrap as MCP. Plugin-owned servers (shipped to consumers, use `${CLAUDE_PLUGIN_ROOT}`) → `.claude-plugin/.mcp.json`. Dev-personal MCP servers (web search, API tokens, per-developer tooling) → user scope (`~/.claude/settings.json` or `~/.claude/mcp/`), **never** committed to this repo — root `/.mcp.json` is gitignored. For wrappers, write a stdlib-only stdio server under `scripts/mcp-servers/`. Register as install module. |
 | **Another Claude Code plugin** | Not a supported dependency. Extract its MCP server, or document as companion in README. |
 
 Rationale, anti-patterns, 9-step checklist, and the v2.4.0 case study that produced this rule: [`CONTRIBUTING.md#external-dependencies`](CONTRIBUTING.md#external-dependencies) and `.claude/plans/pure-shimmying-leaf.md`.

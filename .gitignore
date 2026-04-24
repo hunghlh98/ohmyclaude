@@ -15,3 +15,8 @@ scripts/dashboard/logs/
 # Per-project host-local state written by setup hooks (v2.4.2+). Broad pattern
 # covers YAML today; MD/JSON variants if adopted later.
 .claude/*.local.*
+
+# Repo-root .mcp.json is dev-personal only (v2.4.4+). Developer-personal MCP
+# servers belong in user-scope ~/.claude/settings.json, not committed to the
+# repo where consumers or casual readers might pick them up by accident.
+/.mcp.json
