@@ -8,6 +8,32 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [2.4.2] — 2026-04-24
+
+Re-adopts `code-review-graph` as the plugin's optional graph backend, closing the ROADMAP near-term item opened at v2.4.0. Same-day patch — no agent/skill re-integration (deferred), so this is strictly additive around the MCP + a new per-project state-file convention.
+
+### Added
+
+- **`code-review-graph` MCP server re-adopted** — declared in `.claude-plugin/.mcp.json` with launch command `uvx code-review-graph serve`. Ships via the new opt-in `mcp-code-review-graph` install module (grouped under `full` profile; real consumer opt-in is Claude Code's MCP approval prompt on first install). Exposes all 28 upstream tools — semantic search, blast-radius impact analysis, community/hub detection, flow tracing, refactor preview. Upstream: tirth8205/code-review-graph, MIT. **Runtime prerequisite**: `uv` on PATH (auto-fetches the Python 3.10+ package on first invocation; first tool call may be slow while uv caches). Graph database persists under `.code-review-graph/` at the repo root and is auto-gitignored by the upstream tool.
+- **`.claude/ohmyclaude.local.yaml`** — new per-project host-local state file. Pure YAML, chosen over the plugin-dev ecosystem's `.local.md` (frontmatter + body) convention because ohmyclaude's file carries only state — no prose or prompt content — so the markdown body would be dead weight. Pure YAML also grep/ripgrep-searches cleanly and parses in a single mode, which matters for the agents and hooks that read it. Stores per-project ohmyclaude configuration (initially: `features.code_review_graph.*` prereq detection); extensible schema for future feature flags. Install-instruction hints for missing prereqs travel as YAML comment blocks at the top of the file, safe to regenerate on each hook write. Never committed — consumers add `.claude/*.local.*` (broad pattern, covers YAML/MD/JSON variants) to their project's `.gitignore`.
+- **`hooks/scripts/code-review-graph-setup.js`** — new SessionStart hook. On first session, detects whether `uv` is on PATH, writes status + version + timestamp to `.claude/ohmyclaude.local.yaml`, emits a one-line stderr notice. Fast-path exit on subsequent sessions (setup_complete=true). Respects user override (`features.code_review_graph.enabled: false` → silent no-op). Self-gates on `.claude-plugin/.mcp.json` containing a `code-review-graph` entry — the hook is a no-op when the MCP declaration is absent. Stdlib-only Node; matches the zero-dep invariant of existing hooks. Cache-warm deliberately NOT performed in the hook — deferred to lazy first MCP call to keep SessionStart fast.
+
+### Changed
+
+- **`README.md` Exploration Tool Priority** — `code-review-graph` added as priority 1 (opt-in); `tree` → priority 2, `Glob/Grep` → priority 3. Matches the soft-dependency tier convention. Re-adoption callout replaces the "may be re-introduced in a future release" caveat.
+- **`README.md` Install Profiles** row for `Full` profile now mentions the optional `code-review-graph` MCP and its `uv` prereq.
+- **`README.md`** — new "Per-project state file (v2.4.2+)" subsection documenting `.claude/ohmyclaude.local.yaml` and the gitignore requirement. Explicitly calls out the YAML-vs-.local.md divergence from plugin-dev's `plugin-settings` convention.
+- **`README.md` Project Inventory** counts updated: version 2.4.1 → 2.4.2, hooks 10 → 11, modules 21 → 22 (mcp: 1 → 2).
+- **`manifests/install-profiles.json`** — `full` profile `description` now mentions the optional graph backend and its `uv` prereq.
+- **`ROADMAP.md`** — "Graph backend re-adoption" backlog item marked `[x]` with v2.4.2 shipping note. Current State `Last shipped` updated to v2.4.1; In-flight section describes v2.4.2. Stale "`ohmyclaude-fs` stdio MCP server" backlog item also marked `[x]` (shipped in v2.4.0).
+- **`.gitignore`** — added `.claude/*.local.*` so dogfood sessions against ohmyclaude's own repo don't leak the per-project state file into git (pattern intentionally broad: covers YAML today, MD/JSON variants if adopted later).
+- **`scripts/test-hooks.js`** — added 3 contract assertions for the new setup hook (stdin passthrough, self-gate, YAML state write on uv-missing). Also removed two dead tests for `graph-update.js` that referenced a hook file deleted in v2.4.0 — they had been failing silently since v2.4.0 but weren't caught by CI because the failures are advisory (`test:hooks` is separate from `validate.js`).
+
+### Deferred (intentionally out of scope)
+
+- **Agent/skill graph-tool re-integration** — v2.4.0 stripped graph-query references from `paige-product`, `artie-arch`, `beck-backend`, `effie-frontend`, `quinn-qa`, `stan-standards`, `heracles`, `devon-ops`, `forge.md`, `project-discovery`, `java-source-intel`, `profile-run`. Re-threading graph queries is an opinionated per-agent design task (one or two patterns per agent, with pre/post benchmarks) and deserves its own plan at a future minor version. This patch intentionally stops at "MCP + setup hook are available; agents discover it organically."
+- **Cache-warm on setup** — a detached background `uvx code-review-graph --help` after detection would eliminate the first-call latency, but adds detached-child robustness gotchas (Windows stdio, race conditions on the marker file, warm-failure reporting). Deferred until a real user reports pain.
+
 ## [2.4.1] — 2026-04-24
 
 Doc reorganization + dashboard data-correctness improvements. Rolls up the telemetry-pipeline fixes that accumulated since v2.3.4 alongside the CLAUDE.md compaction.

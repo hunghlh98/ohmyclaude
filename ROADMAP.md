@@ -10,15 +10,15 @@
 
 ## Current State (2026-04-24)
 
-- **Last shipped**: `v2.3.4` — dashboard UI refactor (Logs demoted to Settings drawer, Insights promoted to top-level tab).
-- **In-flight (Unreleased)**: graph-backend cleanup — codegraph and code-review-graph references removed plugin-wide; Paige role-boundaries tightened. See `CHANGELOG.md` Unreleased section.
+- **Last shipped**: `v2.4.1` — CLAUDE.md compaction, `ohmyclaude-fs` plugin-owned MCP server (first graph-backend-free release cycle), dashboard data-correctness fixes.
+- **In-flight (Unreleased → v2.4.2)**: code-review-graph re-adoption as optional graph backend; `.claude/ohmyclaude.local.yaml` per-project state file convention; new SessionStart setup hook detects `uv` prereq. Closes the near-term graph-backend backlog item opened at v2.4.0. See `CHANGELOG.md` [2.4.2] section and `.claude/plans/resilient-hopping-gadget.md`.
 - **Nothing else scheduled**. The backlog below is an honest inventory of what's *still desired* — not a release calendar. Items move from backlog → release only when explicitly planned in a plan file and executed in a session.
 - **Scope discipline**: each backlog item carries one of four statuses — `[ ]` still desired · `[x]` shipped · `[~]` partially shipped · `[-]` superseded / dropped. No item lists a target version until the moment it's being implemented. v2.0.0's whole thesis was that aspirational version pins cause drift.
 
 ### Near-term (pending decisions)
 
-- [ ] **Graph backend re-adoption** — pick one of codegraph / code-review-graph (or a new option) to standardize on. Wire into `.mcp.json`, re-add targeted graph query patterns to `java-source-intel` and `project-discovery`. Deferred explicitly — the Unreleased cleanup left the plugin graph-less as a clean slate for this decision.
-- [ ] **`ohmyclaude-fs` stdio MCP server** — plugin-owned filesystem helpers wrapping `tree` (and, over time, other CLI tools flagged by dashboard `bash_cmd_mix` evidence). Groundwork for promoting opaque Bash invocations to named, trackable MCP tools.
+- [x] **Graph backend re-adoption** — *shipped v2.4.2*: picked `code-review-graph` (MIT, tirth8205/code-review-graph). Declared in `.claude-plugin/.mcp.json`; launched via `uvx code-review-graph serve`. Ships through the new opt-in `mcp-code-review-graph` install module (grouped under the `full` profile). Per-agent query-pattern re-integration into `java-source-intel` and `project-discovery` is deliberately deferred — agents discover the MCP organically for now.
+- [x] **`ohmyclaude-fs` stdio MCP server** — *shipped v2.4.0*: plugin-owned filesystem helpers wrapping `tree`. Exposes `tree` as a named, trackable MCP tool so `mcp_mix` shows it distinctly. Stdlib-only Node (zero deps).
 
 ---
 
