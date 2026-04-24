@@ -107,7 +107,6 @@ All three items named below landed in v2.1.0. ROADMAP ↔ CHANGELOG symmetry hon
 
 Release gate additions (checked by `validate.js`):
 - `rules/<lang>/*.md` must declare a `paths:` array (dead otherwise).
-- `AGENTS.md` must mention + link every agent in `plugin.json`.
 - `package.json` must declare a `test:hooks` script.
 
 ---
@@ -163,7 +162,7 @@ Each follows the `rules/java/` template: 4 files (coding-style, patterns, securi
 - [x] **AGENTS.md reference** — shipped in v2.1.0.
 - [ ] **`npm prepublishOnly`** — one-line: run `validate.js` + `test-hooks.js` before `npm publish`. Small change.
 - [ ] **Agent integration tests** (`scripts/test-agents.js`) — verify each agent's frontmatter, tools, example triggers, read-only tool-list discipline.
-- [ ] **HOOKS.md consolidated reference** — parallel to AGENTS.md, but for hooks.
+- [ ] **HOOKS.md consolidated reference** — directory-entry index for hooks, one section per hook script.
 - [ ] **`install.sh`** — cross-shell POSIX install script mirroring the 3 install profiles. Tested on macOS (zsh + bash), Ubuntu 22.04, Windows WSL2.
 - [ ] **`install.ps1`** — PowerShell parity for `install.sh`. Lower priority than the shell version.
 

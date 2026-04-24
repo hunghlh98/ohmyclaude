@@ -191,26 +191,6 @@ if (fs.existsSync(rulesDir)) {
   }
 }
 
-// ── AGENTS.md consolidated reference (v2.1.0+) ──────────────────────────────
-// AGENTS.md is the agent directory-entry index. Each agent declared in
-// plugin.json must have a section in AGENTS.md, so a new contributor can
-// find the full reference without grep.
-console.log('\nAGENTS.md consolidated reference:');
-const agentsMdPath = path.join(root, 'AGENTS.md');
-if (!fs.existsSync(agentsMdPath)) {
-  check('AGENTS.md', false, 'missing at repo root');
-} else {
-  const agentsMd = fs.readFileSync(agentsMdPath, 'utf8');
-  for (const agentPath of pluginJson.agents) {
-    const name = path.basename(agentPath, '.md');
-    // Must mention "@<name>" (as heading anchor) AND link to agents/<name>.md
-    const mentioned = new RegExp(`@${name}\\b`).test(agentsMd);
-    const linked    = agentsMd.includes(`agents/${name}.md`);
-    check(`AGENTS.md — @${name}`, mentioned && linked,
-      mentioned ? `no link to agents/${name}.md` : `no @${name} mention`);
-  }
-}
-
 // ── test:hooks wiring (v2.1.0+) ─────────────────────────────────────────────
 // The smoke test suite must be runnable via `npm run test:hooks`. Forces
 // parity between what CI runs and what contributors run locally.

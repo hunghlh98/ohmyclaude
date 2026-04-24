@@ -35,7 +35,7 @@ function listEntries(dir, predicate) {
 
 const ALL_AGENTS = listEntries(
   path.join(PLUGIN_ROOT, 'agents'),
-  e => e.isFile() && e.name.endsWith('.md') && e.name !== 'AGENTS.md',
+  e => e.isFile() && e.name.endsWith('.md'),
 ).map(f => f.replace(/\.md$/, ''));
 
 const ALL_SKILLS = listEntries(
