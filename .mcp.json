@@ -1,11 +1,5 @@
 {
   "mcpServers": {
-    "ohmyclaude-fs": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/mcp-servers/fs.js"],
-      "description": "Plugin-owned filesystem helpers. Currently exposes one tool: `tree` (trackable, named MCP tool that replaces anonymous Bash `tree` invocations). Stdlib-only Node implementation — no external dependencies."
-    },
     "exa-search": {
       "type": "http",
       "url": "https://mcp.exa.ai/mcp",

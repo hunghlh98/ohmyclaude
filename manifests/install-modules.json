@@ -189,9 +189,9 @@
     {
       "id": "mcp-servers",
       "kind": "mcp",
-      "description": "Plugin-owned MCP servers declared in `.mcp.json`. Currently: `ohmyclaude-fs` (filesystem helpers — exposes `tree` as a named, trackable MCP tool so it appears distinctly in dashboard tool_mix instead of being lost under Bash). Stdlib-only Node — no external dependencies. Approval prompt appears on first install.",
+      "description": "Plugin-owned MCP servers declared in `.claude-plugin/.mcp.json`. Currently: `ohmyclaude-fs` (filesystem helpers — exposes `tree` as a named, trackable MCP tool so it appears distinctly in dashboard tool_mix instead of being lost under Bash). Stdlib-only Node — no external dependencies. Approval prompt appears on first install.",
       "paths": [
-        ".mcp.json",
+        ".claude-plugin/.mcp.json",
         "scripts/mcp-servers/fs.js"
       ],
       "targets": ["claude"],
