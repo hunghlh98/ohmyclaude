@@ -226,7 +226,7 @@ features:
 |-----------|------:|--------|
 | Version | 2.4.6 | VERSION, package.json, plugin.json, marketplace.json |
 | Agents | 10 | sonnet: 8, opus: 1, haiku: 1 |
-| Skills | 23 | engineering: 5, java: 1, pipeline: 4, specialized: 6, superclaude: 5, session: 2 |
+| Skills | 21 | engineering: 3, java: 1, pipeline: 4, specialized: 6, superclaude: 5, session: 2 |
 | Commands | 3 | forge, load, save |
 | Rules | 9 | common: 1, java: 4, typescript: 4 |
 | Hooks | 12 | backlog-tracker, code-review-graph-setup, cost-profiler, post-bash-lint, pre-write-check, project-init, session-load, session-summary, state-snapshot, subagent-trace, team-cleanup, usage-tracker |

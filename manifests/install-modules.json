@@ -55,13 +55,11 @@
     {
       "id": "skills-engineering",
       "kind": "skills",
-      "description": "General engineering skills: c4-architecture, code-review, commit-work, datadog-cli, generate-fuzz-data",
+      "description": "General engineering skills: c4-architecture, code-review, commit-work",
       "paths": [
         "skills/c4-architecture/",
         "skills/code-review/",
-        "skills/commit-work/",
-        "skills/datadog-cli/",
-        "skills/generate-fuzz-data/"
+        "skills/commit-work/"
       ],
       "targets": ["claude"],
       "defaultInstall": true,
