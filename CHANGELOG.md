@@ -8,6 +8,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [2.4.4] — 2026-04-24
+
+Cleanup: dev-personal MCP servers removed from the repo root. Tightens the line between "shipped to consumers" and "available on the maintainer's machine."
+
+### Removed
+
+- **Root `.mcp.json`** — deleted from the repo. Previously declared `exa-search` (HTTP, per-dev `EXA_API_KEY`) and `grep-app` (HTTP) as "repo-dev-only" MCPs. Problem: anyone cloning ohmyclaude for contributor work picked them up automatically as project-scope MCP config, even if they never wanted or configured an `EXA_API_KEY`. Confused the "what ships to consumers?" story even though these never reached `.claude-plugin/.mcp.json`. Dev-personal MCP servers now belong exclusively in **user scope** (`~/.claude/settings.json` or `~/.claude/mcp/`), not committed to the repo. If you relied on these during ohmyclaude development, add them to your own user-scope config.
+
+### Changed
+
+- **`.gitignore`** — added `/.mcp.json` so a future accidental `.mcp.json` at the repo root never gets committed again. The pattern is anchored (`/.mcp.json`, not `.mcp.json`) so the plugin-shipped `.claude-plugin/.mcp.json` is unaffected.
+- **`CLAUDE.md`** — External Dependency Decision Rule row rewritten. Removed the "Repo-dev-only servers → root `.mcp.json`" guidance (it was the loophole that let `exa-search`/`grep-app` live at repo root in the first place). New guidance routes dev-personal MCPs to user scope and explicitly notes that `/.mcp.json` is gitignored.
+- **`CONTRIBUTING.md`** — the External Dependencies decision-table row no longer cites `exa-search`/`grep-app` as examples; uses `ohmyclaude-fs` and `code-review-graph` instead. Step 4 of the checklist now reads "Add to `.claude-plugin/.mcp.json`" (unambiguous which file) instead of the bare `.mcp.json`.
+
 ## [2.4.3] — 2026-04-24
 
 Hotfix for a strict-JSON-parse error in `hooks/hooks.json` that surfaced when Claude Code reloaded hooks after the v2.4.2 SessionStart addition.
