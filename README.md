@@ -139,10 +139,10 @@ Path-activated language rules:
 | `pre-write-check` | PreToolUse Write/Edit | Blocks writes with hardcoded secrets |
 | `post-bash-lint` | PostToolUse Bash | Runs linter after bash edits source |
 | `backlog-tracker` | PostToolUse Write | Rebuilds BACKLOG.md when ISS-*.md written |
-| `graph-update` | PostToolUse Write/Edit | Incrementally updates source graph (optional) |
 | `session-summary` | Stop | Writes per-response JSONL log to `~/.claude/ohmyclaude/sessions/YYYY-MM-DD.jsonl` |
 | `team-cleanup` | Stop | Cleans orphaned teams older than 24h |
 | `cost-profiler` | SubagentStop + Stop | Writes `.claude/pipeline/PROFILE-<runId>.md` and rolling `baseline.json`; pair with `skills/profile-run` |
+| `usage-tracker` | PreToolUse + UserPromptSubmit + Stop + SessionStart | Per-project usage telemetry to `<cwd>/.claude/usage/events.jsonl` (v2.3+) |
 | `session-load` | SessionStart | On fresh-startup only, emits a one-line hint when a saved session exists for this cwd (v2.2.0) |
 | `state-snapshot` | PreCompact | Snapshots pipeline artifact inventory to the active session's `stages.json` before compaction (v2.2.0) |
 | `subagent-trace` | SubagentStart | Appends one JSONL line per subagent spawn to `traces.jsonl`; pairs with `cost-profiler` for full per-agent lifecycle (v2.2.0) |
