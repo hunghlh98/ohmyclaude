@@ -1,6 +1,6 @@
 {
   "name": "ohmyclaude",
-  "version": "2.4.2",
+  "version": "2.4.3",
   "description": "10-agent OSS pipeline for Claude Code — Agent Teams coordination, single /forge entry point, Java-first skills, source graph integration.",
   "author": "ohmyclaude contributors",
   "license": "MIT",

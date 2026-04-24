@@ -223,7 +223,7 @@ features:
 
 | Component | Count | Detail |
 |-----------|------:|--------|
-| Version | 2.4.2 | VERSION, package.json, plugin.json, marketplace.json |
+| Version | 2.4.3 | VERSION, package.json, plugin.json, marketplace.json |
 | Agents | 10 | sonnet: 8, opus: 1, haiku: 1 |
 | Skills | 36 | engineering: 12, java: 5, pipeline: 4, specialized: 8, superclaude: 5, session: 2 |
 | Commands | 3 | forge, load, save |

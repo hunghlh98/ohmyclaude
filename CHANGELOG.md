@@ -8,6 +8,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [2.4.3] — 2026-04-24
+
+Hotfix for a strict-JSON-parse error in `hooks/hooks.json` that surfaced when Claude Code reloaded hooks after the v2.4.2 SessionStart addition.
+
+### Fixed
+
+- **`hooks/hooks.json`** — removed a trailing comma after the `backlog-tracker.js` PostToolUse/Write entry that was breaking strict JSON parsing (`"Unexpected comma at the end of array expression" at line 53`). The comma was pre-existing (landed earlier), but v2.4.2's new SessionStart entry triggered a reload that exposed it. Reference convention: `pen-claude-plugins/plugins/pen-claude-ai/hooks/hooks.json` (strict JSON, no trailing commas anywhere). All other shipped JSON manifests (`.mcp.json`, `plugin.json`, `marketplace.json`, `install-modules.json`, `install-profiles.json`, `package.json`) re-verified strict-valid.
+
 ## [2.4.2] — 2026-04-24
 
 Re-adopts `code-review-graph` as the plugin's optional graph backend, closing the ROADMAP near-term item opened at v2.4.0. Same-day patch — no agent/skill re-integration (deferred), so this is strictly additive around the MCP + a new per-project state-file convention.
