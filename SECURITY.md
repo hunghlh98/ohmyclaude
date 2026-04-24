@@ -6,8 +6,9 @@ ohmyclaude follows Semantic Versioning. Only the latest minor version receives s
 
 | Version | Supported |
 |---------|-----------|
-| 1.x     | Yes       |
-| 0.x     | No — please upgrade (see `MIGRATION.md` when published) |
+| 2.x     | Yes       |
+| 1.x     | No — please upgrade to 2.x |
+| 0.x     | No — see `MIGRATION.md` |
 
 ## Reporting a Vulnerability
 

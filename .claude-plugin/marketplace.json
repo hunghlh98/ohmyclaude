@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "ohmyclaude",
-      "version": "2.4.6",
+      "version": "2.5.0",
       "source": "./",
       "description": "10-agent OSS pipeline for Claude Code with Agent Teams coordination. Single /forge entry point, smart UX with clarification, Java-first skills, source graph integration, document-driven artifacts for human review, and task dependency graphs for parallel execution.",
       "category": "workflow",

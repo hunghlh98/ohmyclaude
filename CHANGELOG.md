@@ -8,6 +8,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [2.5.0] — 2026-04-25
+
+### Removed
+- Dropped 15 orphan/auto-trigger-only skills: api-design, database-schema-designer, design-system, error-handling, game-changing-features, git-workflow, readme-templates, requirements-clarity, tdd-patterns, java-coding-standards, springboot-patterns, springboot-security, springboot-tdd, datadog-cli, generate-fuzz-data. 36 → 21 skills.
+- Removed `AGENTS.md`; canonical agent content lives in `agents/*.md`.
+
+### Changed
+- Compressed CHANGELOG 616 → 364 lines; enforced Keep-a-Changelog format (no preambles, no Philosophy sections, flat `### Changed`).
+- Updated README skill counts/lists, profile descriptions, and SECURITY Supported Versions table to reflect current state.
+
+### Added
+- `CONTRIBUTING.md` — Changelog Conventions section locks future entries to 1-line bullets, no preambles, max 5 bullets per section.
+
 ## [2.4.6] — 2026-04-25
 
 ### Changed

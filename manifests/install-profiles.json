@@ -17,7 +17,7 @@
     {
       "id": "standard",
       "name": "Standard",
-      "description": "Full pipeline: 10 agents + 30 skills (engineering, Java, pipeline, specialized, SuperClaude) + quality hooks + rules + plugin MCP servers. Recommended for most engineers.",
+      "description": "Full pipeline: 10 agents + 21 skills (engineering, Java, pipeline, specialized, SuperClaude) + quality hooks + rules + plugin MCP servers. Recommended for most engineers.",
       "default": true,
       "modules": [
         "agents-core",

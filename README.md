@@ -96,25 +96,25 @@ Never more than 3 questions. Circuit breaker: 3 rejection rounds triggers human 
 | Release vs stability | @devon-ops (ultimate trump card) |
 | UX vs velocity | @una-ux on WCAG failures |
 
-## Skills (34)
+## Skills (21)
 
 All SKILL.md files are capped at ≤400 lines (enforced by `validate.js` since v2.0.0). Depth lives in each skill's `references/` directory, loaded on-demand.
 
-### General Engineering (12)
+### General Engineering (3)
 
-`api-design` `c4-architecture` `code-review` `commit-work` `database-schema-designer` `datadog-cli` `design-system` `error-handling` `game-changing-features` `generate-fuzz-data` `git-workflow` `tdd-patterns`
+`c4-architecture` `code-review` `commit-work`
 
-### Java / Spring Boot (5)
+### Java / Spring Boot (1)
 
-`java-coding-standards` `springboot-patterns` `springboot-tdd` `springboot-security` `java-source-intel`
+`java-source-intel`
 
 ### Pipeline Artifact Writers (4)
 
 `write-sdd` `write-code-review` `write-security-review` `write-ux-spec`
 
-### Specialized (8)
+### Specialized (6)
 
-`task-breakdown` `project-discovery` `post-deploy-analytics` `qa-test-planner` `readme-templates` `reducing-entropy` `requirements-clarity` `profile-run`
+`task-breakdown` `project-discovery` `post-deploy-analytics` `qa-test-planner` `reducing-entropy` `profile-run`
 
 ### SuperClaude Knowledge Skills (5)
 
@@ -132,7 +132,7 @@ Path-activated language rules:
 | `rules/java/` | Coding style, patterns, security, testing (activates on `**/*.java`) |
 | `rules/typescript/` | Coding style, patterns, security, testing (activates on `**/*.ts` and `**/*.tsx`) |
 
-## Hooks (11)
+## Hooks (12)
 
 | Hook | Trigger | What it does |
 |------|---------|--------------|
@@ -188,7 +188,7 @@ The v2.4.0 cleanup (see `.claude/plans/pure-shimmying-leaf.md`) is the case stud
 | Profile | Contents |
 |---------|----------|
 | Minimal | 10 agents + /forge |
-| Standard (default) | + 34 skills + Java + TypeScript rules + quality hooks |
+| Standard (default) | + 21 skills + Java + TypeScript rules + quality hooks |
 | Full | + tracking hooks + cost profiler + session intelligence (`/save`, `/load`, SessionStart/PreCompact/SubagentStart hooks) + optional `code-review-graph` MCP (requires `uv`) |
 
 ## Session Intelligence (opt-in, v2.2.0)
@@ -224,7 +224,7 @@ features:
 
 | Component | Count | Detail |
 |-----------|------:|--------|
-| Version | 2.4.6 | VERSION, package.json, plugin.json, marketplace.json |
+| Version | 2.5.0 | VERSION, package.json, plugin.json, marketplace.json |
 | Agents | 10 | sonnet: 8, opus: 1, haiku: 1 |
 | Skills | 21 | engineering: 3, java: 1, pipeline: 4, specialized: 6, superclaude: 5, session: 2 |
 | Commands | 3 | forge, load, save |
