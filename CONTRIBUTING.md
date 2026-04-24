@@ -49,6 +49,22 @@ The plugin's rule for anything that lives outside its own `.md` / `.js` files â€
 
 ---
 
+## Changelog Conventions
+
+Keep CHANGELOG.md entries tight. AI-generated prose bloats fast; these rules prevent drift.
+
+1. Max 1 line per bullet. Wrapped prose belongs in the PR description.
+2. No narrative preambles above the first `### Added/Changed/Fixed`.
+3. No `### Philosophy` sections. Rationale goes in the linked PR/issue.
+4. No sub-section headers like `### Changed â€” <subtopic>`. One `### Changed` per version.
+5. No inline tables or code blocks inside bullets.
+6. Max 5 bullets per section. If a release is bigger, group or link out.
+7. Active voice, past tense ("Added X", not "Adds X").
+
+The `update-changelog` skill (from plugin-forge) handles the mechanics; these rules apply whether a human or AI is writing the entry.
+
+---
+
 ## Project Structure
 
 | Category | Files | Purpose |
@@ -162,8 +178,8 @@ color: blue
 
 | Category | Module | Who uses it | Examples |
 |----------|--------|-------------|---------|
-| **General engineering** | `skills-engineering` | Any user, standalone | `api-design`, `tdd-patterns` |
-| **Java / Spring Boot** | `skills-java` | Java backend developers | `springboot-patterns`, `springboot-tdd` |
+| **General engineering** | `skills-engineering` | Any user, standalone | `code-review`, `commit-work` |
+| **Java / Spring Boot** | `skills-java` | Java backend developers | `java-source-intel` |
 | **Pipeline artifact writers** | `skills-pipeline` | Specific agents, writes named docs | `write-sdd`, `write-code-review` |
 | **Specialized** | `skills-specialized` | Pipeline coordination, project tools | `task-breakdown`, `project-discovery` |
 
