@@ -8,6 +8,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [2.4.5] — 2026-04-24
+
+New SessionStart hook that auto-scaffolds ohmyclaude structure on first launch in a consumer project's git root. Closes the gap where `usage-tracker` / `backlog-tracker` expected directories that no bootstrap ever created.
+
+### Added
+
+- **`hooks/scripts/project-init.js`** — synchronous SessionStart hook. On first run in a git repo root, creates `.claude/ohmyclaude/.initialised` (sentinel), `.claude/usage/`, `.claude/backlog/issues/`, `BACKLOG.md` (index stub), and `CLAUDE.md` (starter rules) — the last two only if missing. Sentinel is written **last** so partial failures retry cleanly on the next session. Emits a one-line `[ohmyclaude] Initialised project at <root>: …` banner on successful first-run init; silent on every subsequent session.
+- **Six guardrails, all must pass**: `source === 'startup'`; git root found; cwd IS the git root (not a subfolder); git root is not `$HOME`; repo is not the ohmyclaude plugin itself (detected via `.claude-plugin/plugin.json` name match); sentinel absent. Any fail → silent exit 0.
+
+### Changed
+
+- **`hooks/hooks.json`** — new SessionStart entry for `project-init.js` inserted **first** in the array (so dependent hooks like `usage-tracker` and `code-review-graph-setup` see the scaffolded dirs), `async: false` so the banner is visible, 5s timeout.
+- **`README.md`** — Hooks table updated to 11 rows with the new `project-init` entry; inventory count at the bottom bumped to 12.
+
 ## [2.4.4] — 2026-04-24
 
 Cleanup: dev-personal MCP servers removed from the repo root. Tightens the line between "shipped to consumers" and "available on the maintainer's machine."
