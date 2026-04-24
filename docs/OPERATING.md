@@ -144,9 +144,35 @@ Each agent has a corporate-Slack persona with a clear lane. The pattern for ever
 
 ---
 
-## Part 2 — Hooks (6)
+## Part 2 — Hooks (12)
 
 Hooks are shell-invoked Node scripts wired via `hooks/hooks.json`. The harness, not the model, executes them. Every hook follows the stdin-passthrough pattern: it reads JSON on stdin, reasons about it, writes stdin back to stdout, and exits 0 (or exits 2 to **block** — PreToolUse only).
+
+### Tier overview (install modules + profiles)
+
+Hooks are grouped into 5 install modules. Profile membership follows the module's `defaultInstall` flag — source of truth: [`manifests/install-modules.json`](../manifests/install-modules.json) and [`manifests/install-profiles.json`](../manifests/install-profiles.json).
+
+| Module | Hooks | `defaultInstall` | Profiles including it |
+|---|---|---|---|
+| `hooks-quality` | `pre-write-check`, `post-bash-lint` | **true** | minimal, standard, full |
+| `hooks-tracking` | `backlog-tracker`, `session-summary`, `team-cleanup` | false | standard, full |
+| `hooks-profiler` | `cost-profiler` | false | full |
+| `hooks-usage` | `usage-tracker` | false | full |
+| `hooks-session` | `code-review-graph-setup`, `project-init`, `session-load`, `state-snapshot`, `subagent-trace` | false | full |
+
+The `minimal` profile keeps only quality hooks (secret-blocking + opportunistic linter). `standard` adds tracking. `full` adds profiler, usage telemetry, and session intelligence.
+
+### Per-hook opt-out (v2.5.1+)
+
+Any individual hook can be disabled with `OHMYCLAUDE_HOOK_<NAME>=off`, where `<NAME>` is the script filename (without `.js`) upper-cased with dashes converted to underscores:
+
+- `OHMYCLAUDE_HOOK_USAGE_TRACKER=off` → disables `usage-tracker.js`
+- `OHMYCLAUDE_HOOK_COST_PROFILER=off` → disables `cost-profiler.js`
+- `OHMYCLAUDE_HOOK_PRE_WRITE_CHECK=off` → disables `pre-write-check.js` (use sparingly — this is the secret-blocking guard)
+
+Legacy alias `OHMYCLAUDE_USAGE_TRACKING=off` still works for back-compat. Helper: [`hooks/scripts/_toggle.js`](../hooks/scripts/_toggle.js).
+
+### Hook reference
 
 For each hook below:
 
@@ -155,7 +181,7 @@ For each hook below:
 - **Timeout** — wall-clock budget.
 - **Env vars** — which env vars it reads.
 - **Failure mode** — what happens when the hook errors.
-- **How to disable** — remove the entry from `hooks/hooks.json` or comment the hook block.
+- **How to disable** — remove the entry from `hooks/hooks.json`, or set `OHMYCLAUDE_HOOK_<NAME>=off`.
 
 ### 1. `pre-write-check` — Secret-Blocking Guard
 
@@ -200,20 +226,7 @@ For each hook below:
   - Malformed frontmatter in an issue file → that issue is excluded from the index; others still render.
 - **To disable**: remove the `PostToolUse Write` block for this script from `hooks/hooks.json`.
 
-### 4. `graph-update` — Incremental Source-Graph Sync
-
-- **Trigger**: `PostToolUse` on `Write | Edit | MultiEdit`.
-- **Blocking**: No — `async: true`.
-- **Timeout**: 10s (the underlying `code-review-graph update --incremental` call is capped at 8s).
-- **Script**: `hooks/scripts/graph-update.js`.
-- **What it does**: Runs `which code-review-graph`; if installed, calls `code-review-graph update --incremental`. Keeps the tree-sitter knowledge graph current after code edits.
-- **Env vars**: None (relies on `$PATH`).
-- **Failure modes**:
-  - `code-review-graph` not on PATH → exit 0 silently (zero-setup guarantee).
-  - Update call fails → stderr log, exit 0.
-- **To disable**: remove the `hooks-graph` module from your install, or remove the block from `hooks/hooks.json`.
-
-### 5. `session-summary` — Per-Response Token Log
+### 4. `session-summary` — Per-Response Token Log
 
 - **Trigger**: `Stop` (every assistant response).
 - **Blocking**: No — `async: true`.
@@ -226,7 +239,7 @@ For each hook below:
   - Cannot create sessions dir or write → exit 0 silently (never fails the main flow).
 - **To disable**: remove the `Stop` block for this script from `hooks/hooks.json`.
 
-### 6. `team-cleanup` — Orphan Team Garbage Collector
+### 5. `team-cleanup` — Orphan Team Garbage Collector
 
 - **Trigger**: `Stop`.
 - **Blocking**: No — `async: true`.
@@ -237,19 +250,99 @@ For each hook below:
 - **Failure modes**:
   - No teams dir → exit 0.
   - Per-entry errors (permissions, stat failure) → skipped, continues.
-- **To disable**: remove the second `Stop` block from `hooks/hooks.json`.
+- **To disable**: remove the second `Stop` block from `hooks/hooks.json`, or set `OHMYCLAUDE_HOOK_TEAM_CLEANUP=off`.
+
+### 6. `cost-profiler` — Per-Run PROFILE Artifact + Rolling Baseline
+
+- **Trigger**: `SubagentStop` + `Stop`.
+- **Blocking**: No — `async: true`.
+- **Timeout**: 30s.
+- **Script**: `hooks/scripts/cost-profiler.js`. **Module**: `hooks-profiler` (full profile only).
+- **What it does**: On `SubagentStop`, snapshots cumulative token totals + tool-use counts to `.claude/.ohmyclaude/metrics/runs/<runId>/snap-<ts>.json`. On `Stop`, diffs snapshots into per-agent deltas, writes `PROFILE-<runId>.md` to `.claude/.ohmyclaude/pipeline/`, updates rolling `baseline.json` (N=20), and upserts a one-line summary to `runs/_index.jsonl` for dashboard consumption.
+- **Env vars**: None required.
+- **Failure modes**: Any error exits 0 and passes stdin through. Never blocks `/forge`.
+- **To disable**: remove `hooks-profiler` from your install, or set `OHMYCLAUDE_HOOK_COST_PROFILER=off`.
+
+### 7. `usage-tracker` — Per-Project Usage Telemetry
+
+- **Trigger**: `PreToolUse` + `UserPromptSubmit` + `Stop` + `SessionStart`.
+- **Blocking**: No — `async: true`.
+- **Timeout**: 30s.
+- **Script**: `hooks/scripts/usage-tracker.js`. **Module**: `hooks-usage` (full profile only).
+- **What it does**: Writes `events.jsonl`, `insights.jsonl`, and per-session aggregates under `<cwd>/.claude/.ohmyclaude/usage/`. Captures agent spawns, skill invocations, slash-command usage, correction signals, and Explanatory-style `★ Insight` blocks. Prompt bodies are never logged — only metadata (length, word count, first word, detected slash-command).
+- **Env vars**: `OHMYCLAUDE_USAGE_TRACKING=off` (legacy) or `OHMYCLAUDE_HOOK_USAGE_TRACKER=off` disables all writes.
+- **Failure modes**: Malformed stdin or write error → exit 0 silently.
+- **To disable**: see env vars above, or remove `hooks-usage` from your install.
+
+### 8. `code-review-graph-setup` — `uv` Detection for Graph Backend
+
+- **Trigger**: `SessionStart`.
+- **Blocking**: No — `async: true`.
+- **Timeout**: 10s.
+- **Script**: `hooks/scripts/code-review-graph-setup.js`. **Module**: `hooks-session` (full profile only).
+- **What it does**: Detects whether the `uv` runtime prereq for the `code-review-graph` MCP is present; writes outcome to `<cwd>/.claude/.ohmyclaude/local.yaml` with human-readable install instructions when missing. Fast path when `setup_complete=true` — skips the probe.
+- **Env vars**: None.
+- **Failure modes**:
+  - `.mcp.json` doesn't declare `code-review-graph` → silent no-op (lets this hook ship independently of the MCP).
+  - `features.code_review_graph.enabled=false` → silent no-op.
+- **To disable**: remove `hooks-session` from your install, edit `local.yaml` to disable the feature, or set `OHMYCLAUDE_HOOK_CODE_REVIEW_GRAPH_SETUP=off`.
+
+### 9. `project-init` — First-Run Scaffolding
+
+- **Trigger**: `SessionStart`.
+- **Blocking**: No — `async: true`.
+- **Timeout**: 10s.
+- **Script**: `hooks/scripts/project-init.js`. **Module**: `hooks-session` (full profile only).
+- **What it does**: On first launch in a git repo root, scaffolds `.claude/.ohmyclaude/{local.yaml, usage/, backlog/{BACKLOG.md, issues/}, pipeline/, metrics/}` and appends a marker-delimited `## ohmyclaude` section to `.claude/CLAUDE.md`. Sentinel via `features.project_init.setup_complete` in `local.yaml`.
+- **Env vars**: None.
+- **Failure modes**: Six guardrails — all must pass else silent no-op (source!=startup, no git root, cwd != git root, git root == $HOME, ohmyclaude repo itself, setup_complete already true).
+- **To disable**: remove `hooks-session` from your install, or set `OHMYCLAUDE_HOOK_PROJECT_INIT=off`.
+
+### 10. `session-load` — Saved-Session Discovery Hint
+
+- **Trigger**: `SessionStart` (fresh-startup only).
+- **Blocking**: No — `async: true`.
+- **Timeout**: 5s.
+- **Script**: `hooks/scripts/session-load.js`. **Module**: `hooks-session` (full profile only).
+- **What it does**: When a saved session exists for this `cwd` (checked via `~/.claude/ohmyclaude/sessions/_index.json`), emits a one-line stderr hint so the user knows `/load` is available. Observational only — SessionStart events cannot inject model context.
+- **Env vars**: None.
+- **Failure modes**: No sessions dir, no index, or non-startup source → exit 0 silently.
+- **To disable**: remove `hooks-session` from your install, or set `OHMYCLAUDE_HOOK_SESSION_LOAD=off`.
+
+### 11. `state-snapshot` — PreCompact Pipeline Cursor
+
+- **Trigger**: `PreCompact`.
+- **Blocking**: No — `async: true`.
+- **Timeout**: 10s.
+- **Script**: `hooks/scripts/state-snapshot.js`. **Module**: `hooks-session` (full profile only).
+- **What it does**: Before Claude Code compacts the conversation, snapshots the current `cwd`'s pipeline artifact inventory to `~/.claude/ohmyclaude/sessions/<id>/stages.json` and bumps `meta.last_touch_ts`. This is the ohmyclaude-specific state compaction can't recover — Claude's own compaction handles the transcript.
+- **Env vars**: None.
+- **Failure modes**: Session directory missing (`/save` hasn't run yet) → exit 0 silently.
+- **To disable**: remove `hooks-session` from your install, or set `OHMYCLAUDE_HOOK_STATE_SNAPSHOT=off`.
+
+### 12. `subagent-trace` — Per-Subagent JSONL Log
+
+- **Trigger**: `SubagentStart`.
+- **Blocking**: No — `async: true`.
+- **Timeout**: 5s.
+- **Script**: `hooks/scripts/subagent-trace.js`. **Module**: `hooks-session` (full profile only).
+- **What it does**: Appends one line per subagent spawn to `~/.claude/ohmyclaude/sessions/<id>/traces.jsonl`. Pairs with `cost-profiler` for full per-agent lifecycle coverage (start/duration here, cost/usage there). Pure telemetry — `SubagentStart` is observational, so this hook cannot inject context into the subagent's prompt.
+- **Env vars**: None.
+- **Failure modes**: Session directory missing → exit 0 silently.
+- **To disable**: remove `hooks-session` from your install, or set `OHMYCLAUDE_HOOK_SUBAGENT_TRACE=off`.
 
 ---
 
-## Hook Invariants (all 6)
+## Hook Invariants (all 12)
 
-The repo's hook convention, derived from these 6 implementations:
+The repo's hook convention, derived from these 12 implementations:
 
-1. **Always pass stdin through** to stdout before exit — downstream hooks in the chain need it.
+1. **Always pass stdin through** to stdout before exit — downstream hooks in the chain need it. (One exception: `backlog-tracker` short-circuits when the write isn't to `backlog/issues/`, preserving input untouched because no downstream consumers chain on that path.)
 2. **Exit 0 = allow; exit 2 = block (PreToolUse only)**. Async hooks should never exit non-zero.
 3. **Never fail loudly** when dependencies are absent — graceful no-op is the rule.
 4. **Timeouts are upper bounds**, not targets. Everything above uses a budget well under its limit.
 5. **Hooks are defensive infrastructure**, not AI logic. If your hook needs to call the Claude API, it's not a hook.
+6. **Per-hook env-var opt-out** (v2.5.1+) — every hook honors `OHMYCLAUDE_HOOK_<NAME>=off` via the shared `hooks/scripts/_toggle.js` helper. The helper itself is not a hook; underscore-prefixed files in `hooks/scripts/` are excluded from the hook inventory.
 
 ---
 
@@ -284,6 +377,48 @@ The release gate is enforced by `scripts/validate.js`. It makes the "three relea
 - **"CHANGELOG.md has no `## [X.Y.Z]` section"** — add the entry before running the bump script. Entries under `## [Unreleased]` should be promoted to a dated section.
 - **"SKILL.md exceeds cap"** — split the skill: keep orientation + decision flow in SKILL.md, move depth to `references/*.md`. See `skills/qa-test-planner/`, `skills/design-system/`, `skills/database-schema-designer/` for the v2.0.0 reference splits.
 - **"ROADMAP.md does not mention vX.Y.Z"** (warning) — update ROADMAP.md's "What Actually Shipped" section to reflect the release. This is the Process Invariant in action.
+
+---
+
+## Part 4 — Ship-vs-Dev Script Boundary
+
+`scripts/` at the repo root contains two classes of Node files with **different lifecycles**. Understanding which is which is load-bearing for contributors — a repo-dev script that accidentally ships inflates the plugin bundle and risks being invoked on user machines; a shipped script that lives in the wrong directory is invisible to the runtime.
+
+### Shipped (reachable from plugin config)
+
+| Directory | Referenced by | What lives here |
+|---|---|---|
+| `hooks/scripts/*.js` | `hooks/hooks.json` | The 12 Node hook scripts above + one `_toggle.js` helper (underscore-prefixed, excluded from the hook count). |
+| `scripts/mcp-servers/*.js` | `.claude-plugin/.mcp.json` | Plugin-owned stdio MCP servers. Today: **`fs.js` only**. All shipped paths are rooted at `${CLAUDE_PLUGIN_ROOT}` so they resolve in the installed plugin tree. |
+
+Anything reachable from `plugin.json`, `hooks/hooks.json`, or `.claude-plugin/.mcp.json` is shipped. Everything else in `scripts/` is repo-dev only.
+
+### Repo-dev only (not reachable from plugin config)
+
+`scripts/*.js` at the repo root (NOT under `mcp-servers/`):
+
+- `validate.js` — pre-commit / CI validation of frontmatter, version symmetry, release gate, and the skill-glob-vs-disk check (v2.5.1+).
+- `bump-version.js` — atomic SemVer bump across VERSION + `package.json` + `plugin.json` + `marketplace.json`.
+- `generate-inventory.js` — snapshot of `plugin.json` for the README inventory table.
+- `pre-commit-validate.js` — pre-commit wrapper.
+- `test-hooks.js` — smoke suite for hook runtime contracts.
+- `test-sc-fallback.js` — SuperClaude inlining contract test.
+- `usage-report.js` — analysis over `usage-tracker`'s `events.jsonl`.
+- `postinstall.js` — `npm postinstall` lifecycle.
+- `scripts/dashboard/` — developer dashboard UI.
+
+### Enforcement
+
+The `.gitignore` allow-list pattern (v2.5.1+):
+
+```
+scripts/mcp-servers/*
+!scripts/mcp-servers/fs.js
+```
+
+…actively blocks dev-personal MCPs from being added under `scripts/mcp-servers/` by mistake. Dev-personal MCP servers belong in user scope (`~/.claude/mcp/`), not in this repo. Adding a new **shipped** MCP requires an explicit allow-list exception — forcing the author to hit the ship-vs-dev fork at the moment of first commit.
+
+See also: [CLAUDE.md § External Dependency Decision Rule](../CLAUDE.md#external-dependency-decision-rule).
 
 ---
 

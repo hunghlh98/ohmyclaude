@@ -895,6 +895,39 @@ test('writes valid YAML state with uv-missing when uv not on PATH', () => {
   cleanup(sandbox);
 });
 
+// ── Per-hook toggle short-circuit (v2.5.1+) ─────────────────────────────────
+// Every hook respects OHMYCLAUDE_HOOK_<NAME>=off — finer-grained than the
+// install-profile/module level toggles in manifests/install-modules.json.
+console.log('\nPer-hook toggle (OHMYCLAUDE_HOOK_<NAME>=off):');
+
+const { envVarName } = require(path.join(hooksDir, '_toggle'));
+const HOOK_SCRIPTS = fs.readdirSync(hooksDir)
+  .filter(f => f.endsWith('.js') && !f.startsWith('_'))
+  .sort();
+
+for (const script of HOOK_SCRIPTS) {
+  test(`${script} — honors ${envVarName(script)}=off`, () => {
+    const stdin = JSON.stringify({ hook_event_name: 'Stop', session_id: 'test' });
+    const extraEnv = {};
+    extraEnv[envVarName(script)] = 'off';
+    const r = runHook(script, stdin, { extraEnv });
+    assertEq(r.code, 0, 'exit code');
+    cleanup(r.sandbox);
+  });
+}
+
+test('usage-tracker.js — legacy OHMYCLAUDE_USAGE_TRACKING=off still disables', () => {
+  const stdin = JSON.stringify({ hook_event_name: 'Stop', session_id: 'test' });
+  const r = runHook('usage-tracker.js', stdin, {
+    extraEnv: { OHMYCLAUDE_USAGE_TRACKING: 'off' },
+  });
+  assertEq(r.code, 0, 'exit code');
+  // No usage dir should have been created in the sandbox cwd.
+  assertAbsent(path.join(r.sandbox, '.claude', '.ohmyclaude', 'usage'),
+    'usage dir not created when disabled');
+  cleanup(r.sandbox);
+});
+
 // ── Summary ─────────────────────────────────────────────────────────────────
 console.log('');
 const total = pass + fail;

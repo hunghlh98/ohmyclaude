@@ -291,6 +291,9 @@ Write architecture documentation to `docs/architecture/` with naming convention:
 
 ## References
 
-- [references/c4-syntax.md](references/c4-syntax.md) - Complete Mermaid C4 syntax
-- [references/common-mistakes.md](references/common-mistakes.md) - Anti-patterns to avoid
-- [references/advanced-patterns.md](references/advanced-patterns.md) - Microservices, event-driven, deployment
+- [references/c4-syntax.md](references/c4-syntax.md) - Mermaid C4 syntax reference (elements, relationships, boundaries, styling)
+- [references/c4-syntax-examples.md](references/c4-syntax-examples.md) - Complete worked examples + Mermaid limitations
+- [references/common-mistakes.md](references/common-mistakes.md) - Anti-patterns: abstraction, shared libraries, brokers, externals, metadata
+- [references/common-mistakes-advanced.md](references/common-mistakes-advanced.md) - Anti-patterns: scope, arrows, deployment, consistency, decision docs
+- [references/advanced-patterns.md](references/advanced-patterns.md) - Microservices, event-driven, deployment patterns
+- [references/advanced-patterns-docs-landscape.md](references/advanced-patterns-docs-landscape.md) - API docs, supplementary diagrams, ADRs, landscape, best practices

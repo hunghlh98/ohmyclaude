@@ -8,120 +8,26 @@
 
 ---
 
-## Current State (2026-04-24)
+## Current State (2026-04-25)
 
-- **Last shipped**: `v2.4.1` — CLAUDE.md compaction, `ohmyclaude-fs` plugin-owned MCP server (first graph-backend-free release cycle), dashboard data-correctness fixes.
-- **In-flight (Unreleased → v2.4.2)**: code-review-graph re-adoption as optional graph backend; `.claude/ohmyclaude.local.yaml` per-project state file convention; new SessionStart setup hook detects `uv` prereq. Closes the near-term graph-backend backlog item opened at v2.4.0. See `CHANGELOG.md` [2.4.2] section and `.claude/plans/resilient-hopping-gadget.md`.
+- **Last shipped**: `v2.5.0` — lightweight skill reset (see CHANGELOG.md for full entry).
+- **In-flight**: `[Unreleased]` in CHANGELOG tracks the current follow-up round (dev-MCP relocation, skill-glob validator, hook-toggle convention, reference-file splits, README↔docs dedup).
 - **Nothing else scheduled**. The backlog below is an honest inventory of what's *still desired* — not a release calendar. Items move from backlog → release only when explicitly planned in a plan file and executed in a session.
 - **Scope discipline**: each backlog item carries one of four statuses — `[ ]` still desired · `[x]` shipped · `[~]` partially shipped · `[-]` superseded / dropped. No item lists a target version until the moment it's being implemented. v2.0.0's whole thesis was that aspirational version pins cause drift.
 
-### Near-term (pending decisions)
-
-- [x] **Graph backend re-adoption** — *shipped v2.4.2*: picked `code-review-graph` (MIT, tirth8205/code-review-graph). Declared in `.claude-plugin/.mcp.json`; launched via `uvx code-review-graph serve`. Ships through the new opt-in `mcp-code-review-graph` install module (grouped under the `full` profile). Per-agent query-pattern re-integration into `java-source-intel` and `project-discovery` is deliberately deferred — agents discover the MCP organically for now.
-- [x] **`ohmyclaude-fs` stdio MCP server** — *shipped v2.4.0*: plugin-owned filesystem helpers wrapping `tree`. Exposes `tree` as a named, trackable MCP tool so `mcp_mix` shows it distinctly. Stdlib-only Node (zero deps).
-
 ---
 
-## What Actually Shipped (v1.0 → v1.3)
+## Shipped History
 
-Truthful record of the three minor releases that landed on 2026-04-21. The plan-vs-reality drift was discovered during the v2.0.0 spec-panel review and is the primary motivation for the "restore invariants" refactor.
+Authoritative release log: **[CHANGELOG.md](CHANGELOG.md)**. It records every v1.0 → v2.5 release with its actual diff.
 
-### v1.0.0 — Harness Engineering Overhaul (2026-04-08)
+Context on milestones not obvious from a diff:
 
-- Agent Teams coordination model (TeamCreate / SendMessage / TaskList)
-- Single `/forge` entry point absorbs /review, /debug, /commit
-- 17 agents consolidated to 10 (Corporate Slack personas)
-- Java-first skills (4) + path-activated rules for `rules/java/`
-- Document-driven pipeline with 10 named artifact types
-- 3-level confidence UX (HIGH / MEDIUM / LOW)
-- code-review-graph MCP soft-integration
-- Install profiles simplified to 3 (minimal, standard, full)
+- **v1.0.0 — harness-engineering overhaul** (2026-04-08): 17 agents consolidated to 10, single `/forge` entry, document-driven pipeline, install profiles simplified to 3. Full notes: CHANGELOG `## [1.0.0]`.
+- **v2.0.0 — subtractive refactor** (2026-04-22): addressed drift between stated invariants and shipped state. Three findings drove the work — (1) roadmap fiction across v1.1/v1.2/v1.3, (2) three SKILL.md files over the 400-line cap, (3) 8 SuperClaude verb-wrappers duplicating agent docstrings. No new capabilities; only enforcement + honest documentation. Full notes: CHANGELOG `## [2.0.0]`.
+- **v2.2.0 — session intelligence** (2026-04-22): `/save`, `/load`, three new SessionStart/PreCompact/SubagentStart hooks. Opt-in bundle (`full` profile only). Full notes: CHANGELOG `## [2.2.0]`.
 
-### v1.1.0 — SuperClaude Inlining γ (2026-04-21)
-
-- 13 SuperClaude verb-skills inlined from upstream v4.3.0 (MIT)
-- Every `sc-<verb>` reference resolves in-tree — no external peer dependency
-- Agents' SuperClaude Integration sections rewritten to reference inlined forms
-- `scripts/test-sc-fallback.js` inverted: proves no external `sc:sc-<verb>` remains
-
-### v1.2.0 — Cost Profiler (2026-04-21)
-
-- `cost-profiler.js` hook (SubagentStop + Stop) writes `PROFILE-<runId>.md` per run and a rolling `baseline.json`
-- `profile-run` skill interprets profiles and surfaces anomaly flags (`turn_explosion`, `cost_over_p95`, `cache_miss_spike`, `opus_budget_breach`)
-
-### v1.3.0 — Dual-Graph Backend + java-source-intel (2026-04-21)
-
-- Exploration tier list: `codegraph → code-review-graph → tree → grep`
-- `graph-update.js` probes codegraph first, code-review-graph second, silently skips if neither present
-- `skills/java-source-intel/` — Java semantic-query skill with 6 canonical patterns (callers, `@Transactional` boundaries, Spring bean inventory, impact radius, endpoint→DB traces, interface inheritors)
-- All graph backends are opt-in: the plugin still ships md + js only, nothing installed on the client
-
----
-
-## v2.0.0 — Restore Invariants (Shipped 2026-04-22)
-
-The v2.0.0 refactor addresses drift between ohmyclaude's stated invariants and its shipped state. Strictly subtractive: no new skills, agents, or hooks. Additive work stays in v2.1+.
-
-**Finding 1 — Roadmap fiction (CRITICAL)**: v1.1 / v1.2 / v1.3 shipped nothing from their listed items. This file is now rewritten to be truthful, with the Process Invariant at the top to prevent recurrence.
-
-**Finding 2 — Skills violated the ≤400-line cap (HIGH)**: 3 SKILL.md files exceeded the cap (`qa-test-planner` 758, `database-schema-designer` 688, `design-system` 604). All three split into compliant SKILL.md + expanded `references/`.
-
-**Finding 3 — SuperClaude inlining added drift surface for low value (HIGH)**: 8 of 13 inlined sc-* skills were verb-wrappers duplicating agent docstrings. Removed: `sc-analyze`, `sc-build`, `sc-design`, `sc-document`, `sc-implement`, `sc-improve`, `sc-test`, `sc-troubleshoot`. Kept 5 knowledge-methodology skills: `sc-spec-panel`, `sc-brainstorm`, `sc-pm`, `sc-research`, `sc-estimate`. ~1,400 lines of MIT-drift surface removed.
-
-**Finding 4 — Three releases in one day with no gate (MEDIUM)**: Added release gate to `validate.js` — VERSION bump requires a matching `## [VERSION]` section in CHANGELOG.md, plus an advisory ROADMAP↔VERSION cross-check.
-
-### What changed
-
-- [x] `scripts/validate.js` — enforces ≤400-line cap on all `skills/*/SKILL.md`
-- [x] `scripts/validate.js` — enforces CHANGELOG↔VERSION symmetry (hard)
-- [x] `scripts/validate.js` — advises ROADMAP↔VERSION symmetry (soft warning)
-- [x] `skills/qa-test-planner/` split (758 → 258 lines in SKILL.md)
-- [x] `skills/database-schema-designer/` split (688 → 280 lines in SKILL.md)
-- [x] `skills/design-system/` split (604 → 171 lines in SKILL.md)
-- [x] 8 sc-* verb-wrapper skills deleted
-- [x] 9 agent files updated to drop deleted-verb references
-- [x] `commands/forge.md` SuperClaude section rewritten around the 5 knowledge skills
-- [x] `docs/superclaude-integration.md` rewritten with "subtract the verb-wrappers" rationale
-- [x] `scripts/test-sc-fallback.js` updated with new stable subset and removed-verb list
-- [x] `manifests/install-modules.json` `skills-superclaude` shrunk 13 → 5
-- [x] `ROADMAP.md` rewritten (this file)
-- [x] `docs/OPERATING.md` — release gate documented
-- [x] CHANGELOG entry for v2.0.0 — subtractive refactor summary
-
-### What is NOT in v2.0.0 (intentional)
-
-- No new skills, agents, hooks, or rules
-- No filesystem re-boundary of `skills/` categories (deferred to v2.1)
-- No language expansion (see v2.1+ backlog)
-- No session intelligence features (see v2.1+ backlog)
-
----
-
-## v2.1.0 — Language Expansion + Distribution Hygiene (Shipped 2026-04-22)
-
-All three items named below landed in v2.1.0. ROADMAP ↔ CHANGELOG symmetry honored (see `CHANGELOG.md` `## [2.1.0]`).
-
-- [x] `rules/typescript/` — 4 path-activated rule files (coding-style, patterns, security, testing). Second language in the rules system. Activates on `**/*.ts` / `**/*.tsx`. Mirrors `rules/java/` exactly.
-- [x] Smoke test suite for the 8 hooks — `scripts/test-hooks.js`, 27 contract assertions. Hermetic via `HOME` override; zero hook code modified. Wired into CI as required step.
-- [x] `AGENTS.md` consolidated reference — new file at repo root. One section per agent with purpose, triggers, hard boundaries, and example prompts. Complements `docs/OPERATING.md` without duplicating body content.
-
-Release gate additions (checked by `validate.js`):
-- `rules/<lang>/*.md` must declare a `paths:` array (dead otherwise).
-- `package.json` must declare a `test:hooks` script.
-
----
-
-## v2.2.0 — Session Intelligence (Shipped 2026-04-22)
-
-Ships resumable per-cwd session state — the `/save` and `/load` commands, plus three new hook events (`SessionStart`, `PreCompact`, `SubagentStart`) that keep the snapshot current between explicit saves. Opt-in bundle: `hooks-session`, `skills-session`, and `commands-session` modules are `defaultInstall: false` and land in the `full` profile only, not `standard`.
-
-- [x] `/save` command + `skills/save/` — snapshot session state to `~/.claude/ohmyclaude/sessions/<session_id>/`. Writes `meta.json`, `stages.json`, updates `_index.json`. Idempotent, host-local.
-- [x] `/load` command + `skills/load/` — read-only resume. Three forms: `/load`, `/load <id>`, `/load --list`. Cross-references saved `stages.json` with live `.claude/pipeline/`.
-- [x] `SessionStart` hook (`hooks/scripts/session-load.js`) — fresh-startup only (source-filtered); emits discoverability hint when saved session exists for this cwd.
-- [x] `PreCompact` hook (`hooks/scripts/state-snapshot.js`) — updates `stages.json` + `meta.last_touch_ts` before compaction.
-- [x] `SubagentStart` hook (`hooks/scripts/subagent-trace.js`) — telemetry only. Original ROADMAP intent was context-injection; the event is observational per Claude Code docs, so scope was reduced honestly rather than shipping something broken. Context-injection capability remains in the backlog below (needs a `PreToolUse`-on-`Task` design, not `SubagentStart`).
-
-Smoke suite grew from 27 → 37 contract assertions.
+For any release not called out above, read the CHANGELOG entry directly — this file does not mirror it.
 
 ---
 
@@ -158,8 +64,8 @@ Each follows the `rules/java/` template: 4 files (coding-style, patterns, securi
 
 ### Distribution & Testing
 
-- [x] **Smoke test suite** — shipped in v2.1.0 (`scripts/test-hooks.js`, 37 contract assertions after v2.2.0's extension).
-- [x] **AGENTS.md reference** — shipped in v2.1.0.
+- [x] **Smoke test suite** — shipped in v2.1.0 (`scripts/test-hooks.js`, 60 contract assertions after v2.5.1's per-hook toggle additions).
+- [x] **AGENTS.md reference** — shipped in v2.1.0, later absorbed into `agents/` frontmatter docs in v2.5.0.
 - [ ] **`npm prepublishOnly`** — one-line: run `validate.js` + `test-hooks.js` before `npm publish`. Small change.
 - [ ] **Agent integration tests** (`scripts/test-agents.js`) — verify each agent's frontmatter, tools, example triggers, read-only tool-list discipline.
 - [ ] **HOOKS.md consolidated reference** — directory-entry index for hooks, one section per hook script.

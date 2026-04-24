@@ -14,11 +14,13 @@
 const fs   = require('fs');
 const path = require('path');
 const os   = require('os');
+const { isHookDisabled } = require('./_toggle');
 
 let raw = '';
 process.stdin.on('data', c => raw += c);
 process.stdin.on('end', () => {
   process.stdout.write(raw);
+  if (isHookDisabled(__filename)) process.exit(0);
 
   const teamsDir = path.join(os.homedir(), '.claude', 'teams');
   if (!fs.existsSync(teamsDir)) {

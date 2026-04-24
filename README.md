@@ -59,20 +59,7 @@ Never more than 3 questions. Circuit breaker: 3 rejection rounds triggers human 
 
 ## Agents
 
-10 agents with corporate Slack personas. Each has a name, a clear lane, and a model assignment.
-
-| Tier | Agent | Role | Model |
-|------|-------|------|-------|
-| Lead | @paige-product | Grand Router + Planner + Oracle | sonnet |
-| Design | @artie-arch | C4 system architect | opus |
-| Design | @una-ux | UX spec + WCAG review | sonnet |
-| Execution | @sam-sec | Security audit, adversarial validation | sonnet |
-| Execution | @beck-backend | Backend implementation (BE-only) | sonnet |
-| Execution | @effie-frontend | Frontend implementation (FE-only) | sonnet |
-| Execution | @quinn-qa | Testing + fuzz data | sonnet |
-| Governance | @stan-standards | Code review -- logic + performance + language | sonnet |
-| Ship | @devon-ops | Docs + release + announcement | haiku |
-| Utility | @heracles | Debugging + root cause analysis | sonnet |
+10 agents with corporate Slack personas — Lead, Design, Execution, Governance, Ship, Utility tiers. Full per-agent reference (purpose, model, tools, boundaries, examples) lives in [`docs/OPERATING.md`](./docs/OPERATING.md#part-1--agents-10). Model distribution: 8 sonnet, 1 opus (`@artie-arch`), 1 haiku (`@devon-ops`).
 
 ## Dynamic Routing
 
@@ -134,30 +121,11 @@ Path-activated language rules:
 
 ## Hooks (12)
 
-| Hook | Trigger | What it does |
-|------|---------|--------------|
-| `pre-write-check` | PreToolUse Write/Edit | Blocks writes with hardcoded secrets |
-| `post-bash-lint` | PostToolUse Bash | Runs linter after bash edits source |
-| `backlog-tracker` | PostToolUse Write | Rebuilds BACKLOG.md when ISS-*.md written |
-| `session-summary` | Stop | Writes per-response JSONL log to `~/.claude/ohmyclaude/sessions/YYYY-MM-DD.jsonl` |
-| `team-cleanup` | Stop | Cleans orphaned teams older than 24h |
-| `cost-profiler` | SubagentStop + Stop | Writes `.claude/.ohmyclaude/pipeline/PROFILE-<runId>.md` and rolling `baseline.json`; pair with `skills/profile-run` |
-| `usage-tracker` | PreToolUse + UserPromptSubmit + Stop + SessionStart | Per-project usage telemetry to `<cwd>/.claude/.ohmyclaude/usage/events.jsonl` (v2.3+) |
-| `project-init` | SessionStart | On first launch in a git repo root, scaffolds `.claude/.ohmyclaude/{local.yaml, usage/, backlog/{BACKLOG.md, issues/}, pipeline/, metrics/}` and adds a marker-delimited `## ohmyclaude` section to `.claude/CLAUDE.md` (creates the file if missing; appends the section if it exists without the marker; skips if marker already present). Sentinel via `features.project_init.setup_complete` in `local.yaml` (shared with `code-review-graph-setup`). Silent no-op outside git roots or in the ohmyclaude repo itself (v2.4.6) |
-| `session-load` | SessionStart | On fresh-startup only, emits a one-line hint when a saved session exists for this cwd (v2.2.0) |
-| `state-snapshot` | PreCompact | Snapshots pipeline artifact inventory to the active session's `stages.json` before compaction (v2.2.0) |
-| `subagent-trace` | SubagentStart | Appends one JSONL line per subagent spawn to `traces.jsonl`; pairs with `cost-profiler` for full per-agent lifecycle (v2.2.0) |
+12 hooks across 5 install modules — `hooks-quality` (2, default-on), `hooks-tracking` (3), `hooks-profiler` (1), `hooks-usage` (1), `hooks-session` (5). Per-hook detail (trigger, timeout, failure mode, disable path) and tier overview in [`docs/OPERATING.md` → Part 2](./docs/OPERATING.md#part-2--hooks-12). Any individual hook can be disabled with `OHMYCLAUDE_HOOK_<NAME>=off` (v2.5.1+).
 
 ## Cost Profiler (harness observability)
 
-Every `/forge` run emits structured telemetry. Agents stay blind to it — all measurement happens in-hook by parsing `transcript.jsonl`.
-
-- **PROFILE artifact** — per-run table: agent, model, turns, in/out tokens, cache hit rate, USD, anomaly flags
-- **Baseline** — rolling N=20 means + p95 per scenario (full-app, feature, hotfix, docs) and per agent
-- **Anomaly flags** — `turn_explosion`, `cost_over_p95`, `cache_miss_spike`, `opus_budget_breach`
-- **@paige-product** reads the latest PROFILE at team shutdown and surfaces a one-line cost summary in `SUMMARY-{timestamp}.md`
-- **`profile-run` skill** interprets PROFILE + baseline and recommends concrete tuning (ranked by ROI)
-- **Calibration** — `profile-run --calibrate` splits PROFILE artifacts into recent (≤30d) vs prior (30–90d) windows and diffs per-scenario means; flag drift >25%
+`cost-profiler` writes per-run `PROFILE-<runId>.md` artifacts and a rolling `baseline.json` (N=20). Anomaly flags surface spikes (`turn_explosion`, `cost_over_p95`, `cache_miss_spike`, `opus_budget_breach`); pair with [`skills/profile-run`](./skills/profile-run/) to interpret. Full cost model — pricing, canonical scenarios, cost-driver ranking, levers — in [`docs/TOKENS.md`](./docs/TOKENS.md).
 
 ## Exploration
 
@@ -224,12 +192,12 @@ features:
 
 | Component | Count | Detail |
 |-----------|------:|--------|
-| Version | 2.5.0 | VERSION, package.json, plugin.json, marketplace.json |
+| Version | 2.5.1 | VERSION, package.json, plugin.json, marketplace.json |
 | Agents | 10 | sonnet: 8, opus: 1, haiku: 1 |
 | Skills | 21 | engineering: 3, java: 1, pipeline: 4, specialized: 6, superclaude: 5, session: 2 |
 | Commands | 3 | forge, load, save |
 | Rules | 9 | common: 1, java: 4, typescript: 4 |
-| Hooks | 12 | backlog-tracker, code-review-graph-setup, cost-profiler, post-bash-lint, pre-write-check, project-init, session-load, session-summary, state-snapshot, subagent-trace, team-cleanup, usage-tracker |
+| Hooks | 13 | _toggle, backlog-tracker, code-review-graph-setup, cost-profiler, post-bash-lint, pre-write-check, project-init, session-load, session-summary, state-snapshot, subagent-trace, team-cleanup, usage-tracker |
 | Profiles | 3 | minimal, standard (default), full |
 | Modules | 22 | agents: 4, skills: 6, rules: 3, commands: 2, mcp: 2, hooks: 5 |
 
@@ -247,7 +215,7 @@ All three run in CI on every push to `main`/`develop` and every PR.
 
 ---
 
-**Reference**: [Operating](./docs/OPERATING.md) -- [Pipeline Schema](./docs/pipeline-schema.md) -- [Cost Model](./docs/TOKENS.md) -- [Migration (0.x → 1.0)](./MIGRATION.md)
+**Reference**: [Operating](./docs/OPERATING.md) -- [Pipeline Schema](./docs/pipeline-schema.md) -- [Cost Model](./docs/TOKENS.md) -- [Migration (0.x → 1.0, archived)](./docs/archive/MIGRATION-1.0.md)
 
 [Roadmap](./ROADMAP.md) -- [Contributing](./CONTRIBUTING.md) -- [Changelog](./CHANGELOG.md) -- [Security](./SECURITY.md) -- [License](./LICENSE)
 

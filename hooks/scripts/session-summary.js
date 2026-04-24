@@ -15,6 +15,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { isHookDisabled } = require('./_toggle');
 
 const SESSIONS_DIR = path.join(os.homedir(), '.claude', 'ohmyclaude', 'sessions');
 
@@ -34,6 +35,7 @@ process.stdin.on('data', chunk => { rawInput += chunk; });
 process.stdin.on('end', () => {
   // Pass through immediately
   process.stdout.write(rawInput);
+  if (isHookDisabled(__filename)) process.exit(0);
 
   let input;
   try {

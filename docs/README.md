@@ -14,7 +14,7 @@ Split into **product docs** (shipped with the plugin, user-facing) and **researc
 
 | Path | Purpose |
 |------|---------|
-| `docs/archive/` | v1.0.0 planning notes (historical) — `plan_v1.md`, `review_skills.md`, `skills_required_v1.md`, `update_naming_v1.md`. Kept as provenance for the 17→10 agent consolidation and initial skill roster; safe to read, not safe to act on |
+| [`archive/`](./archive/) | v1.0.0 planning notes + `MIGRATION-1.0.md`. Kept as provenance for the 17→10 agent consolidation, initial skill roster, and 0.x→1.0 upgrade path; safe to read, not safe to act on. See [`archive/README.md`](./archive/README.md) for the full index. |
 
 > **Where did the external research material go?** The English source notes (Anthropic's skills lessons, Socratic prompting, Thariq's skill-authoring guide) were migrated into the second-brain vault at `~/second-brain/knowledge/` and `~/second-brain/research/`. Vietnamese translations were removed; the vault is English-only. Use `/recall` to query. The plugin repo now holds only plugin-authored product docs.
 
@@ -26,5 +26,4 @@ Top-level documentation lives at the repo root:
 - `CHANGELOG.md` — what changed, when
 - `CONTRIBUTING.md` — how to add agents/skills/rules/hooks
 - `SECURITY.md` — how to report vulnerabilities
-- `MIGRATION.md` — 0.x → 1.0 upgrade guide
 - `LICENSE` — MIT

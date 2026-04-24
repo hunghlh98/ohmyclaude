@@ -42,6 +42,7 @@
 const fs   = require('fs');
 const path = require('path');
 const os   = require('os');
+const { isHookDisabled } = require('./_toggle');
 
 const MARKER_BEGIN = '<!-- BEGIN: ohmyclaude (auto-generated — do not edit inside markers) -->';
 const MARKER_END   = '<!-- END: ohmyclaude -->';
@@ -215,6 +216,7 @@ let raw = '';
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', c => raw += c);
 process.stdin.on('end', () => {
+  if (isHookDisabled(__filename)) return process.exit(0);
   let evt = {};
   try { evt = JSON.parse(raw); } catch {}
 

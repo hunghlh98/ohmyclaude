@@ -16,6 +16,7 @@
 const { spawnSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const { isHookDisabled } = require('./_toggle');
 
 // Commands that suggest source files were modified
 const SOURCE_MODIFYING_PATTERNS = [
@@ -42,6 +43,7 @@ process.stdin.setEncoding('utf8');
 process.stdin.on('data', chunk => { rawInput += chunk; });
 
 process.stdin.on('end', () => {
+  if (isHookDisabled(__filename)) { process.stdout.write(rawInput); process.exit(0); }
   let input;
   try {
     input = JSON.parse(rawInput);

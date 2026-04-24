@@ -71,7 +71,7 @@ Without Opus on @artie-arch (running it on Sonnet for simple features): total dr
 
 ### Free wins
 
-1. **Install `code-review-graph`** — agents explore via semantic graph instead of scanning the tree with Grep/Glob. Typical saving: 30–50% input reduction on large repos. Zero-setup penalty if absent (graceful fallback per `graph-update` hook).
+1. **Install `code-review-graph`** — agents explore via semantic graph instead of scanning the tree with Grep/Glob. Typical saving: 30–50% input reduction on large repos. Zero-setup penalty if absent — the `code-review-graph-setup` SessionStart hook detects `uv` presence and writes state to `local.yaml`; missing `uv` yields a one-line notice with install instructions, not a crash.
 2. **Let prompt caching work** — spawn all the agents you need inside one Team, so their system prompts hit the cache on re-invocation. Avoid splitting a task across separate `/forge` calls if they'd reuse the same agents.
 3. **Use `/forge commit` for commits** — it's Scenario A ($0.02). Don't spawn a full team for a commit message.
 
@@ -88,7 +88,19 @@ Without Opus on @artie-arch (running it on Sonnet for simple features): total dr
 
 ### Observability (shipped in v1.2.0)
 
-9. The `cost-profiler` hook (PostToolUse SubagentStop + Stop) writes per-run `PROFILE-<runId>.md` and a rolling `.claude/metrics/baseline.json` (N=20). Anomaly flags (`turn_explosion`, `cost_over_p95`, `cache_miss_spike`, `opus_budget_breach`) surface the real cost distribution. Pair with `skills/profile-run` to interpret.
+9. The `cost-profiler` hook (SubagentStop + Stop events) writes per-run `PROFILE-<runId>.md` to `.claude/.ohmyclaude/pipeline/` and a rolling `.claude/.ohmyclaude/metrics/baseline.json` (N=20).
+
+   **What lands in `PROFILE-<runId>.md`**: per-agent row with model, turns, in/out tokens, cache hit rate, USD, and any tripped anomaly flags.
+
+   **What the baseline captures**: rolling N=20 means + p95 per scenario (full-app, feature, hotfix, docs) and per agent.
+
+   **Anomaly flags** (any tripped flag surfaces on @paige-product's shutdown summary):
+   - `turn_explosion` — agent burned more turns than p95 + tolerance for that agent/scenario.
+   - `cost_over_p95` — total USD for the run exceeded the rolling p95 for its scenario.
+   - `cache_miss_spike` — cache-hit rate dropped below baseline, indicating TTL churn or prompt drift.
+   - `opus_budget_breach` — Opus USD on this run exceeded its scenario-specific ceiling.
+
+   **Calibration**: `skills/profile-run --calibrate` diffs recent (≤30d) vs prior (30–90d) per-scenario means and flags drift >25%. Use when you suspect the baseline is stale.
 
 ---
 

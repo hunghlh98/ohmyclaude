@@ -8,6 +8,26 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [2.5.1] — 2026-04-25
+
+### Added
+- Per-hook env-var opt-out `OHMYCLAUDE_HOOK_<NAME>=off` via `hooks/scripts/_toggle.js`; all 12 hooks honor it (legacy `OHMYCLAUDE_USAGE_TRACKING=off` kept as alias).
+- `validate.js` skill-glob drift check (glob-vs-disk registration mismatch) and underscore-prefix exclusion from hook inventory.
+- `docs/OPERATING.md` Part 4 documents ship-vs-dev script boundary; Part 2 adds tier overview of 5 install modules.
+- 13 new hook contract assertions in `test-hooks.js` (47 → 60 total).
+- `.gitignore` allow-list for `scripts/mcp-servers/` (only shipped `fs.js` permitted; dev-personal MCPs blocked at `git add`).
+
+### Changed
+- `docs/OPERATING.md` Part 2 expanded 6 → 12 hooks; dropped stale `graph-update` section replaced by current hook set.
+- `README.md` shrunk duplicated Agents table, Hooks table, and Cost Profiler section to pointers into OPERATING.md / TOKENS.md (-33 lines).
+- `ROADMAP.md` pruned shipped-release narratives (v1.x–v2.2); CHANGELOG is now the authoritative release log (209 → 115 lines).
+- Split oversized `references/*.md` files at H2 boundaries: `c4-architecture/{advanced-patterns, c4-syntax, common-mistakes}.md` and `qa-test-planner/{test_case_templates, bug_report_templates}.md`.
+- `docs/TOKENS.md` expanded cost-profiler anomaly-flag detail; corrected stale `graph-update` reference to `code-review-graph-setup`.
+
+### Removed
+- Relocated dev-personal `debug-log.js` MCP out of `scripts/mcp-servers/`; that directory now ships `fs.js` only.
+- Archived `MIGRATION.md` (0.x → 1.0 upgrade) to `docs/archive/MIGRATION-1.0.md`; v1.0+ upgrade guidance lives in CHANGELOG.
+
 ## [2.5.0] — 2026-04-25
 
 ### Removed

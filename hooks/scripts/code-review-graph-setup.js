@@ -34,6 +34,7 @@
 const fs           = require('fs');
 const path         = require('path');
 const { spawnSync } = require('child_process');
+const { isHookDisabled } = require('./_toggle');
 
 // ── Stdin passthrough boilerplate ───────────────────────────────────────────
 let raw = '';
@@ -41,6 +42,7 @@ process.stdin.setEncoding('utf8');
 process.stdin.on('data', c => raw += c);
 process.stdin.on('end', () => {
   process.stdout.write(raw);
+  if (isHookDisabled(__filename)) process.exit(0);
   try { main(raw); } catch (_) { /* never let a hook crash block the session */ }
   process.exit(0);
 });

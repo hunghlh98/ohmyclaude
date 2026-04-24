@@ -13,15 +13,19 @@
 
 const fs   = require('fs');
 const path = require('path');
+const { isHookDisabled } = require('./_toggle');
 
 // ── Read hook input ────────────────────────────────────────────────────────────
 let input;
+let raw = '';
 try {
-  const raw = fs.readFileSync('/dev/stdin', 'utf8');
+  raw = fs.readFileSync('/dev/stdin', 'utf8');
   input = JSON.parse(raw);
 } catch {
   process.exit(0); // Non-fatal: no stdin or malformed JSON
 }
+
+if (isHookDisabled(__filename)) process.exit(0);
 
 const filePath = input?.tool_input?.file_path || '';
 

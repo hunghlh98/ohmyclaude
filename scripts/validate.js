@@ -89,8 +89,15 @@ for (const agentPath of pluginJson.agents) {
 // ── Skill files and frontmatter ──────────────────────────────────────────────
 console.log('\nSkill SKILL.md files and frontmatter:');
 const skillsDir = path.join(root, 'skills');
+// v2.5.1+: filter to real directories so stray files at skills/ root (e.g. a
+// README.md someone adds by mistake) don't trip the "missing SKILL.md" check.
+const skillEntries = fs.existsSync(skillsDir)
+  ? fs.readdirSync(skillsDir).filter(e => {
+      try { return fs.statSync(path.join(skillsDir, e)).isDirectory(); } catch { return false; }
+    }).sort()
+  : [];
 if (fs.existsSync(skillsDir)) {
-  for (const skill of fs.readdirSync(skillsDir).sort()) {
+  for (const skill of skillEntries) {
     const skillFile = path.join(skillsDir, skill, 'SKILL.md');
     if (!fs.existsSync(skillFile)) {
       check(`skills/${skill}/SKILL.md`, false, 'missing SKILL.md');
@@ -114,6 +121,35 @@ if (fs.existsSync(skillsDir)) {
       fm && typeof fm.description === 'string' && fm.description.length > 0,
       'missing description');
   }
+}
+
+// ── Glob-vs-disk skill registration drift (v2.5.1+) ─────────────────────────
+// plugin.json uses a glob for skills ("./skills/") while agents are listed
+// explicitly. The glob trivially matches today, but this check would fail
+// loudly if plugin.json ever switched to explicit enumeration and drifted
+// from disk — mirroring the explicit-agent-path contract from CLAUDE.md.
+console.log('\nSkill registration vs disk:');
+const registeredSkills = pluginJson.skills || [];
+const isGlobOnly = registeredSkills.length === 1 && registeredSkills[0] === './skills/';
+if (isGlobOnly) {
+  check('plugin.json skills — glob registration matches skills/ directory',
+    skillEntries.every(s => fs.existsSync(path.join(skillsDir, s, 'SKILL.md'))),
+    'glob "./skills/" would discover a directory without SKILL.md');
+} else {
+  // Explicit enumeration mode — every registered path must resolve and every
+  // on-disk skill must be registered.
+  const registeredNames = registeredSkills
+    .map(p => p.replace(/^\.?\//, '').replace(/\/$/, '').replace(/^skills\//, ''));
+  const onDisk = new Set(skillEntries);
+  const registered = new Set(registeredNames);
+  const unregistered = [...onDisk].filter(n => !registered.has(n));
+  const phantom     = [...registered].filter(n => !onDisk.has(n));
+  check('plugin.json skills — no unregistered on-disk skills',
+    unregistered.length === 0,
+    `on disk but not in plugin.json: ${unregistered.join(', ')}`);
+  check('plugin.json skills — no phantom registrations',
+    phantom.length === 0,
+    `in plugin.json but not on disk: ${phantom.join(', ')}`);
 }
 
 // ── SKILL.md 400-line cap (stated invariant in CLAUDE.md) ───────────────────
@@ -205,6 +241,9 @@ check('scripts/test-hooks.js exists',
 // ── Hook scripts parse as valid JS ───────────────────────────────────────────
 console.log('\nHook script syntax:');
 const hooksScriptsDir = path.join(root, 'hooks', 'scripts');
+// v2.5.1+: underscore-prefixed files (e.g. _toggle.js) are support helpers,
+// not hooks. They're still syntax-checked below but excluded from the hook
+// inventory count further down.
 if (fs.existsSync(hooksScriptsDir)) {
   for (const file of fs.readdirSync(hooksScriptsDir).filter(f => f.endsWith('.js'))) {
     const abs = path.join(hooksScriptsDir, file);
@@ -362,7 +401,8 @@ const agents = pluginJson.agents || [];
 const skillDirs = walkDirs('skills');
 const commandFiles = countDir('commands', '.md');
 const ruleFiles = walkFiles('rules', '.md');
-const hookScripts = countDir('hooks/scripts', '.js');
+// Underscore-prefixed files are shared helpers (e.g. _toggle.js), not hooks.
+const hookScripts = countDir('hooks/scripts', '.js').filter(f => !f.startsWith('_'));
 const profiles = (() => {
   try { return load('manifests/install-profiles.json').profiles || []; } catch (_) { return []; }
 })();

@@ -11,6 +11,8 @@
 
 'use strict';
 
+const { isHookDisabled } = require('./_toggle');
+
 const SECRET_PATTERNS = [
   // Generic high-entropy assignments
   /(?:api_key|apikey|api-key)\s*[:=]\s*['"]?[A-Za-z0-9_\-]{20,}['"]?/i,
@@ -46,6 +48,7 @@ process.stdin.setEncoding('utf8');
 process.stdin.on('data', chunk => { rawInput += chunk; });
 
 process.stdin.on('end', () => {
+  if (isHookDisabled(__filename)) { process.stdout.write(rawInput); process.exit(0); }
   let input;
   try {
     input = JSON.parse(rawInput);

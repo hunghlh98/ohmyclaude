@@ -32,6 +32,7 @@ const fs     = require('fs');
 const path   = require('path');
 const os     = require('os');
 const crypto = require('crypto');
+const { isHookDisabled } = require('./_toggle');
 
 const SESSIONS_DIR = path.join(os.homedir(), '.claude', 'ohmyclaude', 'sessions');
 const MAX_AGE_HOURS = 24 * 14; // hint up to 14 days back — beyond that is stale
@@ -51,6 +52,7 @@ process.stdin.setEncoding('utf8');
 process.stdin.on('data', c => raw += c);
 process.stdin.on('end', () => {
   process.stdout.write(raw);
+  if (isHookDisabled(__filename)) process.exit(0);
 
   let evt;
   try { evt = JSON.parse(raw); } catch { process.exit(0); }

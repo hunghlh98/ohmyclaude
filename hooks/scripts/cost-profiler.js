@@ -25,6 +25,7 @@
 
 const fs   = require('fs');
 const path = require('path');
+const { isHookDisabled } = require('./_toggle');
 
 const PRICING = {
   opus:   { in: 15.00, out: 75.00, cache_read: 1.50, cache_write: 18.75 },
@@ -504,6 +505,7 @@ process.stdin.setEncoding('utf8');
 process.stdin.on('data', c => raw += c);
 process.stdin.on('end', () => {
   process.stdout.write(raw);
+  if (isHookDisabled(__filename)) process.exit(0);
   let evt = null;
   try { evt = JSON.parse(raw); } catch { process.exit(0); }
   try {

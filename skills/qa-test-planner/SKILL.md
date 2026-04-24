@@ -136,7 +136,7 @@ Full template: `references/test_plan_template.md`
 - Test data requirements
 - Priority and severity
 
-Full templates (Functional, UI, Integration, Regression, Security, Performance): `references/test_case_templates.md`
+Full templates — Standard/Functional/UI: `references/test_case_templates.md`; Integration/Regression/Security/Performance: `references/test_case_templates_specialized.md`
 
 ### 3. Regression Suites
 - Smoke tests (15-30 min)
@@ -160,7 +160,7 @@ Full workflow (MCP queries, checklists, automation ideas): `references/figma_val
 - Evidence (screenshots, logs)
 - Severity and priority
 
-Full templates (Standard, UI, Performance, Security, Crash) plus severity matrix: `references/bug_report_templates.md`
+Full templates — Standard: `references/bug_report_templates.md`; Quick/UI/Performance/Security/Crash plus severity matrix: `references/bug_report_templates_additional.md`
 
 ---
 
@@ -246,9 +246,11 @@ More worked examples (responsive design, mobile nav, edge-case listings): `refer
 
 ## References
 
-- [Test Case Templates](references/test_case_templates.md) — Functional, UI, Integration, Regression, Security, Performance formats + naming conventions
+- [Test Case Templates](references/test_case_templates.md) — Standard, Functional, UI formats + naming conventions
+- [Test Case Templates — Specialized](references/test_case_templates_specialized.md) — Integration, Regression, Security, Performance formats
 - [Test Plan Template](references/test_plan_template.md) — Plan structure, run reports, coverage matrix, QA workflow, best practices
-- [Bug Report Templates](references/bug_report_templates.md) — Standard, UI, Performance, Security, Crash templates + severity/priority matrix
+- [Bug Report Templates](references/bug_report_templates.md) — Standard bug template (detailed)
+- [Bug Report Templates — Additional](references/bug_report_templates_additional.md) — Quick, UI, Performance, Security, Crash templates + severity/priority matrix
 - [Regression Testing Guide](references/regression_testing.md) — Suite structure, execution strategy, pass/fail criteria, maintenance
 - [Figma Validation Guide](references/figma_validation.md) — MCP workflow, what-to-validate checklists, query patterns, automation
 - [Examples](references/examples.md) — Full canonical examples (login, responsive design, mobile navigation)

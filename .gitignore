@@ -20,3 +20,9 @@ scripts/dashboard/logs/
 # servers belong in user-scope ~/.claude/settings.json, not committed to the
 # repo where consumers or casual readers might pick them up by accident.
 /.mcp.json
+
+# scripts/mcp-servers/ ships plugin-owned servers only (referenced by
+# .claude-plugin/.mcp.json). Dev-personal MCPs belong in ~/.claude/mcp/.
+# Allow-list — adding a new shipped MCP requires an explicit exception here.
+scripts/mcp-servers/*
+!scripts/mcp-servers/fs.js

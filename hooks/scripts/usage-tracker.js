@@ -49,6 +49,7 @@
 const fs     = require('fs');
 const path   = require('path');
 const crypto = require('crypto');
+const { isHookDisabled: toggleDisabled } = require('./_toggle');
 
 const CORRECTION_RE = /^(no|nope|don'?t|do not|stop|wait|undo|revert|that'?s wrong|try again|actually|hmm|hold on|never mind|nvm|wrong|back|go back|cancel|retry|redo)\b/i;
 // Affirmation: explicit approval of the prior turn. Ordered so shortest
@@ -71,7 +72,10 @@ const AGENT_TOOL_NAMES = new Set(['Agent', 'Task']);
 const FORGE_SKILL_NAMES = new Set(['ohmyclaude:forge', 'forge']);
 
 function isDisabled() {
-  return (process.env.OHMYCLAUDE_USAGE_TRACKING || '').toLowerCase() === 'off';
+  // Legacy OHMYCLAUDE_USAGE_TRACKING=off kept as alias for back-compat (v2.3+).
+  // Uniform OHMYCLAUDE_HOOK_USAGE_TRACKER=off added in v2.5.1.
+  if ((process.env.OHMYCLAUDE_USAGE_TRACKING || '').toLowerCase() === 'off') return true;
+  return toggleDisabled(__filename);
 }
 
 function usageDir(cwd) {

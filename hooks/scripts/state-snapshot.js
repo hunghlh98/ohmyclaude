@@ -31,6 +31,7 @@ const fs     = require('fs');
 const path   = require('path');
 const os     = require('os');
 const crypto = require('crypto');
+const { isHookDisabled } = require('./_toggle');
 
 const SESSIONS_DIR = path.join(os.homedir(), '.claude', 'ohmyclaude', 'sessions');
 
@@ -67,6 +68,7 @@ process.stdin.setEncoding('utf8');
 process.stdin.on('data', c => raw += c);
 process.stdin.on('end', () => {
   process.stdout.write(raw);
+  if (isHookDisabled(__filename)) process.exit(0);
 
   let evt;
   try { evt = JSON.parse(raw); } catch { process.exit(0); }
