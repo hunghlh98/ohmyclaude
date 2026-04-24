@@ -8,6 +8,46 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [2.4.6] — 2026-04-25
+
+Consolidates **all ohmyclaude-generated per-project output under a single hidden directory** `<project>/.claude/.ohmyclaude/`. Resolves two design problems that surfaced while debugging v2.4.5: (1) a competing sentinel — `project-init` had introduced `.claude/ohmyclaude/.initialised` alongside the pre-existing `.claude/ohmyclaude.local.yaml` state file, fragmenting the "is this project set up?" signal; (2) namespace sprawl — plugin-generated state was scattered across `.claude/{usage, backlog/BACKLOG.md, pipeline, metrics, ohmyclaude.local.yaml, ohmyclaude/}/` with no obvious plugin/user boundary. Also folds in the v2.4.5 banner-invisibility fix (debug log `d9658d8a-…` proved the hook ran and scaffolded, but the banner was on stderr and stdout carried a stdin passthrough, leaving the harness nothing human-readable to render).
+
+### Changed — directory layout
+
+Every plugin-generated output path moves under `.claude/.ohmyclaude/`:
+
+| Was | Now |
+|-----|-----|
+| `.claude/ohmyclaude.local.yaml` | `.claude/.ohmyclaude/local.yaml` |
+| `.claude/usage/` | `.claude/.ohmyclaude/usage/` |
+| `.claude/backlog/issues/` | `.claude/.ohmyclaude/backlog/issues/` |
+| `.claude/backlog/BACKLOG.md` (or root-level prior to v2.4.5) | `.claude/.ohmyclaude/backlog/BACKLOG.md` |
+| `.claude/pipeline/PROFILE-*.md` | `.claude/.ohmyclaude/pipeline/PROFILE-*.md` |
+| `.claude/metrics/{baseline.json, runs/}` | `.claude/.ohmyclaude/metrics/{baseline.json, runs/}` |
+| `<gitroot>/CLAUDE.md` | `<gitroot>/.claude/CLAUDE.md` |
+
+Five hooks updated in lockstep: `project-init`, `code-review-graph-setup`, `usage-tracker`, `backlog-tracker`, `cost-profiler` — plus `state-snapshot` (reads `pipeline/`) and the `scripts/usage-report.js` CLI. `scripts/test-hooks.js` updated to assert all new paths; 47/47 contract tests pass.
+
+### Changed — sentinel consolidation
+
+`project-init` no longer writes a separate `.initialised` file. The single state file `.claude/.ohmyclaude/local.yaml` is now the sentinel for every feature; `project-init` adds a `features.project_init.setup_complete: true` block when scaffolding succeeds. On next SessionStart, `project-init` reads the YAML, sees the flag, and silent-exits. The YAML format already in use by `code-review-graph-setup` (2-level `features.<name>.*` schema) was explicitly designed to be extensible, and `project_init` slots in as the second feature.
+
+### Fixed — concurrency
+
+`code-review-graph-setup` previously built its YAML doc from scratch on every write, which would have clobbered `features.project_init.*` set by the sync `project-init` hook that runs before it. Both hooks now **merge-preserve** existing `features.*` blocks on write (spread `existing.features` into the new doc before adding their own block). Either hook can run first; whichever runs second preserves the other's state.
+
+### Fixed — banner invisibility (from v2.4.5)
+
+`project-init` now writes the init banner to **stdout** (not stderr) and no longer copies stdin through to stdout. The harness renders stdout content as the `SessionStart:startup hook success: [ohmyclaude] Initialised ohmyclaude project at <root>: …` banner, alongside the existing `[code-review-graph]` line.
+
+### Changed — CLAUDE.md is additive, not generative
+
+`project-init` doesn't create or overwrite a full `CLAUDE.md` anymore. Instead it injects a marker-delimited section — `<!-- BEGIN: ohmyclaude -->` … `<!-- END: ohmyclaude -->` — containing only ohmyclaude commands + conventions. Three branches: missing → create with header + section; exists without marker → append; exists with marker → no-op. Per user preference, `CLAUDE.md` also moves from `<gitroot>/CLAUDE.md` to `<gitroot>/.claude/CLAUDE.md`. **Note:** Claude Code's autoload behaviour for `.claude/CLAUDE.md` (vs. the canonical repo-root location) may differ; consumers relying on auto-context may need to verify.
+
+### Migration — no auto-migrator
+
+This is a code-only refactor. Consumer repos previously initialised under v2.4.5 retain stale files at the old paths (`.claude/ohmyclaude/.initialised`, `.claude/usage/`, etc.), and those files won't be updated going forward. To pick up the new layout, consumers can delete the entire stale tree under `.claude/` (except their own user-authored content) and relaunch — `project-init` will re-scaffold at the new paths since the new sentinel (`features.project_init` in `local.yaml`) doesn't exist yet.
+
 ## [2.4.5] — 2026-04-24
 
 New SessionStart hook that auto-scaffolds ohmyclaude structure on first launch in a consumer project's git root. Closes the gap where `usage-tracker` / `backlog-tracker` expected directories that no bootstrap ever created.
