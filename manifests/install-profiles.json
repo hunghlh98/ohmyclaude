@@ -40,7 +40,7 @@
     {
       "id": "full",
       "name": "Full",
-      "description": "Everything — standard profile + tracking hooks (backlog, session summary, team cleanup) + cost profiler + session intelligence (save/load + SessionStart/PreCompact/SubagentStart hooks).",
+      "description": "Everything — standard profile + tracking hooks (backlog, session summary, team cleanup) + cost profiler + session intelligence (save/load + SessionStart/PreCompact/SubagentStart hooks) + optional `code-review-graph` MCP (tree-sitter structural graph, 28 review tools; requires `uv` on PATH; approval prompt on first install).",
       "modules": [
         "agents-core",
         "agents-governance",
@@ -62,7 +62,8 @@
         "hooks-profiler",
         "hooks-usage",
         "hooks-session",
-        "mcp-servers"
+        "mcp-servers",
+        "mcp-code-review-graph"
       ]
     }
   ]

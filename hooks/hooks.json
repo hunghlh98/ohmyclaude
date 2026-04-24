@@ -140,6 +140,18 @@
           }
         ],
         "description": "Seed per-session aggregate state under <cwd>/.claude/usage/.sessions/ and emit session_start event"
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/code-review-graph-setup.js\"",
+            "async": true,
+            "timeout": 5
+          }
+        ],
+        "description": "Detect `uv` prereq for code-review-graph MCP; write <cwd>/.claude/ohmyclaude.local.yaml with setup status on first run (self-gates on .mcp.json declaration)"
       }
     ],
     "UserPromptSubmit": [

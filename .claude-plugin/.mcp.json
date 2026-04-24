@@ -5,6 +5,13 @@
       "command": "node",
       "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/mcp-servers/fs.js"],
       "description": "Plugin-owned filesystem helpers. Currently exposes one tool: `tree` (trackable, named MCP tool that replaces anonymous Bash `tree` invocations). Stdlib-only Node implementation — no external dependencies."
+    },
+    "code-review-graph": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["code-review-graph", "serve"],
+      "env": { "PYTHONUTF8": "1" },
+      "description": "Tree-sitter structural graph for impact-aware code review. Exposes 28 tools (semantic_search_nodes_tool, query_graph_tool, get_impact_radius_tool, get_review_context_tool, get_minimal_context_tool, …). Upstream: tirth8205/code-review-graph (MIT, Python 3.10+). Runtime prerequisite: `uv` on PATH — fetches and caches the package on first invocation. Graph database persists under `.code-review-graph/` at the repo root (auto-gitignored by the upstream tool). Opt-in: deny the approval prompt to skip; SessionStart setup hook writes `.claude/ohmyclaude.local.yaml` with detection status."
     }
   }
 }

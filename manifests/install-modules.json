@@ -199,6 +199,18 @@
       "stability": "stable"
     },
     {
+      "id": "mcp-code-review-graph",
+      "kind": "mcp",
+      "description": "Optional: `code-review-graph` MCP server (28 tools — tree-sitter structural graph, impact radius, semantic search, flow tracing, refactor preview). Upstream: tirth8205/code-review-graph (MIT, Python 3.10+). Re-adopts the graph backend flagged in ROADMAP near-term after the v2.4.0 cleanup. Runtime prerequisite: `uv` on PATH (auto-fetches the package on first invocation). Ships the MCP declaration in `.claude-plugin/.mcp.json` and a SessionStart setup hook that writes `.claude/ohmyclaude.local.yaml` with detection status. Real per-consumer opt-in is Claude Code's MCP approval prompt on first install.",
+      "paths": [
+        ".claude-plugin/.mcp.json",
+        "hooks/scripts/code-review-graph-setup.js"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": false,
+      "stability": "stable"
+    },
+    {
       "id": "hooks-quality",
       "kind": "hooks",
       "description": "Quality hooks: block writes with secrets (PreToolUse), run linter after bash (PostToolUse)",

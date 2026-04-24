@@ -242,24 +242,6 @@ test('rebuilds BACKLOG.md when triggered from backlog dir', () => {
   cleanup(sandbox);
 });
 
-// ── graph-update.js (PostToolUse, async; silent no-op without backend) ──────
-console.log('\ngraph-update.js — graph sync (silent when absent):');
-
-test('exits 0 and passes through when no graph backend is installed', () => {
-  // PATH=/tmp means `which codegraph` and `which code-review-graph` both fail
-  const input = JSON.stringify({ tool_input: { file_path: 'x.js' } });
-  const r = runHook('graph-update.js', input, { extraEnv: { PATH: '/tmp' } });
-  assertEq(r.code, 0, 'exit code');
-  assertEq(r.stdout, input, 'passthrough');
-  cleanup(r.sandbox);
-});
-
-test('exits 0 on empty stdin', () => {
-  const r = runHook('graph-update.js', '', { extraEnv: { PATH: '/tmp' } });
-  assertEq(r.code, 0, 'exit code');
-  cleanup(r.sandbox);
-});
-
 // ── session-summary.js (Stop, async; writes to sandbox via HOME override) ──
 console.log('\nsession-summary.js — per-response JSONL log:');
 
@@ -855,6 +837,60 @@ test('PreToolUse(Skill) splits plugin prefix on colon', () => {
   assertEq(invoke.skill_plugin, 'sc', 'plugin prefix');
   assertEq(invoke.skill_local_name, 'sc-analyze', 'local name');
   assertEq(invoke.trigger, 'model_auto', 'no prior slash so auto');
+  cleanup(sandbox);
+});
+
+// ── code-review-graph-setup.js (SessionStart; uv prereq detection) ──────────
+console.log('\ncode-review-graph-setup.js — uv detection + state-file writer:');
+
+test('exits 0 on malformed stdin without writing state', () => {
+  const sandbox = makeSandbox();
+  const r = runHook('code-review-graph-setup.js', 'not-json', { sandbox, cwd: sandbox });
+  assertEq(r.code, 0, 'exit code');
+  assertEq(r.stdout, 'not-json', 'passthrough');
+  assertAbsent(path.join(sandbox, '.claude', 'ohmyclaude.local.yaml'), 'no state on malformed');
+  cleanup(sandbox);
+});
+
+test('self-gates to no-op when .mcp.json lacks code-review-graph', () => {
+  const sandbox = makeSandbox();
+  // Craft a fake plugin root whose .mcp.json only declares ohmyclaude-fs
+  const fakePluginRoot = path.join(sandbox, 'fake-plugin');
+  fs.mkdirSync(path.join(fakePluginRoot, '.claude-plugin'), { recursive: true });
+  fs.writeFileSync(
+    path.join(fakePluginRoot, '.claude-plugin', '.mcp.json'),
+    JSON.stringify({ mcpServers: { 'ohmyclaude-fs': {} } })
+  );
+  const input = JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: sandbox });
+  const r = runHook('code-review-graph-setup.js', input, {
+    sandbox, cwd: sandbox,
+    extraEnv: { CLAUDE_PLUGIN_ROOT: fakePluginRoot },
+  });
+  assertEq(r.code, 0, 'exit code');
+  assertAbsent(path.join(sandbox, '.claude', 'ohmyclaude.local.yaml'), 'no state when MCP undeclared');
+  cleanup(sandbox);
+});
+
+test('writes valid YAML state with uv-missing when uv not on PATH', () => {
+  const sandbox = makeSandbox();
+  const input = JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup', cwd: sandbox });
+  // Scrub PATH so `uv --version` spawn fails. Use CLAUDE_PLUGIN_ROOT
+  // pointing at the real repo so the self-gate passes.
+  const r = runHook('code-review-graph-setup.js', input, {
+    sandbox, cwd: sandbox,
+    extraEnv: { PATH: '/nonexistent', CLAUDE_PLUGIN_ROOT: root },
+  });
+  assertEq(r.code, 0, 'exit code');
+  const stateFile = path.join(sandbox, '.claude', 'ohmyclaude.local.yaml');
+  assertExists(stateFile, 'state file written');
+  const contents = fs.readFileSync(stateFile, 'utf8');
+  assertIncludes(contents, 'version: 1', 'version line');
+  assertIncludes(contents, 'features:', 'features block');
+  assertIncludes(contents, 'code_review_graph:', 'feature key');
+  assertIncludes(contents, 'setup_complete: false', 'marked incomplete');
+  assertIncludes(contents, 'reason: "uv-missing"', 'reason captured');
+  assertIncludes(contents, 'brew install uv', 'install instructions in comment header');
+  assertIncludes(r.stderr, "code-review-graph MCP needs 'uv'", 'stderr notice');
   cleanup(sandbox);
 });
 

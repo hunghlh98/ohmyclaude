@@ -11,3 +11,7 @@ scripts/dashboard/logs/
 
 # Per-workspace runtime state written by hooks; not a plugin deliverable.
 .claude/metrics/
+
+# Per-project host-local state written by setup hooks (v2.4.2+). Broad pattern
+# covers YAML today; MD/JSON variants if adopted later.
+.claude/*.local.*

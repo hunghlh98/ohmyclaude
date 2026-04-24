@@ -166,10 +166,11 @@ The plugin ships md/js files only. Exploration uses `tree` CLI plus native Read/
 
 | Priority | Tool | Type | Required? |
 |----------|------|------|-----------|
-| 1 | `tree` CLI | Directory structure | No (standard on macOS/Linux) |
-| 2 | Glob / Grep | File-level search | Always available |
+| 1 | `code-review-graph` MCP | Structural graph (callers, impact radius, semantic search) | Opt-in (full profile, requires `uv`) |
+| 2 | `tree` CLI | Directory structure | No (standard on macOS/Linux) |
+| 3 | Glob / Grep | File-level search | Always available |
 
-> A single graph backend (tree-sitter semantic graph with callers / impact / annotation queries) may be re-introduced in a future release. The skill layer is structured to accept one via MCP when added — text-based patterns in `java-source-intel` will map onto the backend's tool names at that time.
+> **`code-review-graph` (MIT, Python 3.10+ via `uv`) is re-adopted as of v2.4.2** as the optional graph backend — install via the `full` profile or the `mcp-code-review-graph` module. Skills in `java-source-intel` continue to expose text-based query patterns; graph tools are additive. Consumer setup: on first SessionStart after install, a hook detects `uv` and writes `.claude/ohmyclaude.local.yaml` (YAML, human-inspectable) with status. If `uv` is missing, the file's comment header carries install instructions.
 
 ### Adding External Tools / Skills
 
@@ -187,7 +188,7 @@ The v2.4.0 cleanup (see `.claude/plans/pure-shimmying-leaf.md`) is the case stud
 |---------|----------|
 | Minimal | 10 agents + /forge |
 | Standard (default) | + 34 skills + Java + TypeScript rules + quality hooks |
-| Full | + tracking hooks + cost profiler + session intelligence (`/save`, `/load`, SessionStart/PreCompact/SubagentStart hooks) |
+| Full | + tracking hooks + cost profiler + session intelligence (`/save`, `/load`, SessionStart/PreCompact/SubagentStart hooks) + optional `code-review-graph` MCP (requires `uv`) |
 
 ## Session Intelligence (opt-in, v2.2.0)
 
@@ -199,18 +200,37 @@ Resumable per-cwd session state for "picked up where I left off" workflows.
 
 Opt-in via the `full` profile or by adding `hooks-session` / `skills-session` / `commands-session` modules individually. Host-local, never committed, no secrets.
 
+## Per-project state file (v2.4.2+)
+
+Per-project ohmyclaude configuration and setup state live at `<project>/.claude/ohmyclaude.local.yaml`. Pure YAML by design (no frontmatter-in-markdown) so grep/ripgrep search it cleanly and hooks can parse it in a single mode. Extensible schema: today it only tracks `features.code_review_graph.*`, but additional `features.<name>.*` blocks slot in without breaking existing consumers.
+
+The file is written by the `code-review-graph-setup` SessionStart hook on first run — see the `uv` detection flow above. It's safe to hand-edit (e.g., set `enabled: false` under a feature to silence the setup hook); changes take effect on next Claude Code restart.
+
+```yaml
+version: 1
+features:
+  code_review_graph:
+    enabled: true
+    setup_complete: true
+    uv_version: "0.4.12"
+    installed_at: "2026-04-24T11:30:00Z"
+    reason: null
+```
+
+**Never commit.** Add `.claude/*.local.*` (broad pattern — covers YAML today, MD/JSON variants if adopted later) to your project's `.gitignore`. This deliberately diverges from the plugin-dev ecosystem's `.local.md` (frontmatter + body) convention, which fits plugins that mix state with prose (e.g. multi-agent-swarm, ralph-wiggum). ohmyclaude's file carries pure state, so pure YAML is a better fit.
+
 ## Project Inventory
 
 | Component | Count | Detail |
 |-----------|------:|--------|
-| Version | 2.4.1 | VERSION, package.json, plugin.json, marketplace.json |
+| Version | 2.4.2 | VERSION, package.json, plugin.json, marketplace.json |
 | Agents | 10 | sonnet: 8, opus: 1, haiku: 1 |
 | Skills | 36 | engineering: 12, java: 5, pipeline: 4, specialized: 8, superclaude: 5, session: 2 |
 | Commands | 3 | forge, load, save |
 | Rules | 9 | common: 1, java: 4, typescript: 4 |
-| Hooks | 10 | backlog-tracker, cost-profiler, post-bash-lint, pre-write-check, session-load, session-summary, state-snapshot, subagent-trace, team-cleanup, usage-tracker |
+| Hooks | 11 | backlog-tracker, code-review-graph-setup, cost-profiler, post-bash-lint, pre-write-check, session-load, session-summary, state-snapshot, subagent-trace, team-cleanup, usage-tracker |
 | Profiles | 3 | minimal, standard (default), full |
-| Modules | 21 | agents: 4, skills: 6, rules: 3, commands: 2, mcp: 1, hooks: 5 |
+| Modules | 22 | agents: 4, skills: 6, rules: 3, commands: 2, mcp: 2, hooks: 5 |
 
 Run `node scripts/validate.js` to see the live inventory with per-agent detail.
 
