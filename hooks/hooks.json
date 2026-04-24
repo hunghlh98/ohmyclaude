@@ -50,7 +50,7 @@
           }
         ],
         "description": "Rebuild BACKLOG.md index when ISS-*.md files are written to .claude/backlog/issues/"
-      },
+      }
     ],
     "Stop": [
       {
