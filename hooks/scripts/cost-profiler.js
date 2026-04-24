@@ -91,13 +91,64 @@ function readJsonl(p) {
   }).filter(Boolean);
 }
 
+// Extract the first whitespace-separated token of a Bash command as its
+// "sub-type" for dashboard aggregation. "grep -r foo" → "grep". Capped at
+// 32 chars so a pathological one-word pipeline doesn't inflate the index.
+// Strips common prefix noise (sudo, time, env VAR=val) that would otherwise
+// hide the real command behind a wrapper.
+function bashHead(cmd) {
+  if (typeof cmd !== 'string') return 'unknown';
+  const tokens = cmd.trim().split(/\s+/);
+  let i = 0;
+  while (i < tokens.length - 1) {
+    const t = tokens[i];
+    if (t === 'sudo' || t === 'time' || t === 'nohup') { i++; continue; }
+    if (/^[A-Z_][A-Z0-9_]*=/.test(t)) { i++; continue; }  // env assignment
+    break;
+  }
+  return (tokens[i] || 'unknown').slice(0, 32);
+}
+
+// Parse skill names out of a `skill_listing` attachment. Content is a
+// Markdown bullet list ("- name: description\n…"); captures the first
+// lowercase-leading slug on each bullet line. Plugin-prefixed names
+// (sc:sc-test, pen-claude-ai:jira-log) are preserved verbatim.
+const SKILL_LISTING_RE = /^-\s+([a-z][\w:-]*):/gm;
+
 function cumulativeTotals(transcript) {
   const t = {
     in: 0, out: 0, cacheR: 0, cacheW: 0, usd: 0, turns: 0,
     model: 'unknown',
     tool_calls: {},
+    bash_cmds:  {},  // first-token breakdown of Bash calls → {grep:5,find:3,…}
   };
+  // Session-scoped "was offered" tracking. Tools use delta semantics
+  // (deferred_tools_delta messages add/remove names); skills use snapshot
+  // semantics (skill_listing replaces the full set). Stored as Sets while
+  // walking for O(1) add/delete; materialized to sorted arrays at return.
+  const offeredTools  = new Set();
+  const offeredSkills = new Set();
+  let skillListingsSeen = 0;
+
   for (const m of transcript) {
+    if (m.type === 'attachment') {
+      const att = m.attachment || {};
+      if (att.type === 'deferred_tools_delta') {
+        for (const n of (att.addedNames   || [])) offeredTools.add(n);
+        for (const n of (att.removedNames || [])) offeredTools.delete(n);
+      } else if (att.type === 'skill_listing' && typeof att.content === 'string') {
+        // skill_listing is a snapshot, not a delta — take the union of
+        // all listings seen (Claude Code may emit one per session start
+        // and, rarely, additional ones when plugins load dynamically).
+        skillListingsSeen++;
+        SKILL_LISTING_RE.lastIndex = 0;
+        let mm;
+        while ((mm = SKILL_LISTING_RE.exec(att.content)) !== null) {
+          offeredSkills.add(mm[1]);
+        }
+      }
+      continue;
+    }
     if (m.type !== 'assistant' || !m.message) continue;
     const u = m.message.usage;
     if (u) {
@@ -112,14 +163,26 @@ function cumulativeTotals(transcript) {
     const content = m.message.content;
     if (Array.isArray(content)) {
       for (const b of content) {
-        if (b && b.type === 'tool_use' && b.name) {
-          t.tool_calls[b.name] = (t.tool_calls[b.name] || 0) + 1;
+        if (!b || b.type !== 'tool_use' || !b.name) continue;
+        t.tool_calls[b.name] = (t.tool_calls[b.name] || 0) + 1;
+        if (b.name === 'Bash' && b.input) {
+          const head = bashHead(b.input.command);
+          t.bash_cmds[head] = (t.bash_cmds[head] || 0) + 1;
         }
       }
     }
   }
+  t.offered_tools  = [...offeredTools].sort();
+  t.offered_skills = [...offeredSkills].sort();
+  t.skill_listings_seen = skillListingsSeen;
   return t;
 }
+
+// Claude Code renamed the subagent-spawn tool from "Task" to "Agent".
+// Accept both so `agents: ["unknown", ...]` in baseline.json becomes real
+// agent names again. Without this, every SubagentStop falls through to
+// the 'unknown' sentinel and rolling per-agent baselines can never train.
+const AGENT_TOOL_NAMES = new Set(['Agent', 'Task']);
 
 function inferAgentName(transcript) {
   for (let i = transcript.length - 1; i >= 0; i--) {
@@ -127,7 +190,7 @@ function inferAgentName(transcript) {
     const blocks = m && m.message && m.message.content;
     if (!Array.isArray(blocks)) continue;
     for (const b of blocks) {
-      if (b && b.type === 'tool_use' && b.name === 'Task' && b.input && b.input.subagent_type) {
+      if (b && b.type === 'tool_use' && AGENT_TOOL_NAMES.has(b.name) && b.input && b.input.subagent_type) {
         return b.input.subagent_type;
       }
     }
@@ -196,7 +259,7 @@ function diffCounts(curr, prev) {
 function deltasByAgent(snapshots) {
   const sorted = [...snapshots].sort((a, b) => a.ts - b.ts);
   const rows = [];
-  let prev = { in: 0, out: 0, cacheR: 0, cacheW: 0, usd: 0, turns: 0, tool_calls: {} };
+  let prev = { in: 0, out: 0, cacheR: 0, cacheW: 0, usd: 0, turns: 0, tool_calls: {}, bash_cmds: {} };
   let prevTs = null;
   for (const s of sorted) {
     const c = s.cumulative;
@@ -213,6 +276,7 @@ function deltasByAgent(snapshots) {
                     ? Math.max(0, s.ts - prevTs)
                     : (s.wall_ms_since_last != null ? s.wall_ms_since_last : null),
       tool_calls: diffCounts(c.tool_calls, prev.tool_calls),
+      bash_cmds:  diffCounts(c.bash_cmds,  prev.bash_cmds),
     });
     prev   = c;
     prevTs = s.ts;
@@ -405,6 +469,14 @@ function onStop(evt) {
     for (const [k, v] of Object.entries(r.tool_calls || {})) m[k] = (m[k] || 0) + v;
     return m;
   }, {});
+  const bashCmdMix = perAgent.reduce((m, r) => {
+    for (const [k, v] of Object.entries(r.bash_cmds || {})) m[k] = (m[k] || 0) + v;
+    return m;
+  }, {});
+
+  // Offered sets are session-wide (same menu for every subagent) — use
+  // the last snap's cumulative union rather than diffing across agents.
+  const lastCum = snaps[snaps.length - 1].cumulative || {};
 
   upsertRunIndex(cwd, {
     runId,
@@ -421,6 +493,9 @@ function onStop(evt) {
     cache_hit_rate:  totalIn ? Number((cacheR / totalIn).toFixed(4)) : 0,
     model_mix:       modelMix,
     tool_mix:        toolMix,
+    bash_cmd_mix:    bashCmdMix,
+    offered_tools:   lastCum.offered_tools  || [],
+    offered_skills:  lastCum.offered_skills || [],
   });
 }
 

@@ -173,7 +173,7 @@ After two failed fix attempts (applied a fix, verified it, it still fails or rea
 
 When spawned as a teammate:
 - Receive debug task from @paige-product via SendMessage
-- Explore: prefer query_graph_tool(callers_of, callees_of) + get_flow_tool > `tree` > Grep
+- Explore: prefer `tree` for project structure > Grep for call chains and error sites
 - Send root cause analysis and proposed fix back via SendMessage
 - Update task via TaskUpdate when debugging complete
 

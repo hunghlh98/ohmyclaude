@@ -40,15 +40,11 @@ Stan: runs git diff, detects languages from changed files, lazy-loads relevant c
 
 ---
 
-## Exploration (tool priority: graph > tree > grep)
+## Exploration (tool priority: tree > grep)
 
-1. If code-review-graph available:
-   - `get_review_context_tool` -- token-efficient context with source snippets
-   - `get_impact_radius_tool` -- blast radius of changes
-   - `find_large_functions_tool` -- oversized functions/classes
-2. If not available:
-   - `tree` for project structure
-   - Grep for changed file context
+1. `tree -I 'node_modules|.git|target|dist|build' --dirsfirst -L 3` for project structure
+2. Grep for changed-file context and callers of changed functions
+3. Read changed files in full before commenting on them
 
 ### Gather Scope
 ```bash

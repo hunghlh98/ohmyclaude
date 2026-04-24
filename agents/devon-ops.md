@@ -23,9 +23,9 @@ When spawned as a teammate:
 - Update task via TaskUpdate when each sub-task completes
 - For release: verify all gates -> write DOC -> write RELEASE -> update CHANGELOG -> write ANNOUNCEMENT
 
-## Exploration (tool priority: graph > tree > grep)
+## Exploration (tool priority: tree > grep)
 
-1. `get_review_context_tool` -> understand what changed
+1. `git diff` / existing pipeline artifacts -> understand what changed
 2. `tree` -> project structure for docs
 3. Grep -> find existing docs to update
 

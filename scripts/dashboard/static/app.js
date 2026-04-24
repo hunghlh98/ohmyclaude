@@ -296,7 +296,9 @@ function renderSummary(s) {
     ? `<strong>never invoked (${s.skills.dead.length}/${s.skills.known_total}):</strong> ${s.skills.dead.slice(0, 20).map(esc).join(", ")}${s.skills.dead.length > 20 ? ", …" : ""}`
     : `all ${s.skills.known_total} skills have been invoked at least once ✓`;
 
-  // tool mix
+  // tool mix — vertical bar shows top tool names; the two lines below
+  // split Bash into first-token subtypes (grep/find/tree/…) and list MCP
+  // tools separately so "is my graph backend invoked?" is a glance away.
   const topTools = s.tool_mix.slice(0, 12);
   drawBar(
     "chart-tools",
@@ -305,6 +307,37 @@ function renderSummary(s) {
     PALETTE[2],
     false,
   );
+  const bash = (s.bash_cmd_mix || []).slice(0, 8);
+  el("bash-breakdown").innerHTML = bash.length
+    ? `<strong>Bash:</strong> ${bash.map((b) => `${esc(b.name)}:${b.count}`).join(" · ")}`
+    : "";
+  const mcp = s.mcp_mix || [];
+  const mcpTotal = mcp.reduce((a, b) => a + b.count, 0);
+  el("mcp-breakdown").innerHTML = mcpTotal > 0
+    ? `<strong>MCP:</strong> ${mcp.slice(0, 6).map((m) => `${esc(m.name.replace(/^mcp__/, ""))}:${m.count}`).join(" · ")}`
+    : `<strong>MCP:</strong> <span style="color:#f59e0b">0 calls</span> — no MCP tool fired across ${s.totals.forge_runs} run${s.totals.forge_runs === 1 ? "" : "s"}`;
+
+  // "Was offered but never called" — the dead surface area of your
+  // installed plugins. Tooltip shows the full unused list so you can
+  // decide whether to uninstall, promote the skill in its description,
+  // or route an agent to it.
+  const off = s.offered || {};
+  const tn  = off.tools_count  || 0;
+  const sn  = off.skills_count || 0;
+  if (tn || sn) {
+    const unusedT = (off.unused_tools  || []).filter((x) => !x.startsWith("mcp__claude_ai_")); // auth endpoints are noise
+    const unusedS = off.unused_skills || [];
+    const tooltip = [
+      unusedT.length ? `Unused tools (${unusedT.length}):\n  ${unusedT.join("\n  ")}` : "",
+      unusedS.length ? `Unused skills (${unusedS.length}):\n  ${unusedS.join("\n  ")}` : "",
+    ].filter(Boolean).join("\n\n") || "all offered surfaces were used";
+    el("offer-breakdown").setAttribute("title", tooltip);
+    el("offer-breakdown").innerHTML =
+      `<strong>Offered:</strong> ${(off.tools_called || 0)}/${tn} tools · ${(off.skills_called || 0)}/${sn} skills called ` +
+      `<span class="dim">(hover for unused list)</span>`;
+  } else {
+    el("offer-breakdown").innerHTML = "";
+  }
 
   // scenarios
   drawPie(

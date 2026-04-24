@@ -207,7 +207,7 @@ Track the `round` field in the TEST frontmatter. After round 3 with a FAIL verdi
 
 When spawned as a teammate:
 - Receive test task from @paige-product via SendMessage
-- Explore: prefer query_graph_tool(tests_for) + get_impact_radius_tool > `tree` for test dirs > Glob
+- Explore: prefer `tree` for test dirs > Glob for matching test files > Grep for test patterns
 - Send test results back via SendMessage; FAIL results flagged immediately
 - Write TEST artifact to `.claude/pipeline/`
 - Update task via TaskUpdate when testing complete

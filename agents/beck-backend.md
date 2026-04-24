@@ -219,7 +219,7 @@ Then notify @paige-product and wait for the updated SDD before continuing.
 
 When spawned as a teammate:
 - Receive implementation task from @paige-product via SendMessage
-- Explore: prefer semantic_search_nodes_tool + query_graph_tool > `tree` > Grep
+- Explore: prefer `tree` for project structure > Grep for patterns
 - Send progress updates to Lead via SendMessage
 - If security concern found: message Lead to spawn @sam-sec
 - If architecture change needed: message Lead for ESCALATE-ARCH to @artie-arch

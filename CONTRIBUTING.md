@@ -9,6 +9,44 @@ Run validation before any commit:
 node scripts/validate.js
 ```
 
+Adding an external dependency (skill, tool, or another plugin)? See the [External Dependencies](#external-dependencies) section below. Short version: **skills embed, tools expose as MCP**.
+
+---
+
+## External Dependencies
+
+The plugin's rule for anything that lives outside its own `.md` / `.js` files — skills, tools, or other Claude Code plugins — is documented here and summarised in [CLAUDE.md § External Dependency Decision Rule](CLAUDE.md#external-dependency-decision-rule).
+
+### Decision table
+
+| Nature | Strategy |
+|---|---|
+| **Methodology / knowledge** — prompts, checklists, decision frames, named personas | **Embed inline** as `skills/<name>/SKILL.md`. Pin upstream version in frontmatter. Include a `## Attribution` block. Add a contract test (`scripts/test-*-fallback.js`) if the invariant matters. Example: SuperClaude knowledge-skills (`sc-spec-panel`, `sc-brainstorm`, `sc-pm`, `sc-research`, `sc-estimate`). |
+| **Executable tool** — CLI, server, binary, anything the model should *call* | **Wrap as MCP** in `.mcp.json`. For trivial wrappers, write a **stdlib-only** stdio server under `scripts/mcp-servers/<name>.js` (~200 LOC is typical). For pre-packaged MCP servers, declare stdio/http directly. Register as an install module. Example: `ohmyclaude-fs` (wraps `tree`, stdlib Node), `exa-search` (HTTP), `grep-app` (HTTP). |
+| **Another Claude Code plugin** | Not supported as a dependency (no `dependencies` field in `marketplace.json`). Either extract its MCP server portion and redeclare in our `.mcp.json`, or document as a recommended companion plugin in README. |
+
+**Why the asymmetry**: skills are text the model reads; a file copy carries them. Tools are code the model calls; they need a runtime. Trying to "embed a tool" means bundling its runtime — usually worse than declaring the MCP server and letting users approve it once on install.
+
+### Anti-patterns (from the v2.4.0 cleanup)
+
+- **Don't ship two similar tools with a fallback tier.** The parallel code paths compound maintenance forever. Pick one and own it, or bundle neither and use native text tools. The codegraph + code-review-graph dual-backend cost 6 files of duplicated query patterns.
+- **Don't soft-detect without a dashboard signal.** If a tool is "detected and used when available" but never invoked across N runs, you cannot tell whether it was offered-but-not-chosen or not-offered-at-all. Declare it in `.mcp.json` so the dashboard's "offered vs called" diff is real evidence.
+- **Don't make an agent read code its persona forbids.** Before adding MCP tool references to an agent, check the agent's `tools:` frontmatter and its role doc's "What You Do NOT Do" section. Paige had `list_graph_stats_tool` in her Step 0 while her persona said "you do not read code" — that's a smell, not a feature.
+
+### Checklist for a new external dependency
+
+1. Classify as skill / tool / plugin.
+2. If tool → stdio or HTTP? Already packaged (npm / binary) or write a wrapper?
+3. If wrapper → can it stay stdlib-only? (preferred — matches the zero-dep invariant of `scripts/dashboard/server.py` and `scripts/mcp-servers/fs.js`.)
+4. Add to `.mcp.json` with a `description` field.
+5. Register an install module in `manifests/install-modules.json`; include in `standard` and/or `full` profiles.
+6. Update affected agent/skill docs to reference the MCP tool name (not the Bash form).
+7. Ping-pong test the server before shipping — send `initialize` + `tools/list` + one `tools/call` via `printf … | node scripts/mcp-servers/<name>.js`; verify valid JSON-RPC responses.
+8. Version bump: `node scripts/bump-version.js --minor` (new public surface = minor bump).
+9. Update CHANGELOG with a concrete [Unreleased] entry; mention the approval prompt users will see on install.
+
+**Rationale anchor**: the v2.4.0 case study at `.claude/plans/pure-shimmying-leaf.md` walks this rule end-to-end — cleaning up the dual graph backends, fixing the Paige role conflict, and creating `ohmyclaude-fs` as the first plugin-owned MCP server.
+
 ---
 
 ## Project Structure

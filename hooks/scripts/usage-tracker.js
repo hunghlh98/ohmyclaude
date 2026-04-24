@@ -60,6 +60,16 @@ const AFFIRMATION_RE = /^(lgtm|ship it|looks good|that works|perfect|exactly|awe
 // captured lazily until a terminating horizontal rule (≥10 dashes).
 const INSIGHT_RE = /`?★\s*Insight[─\-\s]*`?\s*\n([\s\S]*?)\n\s*`?[─\-]{10,}[─\-\s]*`?/g;
 
+// Claude Code renamed the subagent-spawn tool from "Task" to "Agent".
+// Accept both so events recorded under either name are tracked — and so
+// this hook survives future renames without another silent zero-metric bug.
+const AGENT_TOOL_NAMES = new Set(['Agent', 'Task']);
+
+// Skills whose invocation marks the session as a /forge run — stamped onto
+// forge_run_end as `via`, so the dashboard can filter the cost timeline to
+// real /forge sessions instead of every subagent-bearing session.
+const FORGE_SKILL_NAMES = new Set(['ohmyclaude:forge', 'forge']);
+
 function isDisabled() {
   return (process.env.OHMYCLAUDE_USAGE_TRACKING || '').toLowerCase() === 'off';
 }
@@ -252,7 +262,7 @@ function onPreToolUse(evt) {
   let skillName = null;
   let triggerForSkill = null;  // populated via session-state side effect
 
-  if (tool === 'Task') {
+  if (AGENT_TOOL_NAMES.has(tool)) {
     agentType = (input.subagent_type || 'unknown').slice(0, 64);
     const parts = splitPlugin(agentType);
     const spawn = {
@@ -261,6 +271,7 @@ function onPreToolUse(evt) {
       session_id:      sid,
       agent_type:      agentType,
       description_len: (input.description || '').length,
+      tool_name:       tool,
     };
     if (parts.plugin) {
       spawn.agent_plugin     = parts.plugin;
@@ -299,6 +310,13 @@ function onPreToolUse(evt) {
       // Consume the pending slot after we've decided trigger — any
       // subsequent Skill call in the same turn is model_auto by design.
       if (triggerForSkill === 'user_slash') s.pending_slash_skill = null;
+      // /forge provenance: once any forge skill fires in this session,
+      // downstream forge_run_end gets via="/forge" so the dashboard can
+      // separate real /forge runs from other subagent-bearing sessions.
+      if (FORGE_SKILL_NAMES.has(skillName)) {
+        s.forge_triggered    = true;
+        s.forge_trigger_via  = triggerForSkill;   // user_slash | model_auto
+      }
     }
   });
 }
@@ -405,23 +423,45 @@ function onStop(evt) {
 
   const run = findRunIndexEntry(cwd, sid);
   if (run) {
-    appendEvent(cwd, {
-      ts,
-      event:           'forge_run_end',
-      session_id:      sid,
-      runId:           run.runId,
-      scenario:        run.scenario,
-      agents:          run.agents,
-      agents_count:    run.agents_count,
-      total_usd:       run.total_usd,
-      total_turns:     run.total_turns,
-      total_in_tokens: run.total_in_tokens,
-      total_out_tokens: run.total_out_tokens,
-      cache_hit_rate:  run.cache_hit_rate,
-      wall_ms:         run.wall_ms,
-      model_mix:       run.model_mix,
-      tool_mix:        run.tool_mix,
-    });
+    // Dedup: Stop fires on every assistant turn. Without this guard, a
+    // single /forge run that spans N turns emits N forge_run_end events
+    // with growing-but-repeated totals, inflating the dashboard's run
+    // count and spend. Emit only when total_usd has advanced since the
+    // last emission for this runId.
+    const lastUsd = s.last_forge_run_end_usd;
+    const currUsd = Number(run.total_usd || 0);
+    const advanced = lastUsd == null || currUsd > lastUsd;
+    if (advanced) {
+      // via: "/forge" once a forge skill has fired in this session;
+      // otherwise "ad-hoc" (any session with subagents ends up in
+      // _index.jsonl — this separates them downstream).
+      const via = s.forge_triggered ? '/forge' : 'ad-hoc';
+      appendEvent(cwd, {
+        ts,
+        event:           'forge_run_end',
+        session_id:      sid,
+        runId:           run.runId,
+        scenario:        run.scenario,
+        agents:          run.agents,
+        agents_count:    run.agents_count,
+        total_usd:       run.total_usd,
+        total_turns:     run.total_turns,
+        total_in_tokens: run.total_in_tokens,
+        total_out_tokens: run.total_out_tokens,
+        cache_hit_rate:  run.cache_hit_rate,
+        wall_ms:         run.wall_ms,
+        model_mix:       run.model_mix,
+        tool_mix:        run.tool_mix,
+        bash_cmd_mix:    run.bash_cmd_mix,
+        offered_tools:   run.offered_tools,
+        offered_skills:  run.offered_skills,
+        via,
+        forge_trigger:   s.forge_trigger_via || null,
+      });
+      bumpSession(cwd, sid, st => {
+        st.last_forge_run_end_usd = currUsd;
+      });
+    }
   }
 }
 

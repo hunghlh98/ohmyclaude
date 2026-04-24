@@ -1,95 +1,19 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+ohmyclaude is a Claude Code plugin — a 10-agent pipeline. Markdown + frontmatter content; no build step. Philosophy: *"The model IS the agent. Build harnesses, not prompt chains."*
 
-## What This Is
+Architecture narrative, /forge flow, agent table, install profiles → see `README.md`.
 
-ohmyclaude is a **Claude Code plugin** — a 10-agent OSS pipeline using Agent Teams for coordination. It ships agents, skills, commands, hooks, and rules as markdown files with YAML frontmatter. There is no application code to build or run — the "product" is the plugin content itself.
-
-**Guiding philosophy**: *"The model IS the agent. Build harnesses, not prompt chains."*
-
-## Validation
+## Commands
 
 ```bash
-node scripts/validate.js
+node scripts/validate.js                            # run before every commit; CI runs the same
+node scripts/bump-version.js --minor                # atomic bump: VERSION, package.json, plugin.json, marketplace.json
 ```
 
-Validates: version consistency (4 files), plugin.json structure, agent/skill frontmatter, hook JS syntax, install-module path existence, and stale retired agent name references. CI runs this same script.
+## Frontmatter contracts
 
-**Version bump** (atomic across 4 files):
-```bash
-node scripts/bump-version.js --major   # or --minor, --patch, or explicit x.y.z
-```
-
-## Architecture
-
-### Single Entry Point
-
-Users interact through `/forge` — the only command. It routes everything:
-```
-/forge <natural language>     Smart router (default)
-/forge sprint [--size N]      Execute sprint from backlog
-/forge release                Cut release
-/forge commit                 Generate semantic commit message
-/forge help                   Show help
-```
-
-### Agent Teams Model
-
-Every `/forge` request creates a Team:
-1. Project discovery (CLAUDE.md, source graph, tree, language detection)
-2. TeamCreate → spawn @paige-product as lead
-3. Lead classifies, decomposes into tasks with dependency graph
-4. Lead spawns specialist agents, assigns tasks in parallel waves
-5. Agents write artifacts to `.claude/pipeline/` for human review
-6. Team shutdown, summary
-
-### 10 Agents (Corporate Slack personas)
-
-| Role | Agent | Model | Read-only? |
-|------|-------|-------|------------|
-| Lead | @paige-product | sonnet | No |
-| Design | @artie-arch | opus | Yes |
-| Design | @una-ux | sonnet | Yes (pre-dev) |
-| Security | @sam-sec | sonnet | Yes + Bash |
-| Backend | @beck-backend | sonnet | No |
-| Frontend | @effie-frontend | sonnet | No |
-| Testing | @quinn-qa | sonnet | No |
-| Review | @stan-standards | sonnet | Yes |
-| Ship | @devon-ops | haiku | No |
-| Debug | @heracles | sonnet | No |
-
-### Exploration Tool Priority
-
-1. **codegraph** ([`@colbymchenry/codegraph`](https://github.com/colbymchenry/codegraph)) — pre-indexed tree-sitter graph, FTS5 search, designed for Explore-subagent orchestration. Use if `.codegraph/` exists or `mcp__codegraph__*` tools are loaded.
-2. **code-review-graph** MCP — tree-sitter semantic graph with impact radius, community detection, review tooling. Use if `mcp__plugin_code-review-graph__*` tools are loaded.
-3. **`tree` CLI** — directory structure overview.
-4. **Glob/Grep** — file-level search (last resort).
-
-All graph backends are **soft dependencies** — the plugin ships md/js files only and works without any of them. Detection is graceful: never error if a backend is absent, fall to the next tier. See `skills/java-source-intel/` for the canonical query patterns per tier.
-
-### Two File Categories
-
-| Category | Directories | Shipped? |
-|----------|-------------|----------|
-| Plugin deliverable | `agents/`, `skills/`, `commands/`, `hooks/`, `rules/`, `.claude-plugin/`, `manifests/`, `schemas/` | Yes |
-| Repo dev config | `scripts/`, `.github/`, `.claude/skills/` | No |
-
-## Critical Conventions
-
-### Versioning — 4 Files Must Match
-
-Use `node scripts/bump-version.js` to update atomically:
-- `VERSION`, `package.json`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`
-
-### plugin.json Gotchas
-
-- Agents must be **explicit file paths** — directory paths silently fail
-- Skills and commands **can** use directory paths
-- **Never add a `hooks` field** — `hooks/hooks.json` auto-loads
-- Version must be full semver (`1.0.0` not `1.0`)
-
-### Agent Frontmatter (Required)
+### Agent (`agents/*.md`)
 
 ```yaml
 ---
@@ -101,7 +25,10 @@ color: blue
 ---
 ```
 
-### Skill Frontmatter (Required)
+**Read-only agents** must NEVER list `Write` / `Edit` / `MultiEdit`:
+- `artie-arch`, `una-ux` (pre-dev), `stan-standards`, `sam-sec` (Bash-only exception)
+
+### Skill (`skills/<name>/SKILL.md`)
 
 ```yaml
 ---
@@ -111,11 +38,10 @@ origin: ohmyclaude
 ---
 ```
 
-Skills stay under **400 lines** (≈500 tokens). Verbose content goes in `references/`.
+Skills stay under **400 lines** (~500 tokens). Verbose content → `references/`.
 
-### Rules System
+### Rule (`rules/<lang>/*.md`)
 
-Path-activated language rules in `rules/{language}/`:
 ```yaml
 ---
 paths:
@@ -123,25 +49,13 @@ paths:
 ---
 ```
 
-### Read-Only Agents
+## Registration — every new component touches 3 files
 
-Must **never** have Write/Edit/MultiEdit in tools list:
-- `artie-arch`, `una-ux` (pre-dev), `stan-standards`, `sam-sec` (except Bash)
+1. `.claude-plugin/plugin.json` — agents as **explicit file paths** (directory paths silently fail). Never add a `hooks` field (`hooks/hooks.json` auto-loads). Version must be full semver.
+2. `manifests/install-modules.json` — grouped by module.
+3. `manifests/install-profiles.json` — assign to `minimal` / `standard` / `full`.
 
-### Model Selection (token cost: Haiku 1x, Sonnet 3x, Opus 5x)
-
-- `opus` — only `artie-arch`. Justify in PR if adding elsewhere.
-- `sonnet` — default (90% of tasks)
-- `haiku` — only `devon-ops` (templated work)
-
-### Install Manifests
-
-Every new component registers in:
-1. `.claude-plugin/plugin.json` (agents as explicit paths)
-2. `manifests/install-modules.json` (grouped by module)
-3. `manifests/install-profiles.json` (3 profiles: minimal, standard, full)
-
-### Hook Pattern
+## Hook contract
 
 ```js
 process.stdin.on('data', c => raw += c);
@@ -151,10 +65,30 @@ process.stdin.on('end', () => {
 });
 ```
 
-### Documentation Rule
+## Model selection (cost: Haiku 1× · Sonnet 3× · Opus 5×)
 
-Any change affecting public behavior must update `README.md` in the same commit.
+- `opus` — only `artie-arch`. Justify in PR if adding elsewhere.
+- `sonnet` — default (~90% of tasks).
+- `haiku` — only `devon-ops` (templated work).
 
-### Commit Messages
+## External Dependency Decision Rule
 
-Conventional Commits: `feat(agents):`, `fix(hooks):`, `docs:`, `chore:`, `refactor:`, `test:`, `ci:`
+**Skills embed, tools expose.**
+
+| Nature | Strategy |
+|---|---|
+| **Methodology / knowledge** (prompts, checklists, frames) | Embed as `skills/<name>/SKILL.md` with upstream attribution. |
+| **Executable tool** (CLI, server, binary) | Wrap as MCP in `.mcp.json`. For wrappers, write a stdlib-only stdio server under `scripts/mcp-servers/`. Register as install module. |
+| **Another Claude Code plugin** | Not a supported dependency. Extract its MCP server, or document as companion in README. |
+
+Rationale, anti-patterns, 9-step checklist, and the v2.4.0 case study that produced this rule: [`CONTRIBUTING.md#external-dependencies`](CONTRIBUTING.md#external-dependencies) and `.claude/plans/pure-shimmying-leaf.md`.
+
+## Documentation + commits
+
+- Any change affecting public behavior updates `README.md` in the same commit.
+- Conventional Commits: `feat(agents):`, `fix(hooks):`, `docs:`, `chore:`, `refactor:`, `test:`, `ci:`.
+
+## File categories
+
+- **Plugin deliverable** (shipped): `agents/ skills/ commands/ hooks/ rules/ .claude-plugin/ manifests/ schemas/`
+- **Repo dev config** (NOT shipped): `scripts/ .github/ .claude/skills/`

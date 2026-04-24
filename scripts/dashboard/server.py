@@ -25,6 +25,7 @@ import json
 import re
 import sys
 from collections import Counter, defaultdict
+from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
@@ -152,9 +153,27 @@ def compute_summary(events: list[dict]) -> dict:
     spawns     = [e for e in events if e.get("event") == "agent_spawn"]
     skills     = [e for e in events if e.get("event") == "skill_invoke"]
     responses  = [e for e in events if e.get("event") == "response_end"]
-    forge_runs = [e for e in events if e.get("event") == "forge_run_end"]
     sessions   = [e for e in events if e.get("event") == "session_start"]
     insights   = [e for e in events if e.get("event") == "insight_captured"]
+
+    # forge_run_end dedup: the hook previously emitted one event per Stop,
+    # so a single /forge run that spans N turns produced N events with
+    # monotonically growing totals. Keep only the latest (highest total_usd)
+    # row per runId so each real run counts once. Events emitted by the
+    # updated hook are already deduped, but this protects legacy events.jsonl
+    # files and guarantees the invariant regardless of emitter version.
+    _by_run: dict[str, dict] = {}
+    for e in events:
+        if e.get("event") != "forge_run_end":
+            continue
+        rid = e.get("runId") or e.get("session_id") or ""
+        if not rid:
+            continue
+        prev = _by_run.get(rid)
+        if prev is None or float(e.get("total_usd") or 0) >= float(prev.get("total_usd") or 0):
+            _by_run[rid] = e
+    # Preserve chronological order by keeping the event's original ts.
+    forge_runs = sorted(_by_run.values(), key=lambda e: e.get("ts") or "")
 
     agent_counts = Counter(e.get("agent_type", "unknown") for e in spawns)
     skill_counts = Counter(e.get("skill_name", "unknown") for e in skills)
@@ -208,9 +227,34 @@ def compute_summary(events: list[dict]) -> dict:
                 break
 
     tool_mix: Counter[str] = Counter()
+    bash_cmd_mix: Counter[str] = Counter()
+    mcp_mix: Counter[str] = Counter()
+    # Union-across-runs of the deferred-tools + skill menus the model saw.
+    # Empty for forge_run_end events emitted before the enhancement; those
+    # get retroactive values in api_summary via the transcript backfill.
+    offered_tools: set[str]  = set()
+    offered_skills: set[str] = set()
     for r in forge_runs:
         for k, v in (r.get("tool_mix") or {}).items():
             tool_mix[k] += v
+            # Any tool name starting with "mcp__" is an MCP-provided tool;
+            # answers the "is my graph backend getting invoked?" question.
+            if isinstance(k, str) and k.startswith("mcp__"):
+                mcp_mix[k] += v
+        for k, v in (r.get("bash_cmd_mix") or {}).items():
+            bash_cmd_mix[k] += v
+        offered_tools.update(r.get("offered_tools")  or [])
+        offered_skills.update(r.get("offered_skills") or [])
+
+    # Called sets come straight from the already-computed counters.
+    called_tools  = set(tool_mix.keys())
+    called_skills = set(skill_counts.keys())
+    # "Unused offered" = was in the menu, never got chosen. That's the
+    # surface area you're paying for in token cost but getting no value
+    # from. Excludes trivially-native items (Read/Bash/etc.) by construction,
+    # since those aren't in the deferred list.
+    unused_tools  = sorted(offered_tools  - called_tools)
+    unused_skills = sorted(offered_skills - called_skills)
 
     total_usd  = sum(float(r.get("total_usd") or 0) for r in forge_runs)
     total_turns = sum(int(r.get("total_turns") or 0) for r in forge_runs)
@@ -319,6 +363,16 @@ def compute_summary(events: list[dict]) -> dict:
             ],
         },
         "tool_mix": [{"name": n, "count": c} for n, c in tool_mix.most_common()],
+        "bash_cmd_mix": [{"name": n, "count": c} for n, c in bash_cmd_mix.most_common()],
+        "mcp_mix": [{"name": n, "count": c} for n, c in mcp_mix.most_common()],
+        "offered": {
+            "tools_count":   len(offered_tools),
+            "skills_count":  len(offered_skills),
+            "tools_called":  len(offered_tools  & called_tools),
+            "skills_called": len(offered_skills & called_skills),
+            "unused_tools":  unused_tools,
+            "unused_skills": unused_skills,
+        },
         "session_latency": {
             "count":  len(sorted_durs),
             "p50_ms": _percentile(sorted_durs, 0.5),
@@ -385,6 +439,44 @@ def api_summary(claude_dir: Path) -> dict:
         })
 
     events.sort(key=lambda e: e.get("ts") or "")
+
+    # Backfill bash_cmd_mix (and enrich tool_mix with mcp__* calls) onto
+    # forge_run_end events that predate cost-profiler's bash-head capture.
+    # Reads the parent CC transcript once per unique runId; cheap because
+    # each project has <20 runs and each transcript is <2 MB in practice.
+    tally_cache: dict[str, tuple[dict, dict, list, list]] = {}
+    for e in events:
+        if e.get("event") != "forge_run_end":
+            continue
+        needs_backfill = (
+            not e.get("bash_cmd_mix")
+            or not e.get("offered_tools")
+            or not e.get("offered_skills")
+        )
+        if not needs_backfill:
+            continue
+        rid = e.get("runId") or e.get("session_id")
+        if not rid:
+            continue
+        if rid not in tally_cache:
+            tally_cache[rid] = _parent_transcript_tool_tally(
+                _cc_transcript_path(claude_dir, rid)
+            )
+        bash_tally, mcp_tally, off_tools, off_skills = tally_cache[rid]
+        if bash_tally and not e.get("bash_cmd_mix"):
+            e["bash_cmd_mix"] = bash_tally
+        # Merge mcp calls seen in the transcript into tool_mix if missing;
+        # catches any old rows where cost-profiler didn't persist them.
+        if mcp_tally:
+            tm = dict(e.get("tool_mix") or {})
+            for k, v in mcp_tally.items():
+                tm[k] = max(tm.get(k, 0), v)
+            e["tool_mix"] = tm
+        if off_tools and not e.get("offered_tools"):
+            e["offered_tools"] = off_tools
+        if off_skills and not e.get("offered_skills"):
+            e["offered_skills"] = off_skills
+
     return compute_summary(events)
 
 
@@ -431,6 +523,169 @@ def api_runs(claude_dir: Path) -> list[dict]:
     return _synthesize_runs_from_snaps(claude_dir / "metrics" / "runs")
 
 
+def _cc_transcript_path(claude_dir: Path, run_id: str) -> Path:
+    """Claude Code stores per-session transcripts under
+    ~/.claude/projects/<abs-cwd-with-slashes-to-dashes>/<session_id>.jsonl.
+    The orchestrator's transcript is the only place top-level subagent
+    identities (paige, artie, …) appear — subagent transcripts can't see
+    the Agent tool_use that spawned them."""
+    project_root = claude_dir.parent.resolve()
+    hashed = str(project_root).replace("/", "-")
+    return Path.home() / ".claude" / "projects" / hashed / f"{run_id}.jsonl"
+
+
+_BASH_HEAD_SKIP = {"sudo", "time", "nohup"}
+_BASH_ENV_RE = re.compile(r"^[A-Z_][A-Z0-9_]*=")
+
+
+def _bash_head(cmd: str) -> str:
+    """Mirror of cost-profiler.js bashHead(): first real token after
+    skipping sudo/time/nohup wrappers and leading VAR=val env assignments."""
+    if not isinstance(cmd, str):
+        return "unknown"
+    tokens = cmd.strip().split()
+    i = 0
+    while i < len(tokens) - 1:
+        t = tokens[i]
+        if t in _BASH_HEAD_SKIP or _BASH_ENV_RE.match(t):
+            i += 1
+            continue
+        break
+    return (tokens[i] if i < len(tokens) else "unknown")[:32] or "unknown"
+
+
+_SKILL_LISTING_RE = re.compile(r"^-\s+([a-z][\w:-]*):", re.MULTILINE)
+
+
+def _parent_transcript_tool_tally(
+    transcript: Path,
+) -> tuple[dict[str, int], dict[str, int], list[str], list[str]]:
+    """Walk a CC transcript once and return:
+      (bash_cmd_mix, mcp_mix, offered_tools, offered_skills)
+
+    Reads two signal kinds:
+      - assistant-message tool_use blocks → Bash heads + mcp__ calls
+      - attachment messages → deferred_tools_delta (offered tools) and
+        skill_listing (offered skills)
+    Used to backfill forge_run_end events that predate cost-profiler's
+    new fields, so the dashboard answers "was X ever in the menu?" even
+    for older runs."""
+    if not transcript.is_file():
+        return {}, {}, [], []
+    bash: Counter[str] = Counter()
+    mcp:  Counter[str] = Counter()
+    offered_tools: set[str]  = set()
+    offered_skills: set[str] = set()
+    with transcript.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                m = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            # attachment lane: deferred_tools + skill_listing
+            if m.get("type") == "attachment":
+                att = m.get("attachment") or {}
+                at = att.get("type")
+                if at == "deferred_tools_delta":
+                    for n in (att.get("addedNames")   or []):
+                        offered_tools.add(n)
+                    for n in (att.get("removedNames") or []):
+                        offered_tools.discard(n)
+                elif at == "skill_listing":
+                    content = att.get("content") or ""
+                    if isinstance(content, str):
+                        for name in _SKILL_LISTING_RE.findall(content):
+                            offered_skills.add(name)
+                continue
+            # assistant tool_use lane: bash heads + mcp call counts
+            msg = m.get("message") or {}
+            blocks = msg.get("content")
+            if not isinstance(blocks, list):
+                continue
+            for b in blocks:
+                if not isinstance(b, dict) or b.get("type") != "tool_use":
+                    continue
+                name = b.get("name") or ""
+                if name == "Bash":
+                    cmd = (b.get("input") or {}).get("command") or ""
+                    bash[_bash_head(cmd)] += 1
+                if isinstance(name, str) and name.startswith("mcp__"):
+                    mcp[name] += 1
+    return dict(bash), dict(mcp), sorted(offered_tools), sorted(offered_skills)
+
+
+def _parent_agent_calls(transcript: Path) -> list[tuple[int, str]]:
+    """Extract (ts_ms, subagent_type) pairs from every Agent/Task tool_use
+    in a session transcript, sorted by timestamp. Empty list if the file
+    is missing or unreadable — caller falls back to whatever `agent` the
+    snap already had."""
+    if not transcript.is_file():
+        return []
+    calls: list[tuple[int, str]] = []
+    with transcript.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                m = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            msg = m.get("message") or {}
+            blocks = msg.get("content")
+            if not isinstance(blocks, list):
+                continue
+            for b in blocks:
+                if not isinstance(b, dict):
+                    continue
+                if b.get("type") != "tool_use" or b.get("name") not in ("Agent", "Task"):
+                    continue
+                sat = (b.get("input") or {}).get("subagent_type")
+                if not sat:
+                    continue
+                ts_iso = m.get("timestamp") or ""
+                try:
+                    ts_ms = int(
+                        datetime.fromisoformat(ts_iso.replace("Z", "+00:00")).timestamp() * 1000
+                    )
+                except ValueError:
+                    continue
+                calls.append((ts_ms, str(sat)))
+    calls.sort(key=lambda x: x[0])
+    return calls
+
+
+def _resolve_unknown_agents(claude_dir: Path, run_id: str, snaps: list[dict]) -> list[dict]:
+    """If any snap has agent='unknown', pair each unknown snap with the
+    most recent preceding Agent tool_use in the parent session's
+    transcript. Top-level subagents (paige/artie) resolve here;
+    nested subagents stay 'unknown' if their parent transcript doesn't
+    have an Agent call — cost-profiler's inferAgentName on the subagent
+    transcript handles those at write time."""
+    if not any((s.get("agent") or "unknown") == "unknown" for s in snaps):
+        return snaps
+    calls = _parent_agent_calls(_cc_transcript_path(claude_dir, run_id))
+    if not calls:
+        return snaps
+    for s in snaps:
+        if (s.get("agent") or "unknown") != "unknown":
+            continue
+        snap_ts = int(s.get("ts") or 0)
+        pick: str | None = None
+        for ts_ms, sat in calls:
+            if ts_ms <= snap_ts:
+                pick = sat
+            else:
+                break
+        if pick:
+            s["agent"] = pick
+            s["agent_source"] = "parent_transcript"
+    return snaps
+
+
 def api_run_detail(claude_dir: Path, run_id: str) -> dict:
     run_dir = claude_dir / "metrics" / "runs" / run_id
     if not run_dir.is_dir():
@@ -442,6 +697,7 @@ def api_run_detail(claude_dir: Path, run_id: str) -> dict:
         except (json.JSONDecodeError, OSError):
             continue
     snaps.sort(key=lambda s: s.get("ts", 0))
+    snaps = _resolve_unknown_agents(claude_dir, run_id, snaps)
     return {"runId": run_id, "snaps": snaps}
 
 

@@ -6,9 +6,9 @@ origin: ohmyclaude
 
 # Project Discovery
 
-Understand the target project before routing or implementing. This skill runs at the start of every `/forge` invocation.
+Understand the target project before routing or implementing. This skill runs in the orchestrator context at the start of every `/forge` invocation, before spawning `@paige-product`. Paige consumes its context block as input; she never invokes discovery herself.
 
-**Tool priority (soft-detect, graceful fallback):** `codegraph` → `code-review-graph` → `tree` → `Glob/Grep`. Nothing is required — the plugin ships md files only; external tools are opportunistic.
+**Tool priority:** `tree` → `Glob/Grep`. Nothing is required — the plugin ships md files only.
 
 ## When to Activate
 
@@ -16,7 +16,7 @@ Understand the target project before routing or implementing. This skill runs at
 - When entering a new codebase for the first time
 - When context about the project is missing or stale
 
-## Discovery Steps (tool priority: codegraph > code-review-graph > tree > grep)
+## Discovery Steps (tool priority: tree > grep)
 
 ### 1. Read Project Config
 
@@ -31,44 +31,22 @@ Check for these files (in order):
 
 ### 2. Get Project Structure
 
-Probe graph backends in priority order. **Soft detect** — never error if a backend is absent; fall to the next tier.
-
-**Tier 1 — codegraph** (check first if `.codegraph/` exists or codegraph MCP tools are loaded):
+**Primary — `mcp__ohmyclaude-fs__tree`** (plugin-owned, always available when ohmyclaude is installed):
 ```
-mcp__codegraph__codegraph_status       → is graph indexed?
-  YES → mcp__codegraph__codegraph_files  (file structure, ~100 tokens)
-        For deep "how does X work?" questions, spawn an Explore subagent
-        that uses mcp__codegraph__codegraph_context / codegraph_explore —
-        never call those from the main session (they return large source
-        blobs and pollute main context).
-  NO  → suggest once: "Run `codegraph init -i` to index this project"
-        continue to tier 2
+mcp__ohmyclaude-fs__tree({ maxDepth: 3 })
 ```
 
-**Tier 2 — code-review-graph** (check if MCP tools `mcp__plugin_code-review-graph__*` are loaded):
-```
-list_graph_stats_tool → inspect files_count
-  files_count > 0 → get_minimal_context_tool (~100 tokens)
-                  → get_architecture_overview_tool (communities, flows)
-  files_count == 0 → build_or_update_graph_tool (bootstrap once per session)
-                     then retry stats + context calls above
-                     Skip the bootstrap and suggest the manual command
-                     /code-review-graph:build-graph if the repo is obviously
-                     large (> ~500 source files by tree count) — full builds
-                     on huge repos can be slow and should be user-initiated.
-```
-
-**Tier 3 — tree CLI** (always available on macOS/Linux with `brew install tree` / `apt install tree`):
+**Fallback 1 — Bash `tree` CLI** (if the MCP server isn't loaded for any reason):
 ```bash
 tree -I 'node_modules|.git|target|dist|build|.gradle|__pycache__|venv' --dirsfirst -L 3
 ```
 
-**Last resort — Glob:**
+**Fallback 2 — Glob:**
 ```
 Glob for: **/src/**/*.{java,ts,tsx,go,py,rs}
 ```
 
-Install-suggestion rule: each tier emits its suggestion **at most once per session**. Do not repeat on every discovery call.
+A graph backend may be re-introduced in a future release; discovery will prefer it when present, while keeping the tree fallback.
 
 ### 3. Detect Language & Framework
 
@@ -89,7 +67,7 @@ Based on detected language, load relevant rules:
 - `rules/common/` always loaded
 
 **Language-specific investigation skills:**
-- If Java detected → activate `java-source-intel` for semantic queries (callers, impact, annotation scans). The skill routes across whichever graph backend is present.
+- If Java detected → activate `java-source-intel` for semantic queries (callers, impact, annotation scans) using text-based tools.
 
 ### 5. Build Context Summary
 
@@ -103,7 +81,7 @@ Structure: {monolith / monorepo / microservice}
 Test framework: {JUnit 5 / Jest / go test / pytest}
 Build tool: {Maven / Gradle / npm / cargo}
 Key directories: {src/main/java/..., src/test/...}
-Graph: {codegraph | code-review-graph | none}
+Size: {file count from tree -L 3}
 ```
 
 ## Key Rules
@@ -111,4 +89,3 @@ Graph: {codegraph | code-review-graph | none}
 - Discovery is read-only — never modify project files during discovery
 - Keep the context summary under 200 tokens
 - If CLAUDE.md exists, its conventions override defaults
-- Install suggestions (codegraph / code-review-graph) are one-time per session, not per invocation

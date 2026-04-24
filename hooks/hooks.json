@@ -51,18 +51,6 @@
         ],
         "description": "Rebuild BACKLOG.md index when ISS-*.md files are written to .claude/backlog/issues/"
       },
-      {
-        "matcher": "Write|Edit|MultiEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/graph-update.js\"",
-            "async": true,
-            "timeout": 10
-          }
-        ],
-        "description": "Incrementally update code-review-graph after code changes (skips silently if not installed)"
-      }
     ],
     "Stop": [
       {

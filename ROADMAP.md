@@ -8,11 +8,17 @@
 
 ---
 
-## Current State (2026-04-23)
+## Current State (2026-04-24)
 
-- **Last shipped**: `v2.3.0` — metrics observability (usage-tracker hook, cost-profiler agent attribution, per-project `.claude/usage/` telemetry, usage-report CLI, zero-dep Python dashboard at `scripts/dashboard/`).
-- **Nothing scheduled**. The backlog below is an honest inventory of what's *still desired* — not a release calendar. Items move from backlog → release only when explicitly planned in a plan file and executed in a session.
+- **Last shipped**: `v2.3.4` — dashboard UI refactor (Logs demoted to Settings drawer, Insights promoted to top-level tab).
+- **In-flight (Unreleased)**: graph-backend cleanup — codegraph and code-review-graph references removed plugin-wide; Paige role-boundaries tightened. See `CHANGELOG.md` Unreleased section.
+- **Nothing else scheduled**. The backlog below is an honest inventory of what's *still desired* — not a release calendar. Items move from backlog → release only when explicitly planned in a plan file and executed in a session.
 - **Scope discipline**: each backlog item carries one of four statuses — `[ ]` still desired · `[x]` shipped · `[~]` partially shipped · `[-]` superseded / dropped. No item lists a target version until the moment it's being implemented. v2.0.0's whole thesis was that aspirational version pins cause drift.
+
+### Near-term (pending decisions)
+
+- [ ] **Graph backend re-adoption** — pick one of codegraph / code-review-graph (or a new option) to standardize on. Wire into `.mcp.json`, re-add targeted graph query patterns to `java-source-intel` and `project-discovery`. Deferred explicitly — the Unreleased cleanup left the plugin graph-less as a clean slate for this decision.
+- [ ] **`ohmyclaude-fs` stdio MCP server** — plugin-owned filesystem helpers wrapping `tree` (and, over time, other CLI tools flagged by dashboard `bash_cmd_mix` evidence). Groundwork for promoting opaque Bash invocations to named, trackable MCP tools.
 
 ---
 

@@ -77,7 +77,7 @@
     {
       "id": "skills-java",
       "kind": "skills",
-      "description": "Java / Spring Boot skills — coding standards, patterns, TDD, security, source intel (semantic queries via codegraph → code-review-graph → ripgrep)",
+      "description": "Java / Spring Boot skills — coding standards, patterns, TDD, security, source intel (semantic queries via text-based tools: ripgrep + find + tree)",
       "paths": [
         "skills/java-coding-standards/",
         "skills/springboot-patterns/",
@@ -187,6 +187,18 @@
       "stability": "stable"
     },
     {
+      "id": "mcp-servers",
+      "kind": "mcp",
+      "description": "Plugin-owned MCP servers declared in `.mcp.json`. Currently: `ohmyclaude-fs` (filesystem helpers — exposes `tree` as a named, trackable MCP tool so it appears distinctly in dashboard tool_mix instead of being lost under Bash). Stdlib-only Node — no external dependencies. Approval prompt appears on first install.",
+      "paths": [
+        ".mcp.json",
+        "scripts/mcp-servers/fs.js"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "stable"
+    },
+    {
       "id": "hooks-quality",
       "kind": "hooks",
       "description": "Quality hooks: block writes with secrets (PreToolUse), run linter after bash (PostToolUse)",
@@ -197,17 +209,6 @@
       ],
       "targets": ["claude"],
       "defaultInstall": true,
-      "stability": "stable"
-    },
-    {
-      "id": "hooks-graph",
-      "kind": "hooks",
-      "description": "Source graph hook: incremental update after code changes. Probes codegraph first (requires .codegraph/), then code-review-graph. Silently skips if neither installed.",
-      "paths": [
-        "hooks/scripts/graph-update.js"
-      ],
-      "targets": ["claude"],
-      "defaultInstall": false,
       "stability": "stable"
     },
     {

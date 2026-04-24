@@ -8,6 +8,51 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [2.4.1] — 2026-04-24
+
+Doc reorganization + dashboard data-correctness improvements. Rolls up the telemetry-pipeline fixes that accumulated since v2.3.4 alongside the CLAUDE.md compaction.
+
+### Changed
+
+- **`CLAUDE.md` compacted 188 → 94 lines** (50% reduction). Architecture narrative, 10-agent table, /forge command list, and Exploration tool priority were duplicated between CLAUDE.md and README.md / commands/forge.md / project-discovery skill — removed from CLAUDE.md with pointers to the canonical source. The External Dependency Decision Rule's 9-step checklist + anti-patterns moved to a new `## External Dependencies` section in `CONTRIBUTING.md`; CLAUDE.md retains the 3-row decision table and points at the full rule. Rationale: CLAUDE.md is loaded into every session's context; load-bearing rules belong there, narrative and case-study material don't. Net footprint across CLAUDE.md + CONTRIBUTING.md dropped by 57 lines.
+
+### Fixed
+
+- **`hooks/scripts/usage-tracker.js` + `hooks/scripts/cost-profiler.js`** — accept `Agent` as the subagent-spawn tool name. Claude Code renamed the tool from `Task` to `Agent` in a prior release; both hooks were silently recording zero `agent_spawn` events as a result. Legacy `Task` name still accepted for backwards compatibility.
+- **`hooks/scripts/usage-tracker.js`** — `forge_run_end` emission dedup. Stop fires on every assistant turn, so a single /forge run was emitting N duplicate events with monotonically growing totals (the esp-targeting evidence showed 1 real run surfacing as 4 runs for $48 instead of the true $18). Guarded via `last_forge_run_end_usd` in session state. Also adds `via: "/forge"` vs `"ad-hoc"` provenance so future dashboard filters can scope the cost timeline to real /forge runs.
+
+### Added (dashboard observability)
+
+- **`bash_cmd_mix`** — cost-profiler's transcript walk now tallies the first token of every Bash invocation (`grep`, `find`, `tree`, `ls`, etc.). Dashboard shows the breakdown under the Tool mix panel so users can see what Bash is actually doing instead of collapsing everything under a single "Bash" bar.
+- **`mcp_mix`** — separates MCP tool calls (names prefixed `mcp__`) from general tool mix. Surfaces "0 calls" as an amber warning when no MCP tool fired across all /forge runs — the diagnostic that surfaced the missing graph-backend invocations before the v2.4.0 cleanup.
+- **`offered_tools` + `offered_skills`** — cost-profiler walks transcript `attachment` messages (`deferred_tools_delta`, `skill_listing`) to reconstruct the tool + skill menu the model saw per run. Dashboard shows "offered X / called Y tools · A / B skills" with a tooltip listing the unused surface area — answers the "which parts of my plugin are dead weight?" question directly.
+- **Retroactive backfill in `scripts/dashboard/server.py`** — `api_summary` reads parent session transcripts from `~/.claude/projects/<cwd>/<sessionId>.jsonl` to reconstruct `bash_cmd_mix`, `mcp_mix`, `offered_tools`, and `offered_skills` fields for runs that predate the hook enhancements. No hook replay required.
+- **Run-detail agent resolution** — `api_run_detail` pairs each snap timestamp with the most recent preceding `Agent` tool_use in the parent transcript so `agent: "unknown"` rows in the /forge runs detail view get replaced with the real `subagent_type` (e.g., `ohmyclaude:paige-product`, `ohmyclaude:artie-arch`).
+
+## [2.4.0] — 2026-04-24
+
+Cleanup + role-boundary fix + first plugin-owned MCP server. Three-phase refactor executed per the approved plan at `.claude/plans/pure-shimmying-leaf.md`.
+
+### Added
+
+- **`ohmyclaude-fs` stdio MCP server** at `scripts/mcp-servers/fs.js`. First plugin-owned MCP server. Currently exposes one tool: `tree` — a named, trackable replacement for anonymous Bash `tree` invocations. Stdlib-only Node implementation (zero npm deps, consistent with the Python dashboard's zero-dep invariant). Shells out to the system `tree` CLI when available, falls back to a portable Node implementation otherwise (works on Windows / minimal containers). Dashboard `mcp_mix` and `tool_mix` panels will now show `mcp__ohmyclaude-fs__tree:N` instead of that count getting buried under `Bash: tree:N`. Tracked as new `mcp-servers` install module in `standard` and `full` profiles.
+- **ROADMAP near-term backlog** — explicit "Graph backend re-adoption (pending decision)" entry so the cleanup isn't mistaken for a permanent design choice.
+
+### Removed
+
+- **Graph-backend references throughout the plugin.** codegraph and code-review-graph were both referenced as Tier 1 / Tier 2 exploration backends in `agents/paige-product.md`, `agents/stan-standards.md`, `agents/artie-arch.md`, `agents/beck-backend.md`, `agents/effie-frontend.md`, `agents/quinn-qa.md`, `agents/heracles.md`, `agents/devon-ops.md`, `commands/forge.md`, `skills/project-discovery/SKILL.md`, `skills/java-source-intel/SKILL.md`, and `skills/profile-run/SKILL.md`. Maintaining parallel query patterns for two APIs was a duplication burden and created install-time confusion. All references removed; the plugin now uses `tree` (via `ohmyclaude-fs` MCP or Bash fallback) + native Grep/Glob for exploration. A single graph backend may be re-introduced after deciding which to standardize on — see ROADMAP near-term.
+- **`hooks-graph` install module** (`manifests/install-modules.json`) and its removal from the `full` install profile.
+- **`hooks/scripts/graph-update.js`** and the `Write|Edit|MultiEdit` hook entry that invoked it from `hooks/hooks.json`.
+- `SECURITY.md` mention of code-review-graph (no longer an MCP dependency of the plugin).
+
+### Changed
+
+- **`skills/java-source-intel/SKILL.md` rewritten** — 6 canonical Java query patterns (callers, `@Transactional`, Spring stereotypes, impact, endpoint→DB trace, interface inheritors) now use ripgrep + find. Confidence rules acknowledge text-based tools have known gaps (reflection, meta-annotations, transitive impact, lambda bodies); skill surfaces these in the `Gaps` section of each output.
+- **`agents/paige-product.md`** — role boundary tightened to resolve the persona-vs-behaviour conflict (Paige was stated as a product/routing role but in practice was calling graph tools and exploring the codebase). Step 0 replaced with a note that `project-discovery` runs in the orchestrator context before Paige is spawned; Paige consumes its context block but does not re-run discovery. Step 3 "Explore the Codebase" removed entirely — Paige does not read source code. `tools:` reduced from `["Read","Grep","Glob","Write"]` to `["Read","Write"]`. Added three explicit bullets to the "What You Do NOT Do" section codifying the new boundary.
+- **`agents/artie-arch.md`** — Step 1 extended: when PRD tasks are stated abstractly (no file paths), Artie resolves them to concrete paths in his SDD using the discovery context block and Read/Grep/Glob. Formalizes the division of labour implied by the Paige refactor.
+- **`skills/project-discovery/SKILL.md`** — handoff contract strengthened (skill runs in orchestrator context before Paige; Paige consumes its output). Tier 1/Tier 2 graph-backend blocks removed. Primary tool is now `mcp__ohmyclaude-fs__tree`, with Bash `tree` as fallback. Context-block `Graph:` field replaced with `Size:`.
+- **Install profiles** — `standard` profile now includes `mcp-servers` module by default (so the `ohmyclaude-fs` MCP server is available on standard install). `full` profile updated to match. `minimal` remains MCP-server-free for locked-down environments.
+
 ## [2.3.4] — 2026-04-24
 
 Dashboard UI refactor. The top-level Logs tab was showing dashboard self-diagnostic output (browser console + server log) — not user-facing telemetry — so it's been demoted behind a ⚙ icon in the header. The freed tab slot now belongs to a dedicated Insights view of captured ★ Insight blocks, with filtering and search.

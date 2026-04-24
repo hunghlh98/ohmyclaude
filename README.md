@@ -158,25 +158,28 @@ Every `/forge` run emits structured telemetry. Agents stay blind to it — all m
 - **`profile-run` skill** interprets PROFILE + baseline and recommends concrete tuning (ranked by ROI)
 - **Calibration** — `profile-run --calibrate` splits PROFILE artifacts into recent (≤30d) vs prior (30–90d) windows and diffs per-scenario means; flag drift >25%
 
-## Source Graph Integration (all optional, all soft-detected)
+## Exploration
 
-The plugin ships md/js files only. Nothing is installed on your machine when you install ohmyclaude. Graph backends are **opportunistic** — if one is present, agents use it; if not, they fall through to the next tier without error.
-
-Either of these unlocks richer exploration:
-
-- [codegraph](https://github.com/colbymchenry/codegraph) — `npx @colbymchenry/codegraph` (project-level, `.codegraph/codegraph.db`). Benchmarks at ~94% fewer tool calls for Explore-agent workloads.
-- [code-review-graph](https://github.com/nicholasgriffintn/code-review-graph) — `claude plugin install code-review-graph` (Claude Code plugin MCP). Adds impact radius + review-specific tools.
-
-The `hooks-graph` hook auto-detects which is present and syncs incrementally after edits. Java projects additionally get the `java-source-intel` skill, which routes semantic queries (callers, impact, `@Transactional` scans, call chains) to whichever backend is installed — or falls back to ripgrep patterns when none is.
+The plugin ships md/js files only. Exploration uses `tree` CLI plus native Read/Grep/Glob. Java projects additionally get the `java-source-intel` skill, which provides canonical ripgrep + find patterns for callers, impact, `@Transactional` scans, and call chains.
 
 ### Exploration Tool Priority
 
 | Priority | Tool | Type | Required? |
 |----------|------|------|-----------|
-| 1 | codegraph | Pre-indexed tree-sitter graph, FTS5 search | No |
-| 2 | code-review-graph | Tree-sitter graph + review tooling | No |
-| 3 | `tree` CLI | Directory structure | No (standard on macOS/Linux) |
-| 4 | Glob / Grep | File-level search | Always available |
+| 1 | `tree` CLI | Directory structure | No (standard on macOS/Linux) |
+| 2 | Glob / Grep | File-level search | Always available |
+
+> A single graph backend (tree-sitter semantic graph with callers / impact / annotation queries) may be re-introduced in a future release. The skill layer is structured to accept one via MCP when added — text-based patterns in `java-source-intel` will map onto the backend's tool names at that time.
+
+### Adding External Tools / Skills
+
+When extending ohmyclaude with something external, follow the **External Dependency Decision Rule** in [CLAUDE.md](CLAUDE.md#external-dependency-decision-rule):
+
+- **Skills (methodology, prompts)** → **embed inline** as a `skills/<name>/` directory with upstream attribution.
+- **Tools (executables, CLIs, servers)** → **wrap as MCP** in `.mcp.json`. For trivial cases, write a stdlib-only stdio server under `scripts/mcp-servers/` — the `ohmyclaude-fs` server is the canonical pattern.
+- **Another Claude Code plugin** → not a supported dependency; extract its MCP server portion or document it as a recommended companion.
+
+The v2.4.0 cleanup (see `.claude/plans/pure-shimmying-leaf.md`) is the case study that motivated this rule.
 
 ## Install Profiles
 
@@ -184,7 +187,7 @@ The `hooks-graph` hook auto-detects which is present and syncs incrementally aft
 |---------|----------|
 | Minimal | 10 agents + /forge |
 | Standard (default) | + 34 skills + Java + TypeScript rules + quality hooks |
-| Full | + source graph hooks + tracking hooks + cost profiler + session intelligence (`/save`, `/load`, SessionStart/PreCompact/SubagentStart hooks) |
+| Full | + tracking hooks + cost profiler + session intelligence (`/save`, `/load`, SessionStart/PreCompact/SubagentStart hooks) |
 
 ## Session Intelligence (opt-in, v2.2.0)
 
@@ -200,14 +203,14 @@ Opt-in via the `full` profile or by adding `hooks-session` / `skills-session` / 
 
 | Component | Count | Detail |
 |-----------|------:|--------|
-| Version | 2.3.4 | VERSION, package.json, plugin.json, marketplace.json |
+| Version | 2.4.1 | VERSION, package.json, plugin.json, marketplace.json |
 | Agents | 10 | sonnet: 8, opus: 1, haiku: 1 |
 | Skills | 36 | engineering: 12, java: 5, pipeline: 4, specialized: 8, superclaude: 5, session: 2 |
 | Commands | 3 | forge, load, save |
 | Rules | 9 | common: 1, java: 4, typescript: 4 |
-| Hooks | 11 | backlog-tracker, cost-profiler, graph-update, post-bash-lint, pre-write-check, session-load, session-summary, state-snapshot, subagent-trace, team-cleanup, usage-tracker |
+| Hooks | 10 | backlog-tracker, cost-profiler, post-bash-lint, pre-write-check, session-load, session-summary, state-snapshot, subagent-trace, team-cleanup, usage-tracker |
 | Profiles | 3 | minimal, standard (default), full |
-| Modules | 21 | agents: 4, skills: 6, rules: 3, commands: 2, hooks: 6 |
+| Modules | 21 | agents: 4, skills: 6, rules: 3, commands: 2, mcp: 1, hooks: 5 |
 
 Run `node scripts/validate.js` to see the live inventory with per-agent detail.
 

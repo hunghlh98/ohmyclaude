@@ -25,16 +25,14 @@ Bare `/forge <description>` is the primary interaction. It handles features, bug
 
 ### Step 1 — Project discovery
 
-Before any planning, gather context. The `project-discovery` skill runs this — it **soft-detects** graph backends, so the plugin ships nothing and nothing is required.
+Before any planning, gather context. The `project-discovery` skill runs this in the orchestrator context before spawning `@paige-product`.
 
 Exploration tool priority (first match wins):
 
-1. **codegraph** — pre-indexed tree-sitter graph ([`@colbymchenry/codegraph`](https://github.com/colbymchenry/codegraph)). Detect via `.codegraph/` directory or `mcp__codegraph__*` tools. Best for Explore-subagent orchestration (one `codegraph_explore` call returns full source sections, stops).
-2. **code-review-graph** — tree-sitter graph with impact radius + review tools. Detect via `mcp__plugin_code-review-graph__*` tools.
-3. **`tree` CLI** — directory structure fallback.
-4. **Glob/Grep** — last resort file search.
+1. **`tree` CLI** — directory structure at depth 3. Preferred when available.
+2. **Glob/Grep** — fallback when `tree` is absent or for targeted pattern search.
 
-For Java projects, the `java-source-intel` skill provides canonical query patterns (callers, impact, annotation scans, call chains) that route across whichever backend is present.
+For Java projects, the `java-source-intel` skill provides canonical query patterns (callers, impact, annotation scans, call chains) using text-based tools. A graph backend may be re-introduced in a future release; the query patterns will map onto it when it lands.
 
 Also read: CLAUDE.md, package.json (or equivalent), language/framework detection, existing `.claude/pipeline/` state.
 
@@ -277,7 +275,7 @@ Agents:
 - `commit-work` — Conventional Commits formatting
 - `task-breakdown` — Decompose work into agent tasks with dependency graph
 - `project-discovery` — Detect project scope, language, framework
-- `java-source-intel` — Java semantic queries (callers, impact, annotations) routed across codegraph → code-review-graph → ripgrep
+- `java-source-intel` — Java semantic queries (callers, impact, annotations) using text-based tools (grep, find, ast-grep). Graph-backed implementation deferred to a future release.
 - `post-deploy-analytics` — Post-deploy telemetry analysis
 - `write-code-review` — Structured code review output
 - `write-sdd` — System design document generation

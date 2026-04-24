@@ -66,7 +66,7 @@ Write the diff to `.claude/metrics/calibration-<date>.md`. Surface any drift >25
 When surfacing advice, prefer these ranked by ROI:
 
 1. **Skip @artie for non-architectural features** — 40% savings on feature runs; check if routing JSON marks arch as needed
-2. **Pre-filter files via code-review-graph** before builder agents — 20-30% input reduction for brownfield
+2. **Scope builder agent reads via project-discovery output** — pass the discovery context block into each builder's brief so they read only the files the skill identified as relevant, instead of re-exploring. 20-30% input reduction for brownfield.
 3. **Cap artifact word counts** — PRD <500w, SDD <1500w, REVIEW <800w
 4. **Promote frequently-revising agent to Opus** *only if* counterfactual turn reduction outweighs 5x model multiplier (measure, don't assume)
 5. **Keep @devon-ops on Haiku** — promoting is a trap; templated work does not benefit from larger models

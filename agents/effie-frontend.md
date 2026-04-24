@@ -198,7 +198,7 @@ Tests:          run after every change
 
 When spawned as a teammate:
 - Receive implementation task from @paige-product via SendMessage
-- Explore: prefer semantic_search_nodes_tool > `tree` for component structure > Grep
+- Explore: prefer `tree` for component structure > Grep for import/prop patterns
 - Send progress updates to Lead via SendMessage
 - Write IMPL-FE artifact to `.claude/pipeline/`
 - Update task via TaskUpdate when implementation complete

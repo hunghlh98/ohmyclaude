@@ -17,7 +17,7 @@
     {
       "id": "standard",
       "name": "Standard",
-      "description": "Full pipeline: 10 agents + 30 skills (engineering, Java, pipeline, specialized, SuperClaude) + quality hooks + rules. Recommended for most engineers.",
+      "description": "Full pipeline: 10 agents + 30 skills (engineering, Java, pipeline, specialized, SuperClaude) + quality hooks + rules + plugin MCP servers. Recommended for most engineers.",
       "default": true,
       "modules": [
         "agents-core",
@@ -33,13 +33,14 @@
         "rules-java",
         "rules-typescript",
         "commands",
-        "hooks-quality"
+        "hooks-quality",
+        "mcp-servers"
       ]
     },
     {
       "id": "full",
       "name": "Full",
-      "description": "Everything — standard profile + source graph integration + tracking hooks (backlog, session summary, team cleanup) + cost profiler + session intelligence (save/load + SessionStart/PreCompact/SubagentStart hooks).",
+      "description": "Everything — standard profile + tracking hooks (backlog, session summary, team cleanup) + cost profiler + session intelligence (save/load + SessionStart/PreCompact/SubagentStart hooks).",
       "modules": [
         "agents-core",
         "agents-governance",
@@ -57,11 +58,11 @@
         "commands",
         "commands-session",
         "hooks-quality",
-        "hooks-graph",
         "hooks-tracking",
         "hooks-profiler",
         "hooks-usage",
-        "hooks-session"
+        "hooks-session",
+        "mcp-servers"
       ]
     }
   ]
