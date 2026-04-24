@@ -224,7 +224,7 @@ test('rebuilds BACKLOG.md when triggered from backlog dir', () => {
   // Seed a .git so findRepoRoot stops at sandbox
   fs.mkdirSync(path.join(sandbox, '.git'), { recursive: true });
   // Seed one ISS-*.md
-  const issuesDir = path.join(sandbox, '.claude', 'backlog', 'issues');
+  const issuesDir = path.join(sandbox, '.claude', '.ohmyclaude', 'backlog', 'issues');
   fs.mkdirSync(issuesDir, { recursive: true });
   const issuePath = path.join(issuesDir, 'ISS-001.md');
   fs.writeFileSync(issuePath,
@@ -235,8 +235,9 @@ test('rebuilds BACKLOG.md when triggered from backlog dir', () => {
   });
   const r = runHook('backlog-tracker.js', input, { cwd: sandbox, sandbox });
   assertEq(r.code, 0, 'exit code');
-  assertExists(path.join(sandbox, 'BACKLOG.md'), 'BACKLOG.md written');
-  const backlog = fs.readFileSync(path.join(sandbox, 'BACKLOG.md'), 'utf8');
+  const backlogPath = path.join(sandbox, '.claude', '.ohmyclaude', 'backlog', 'BACKLOG.md');
+  assertExists(backlogPath, 'BACKLOG.md written at .claude/.ohmyclaude/backlog/');
+  const backlog = fs.readFileSync(backlogPath, 'utf8');
   assertIncludes(backlog, 'ISS-001', 'backlog contains issue id');
   assertIncludes(backlog, 'Fix the thing', 'backlog contains title');
   cleanup(sandbox);
@@ -340,7 +341,7 @@ test('Stop with no prior snapshots is a no-op', () => {
   const r = runHook('cost-profiler.js', JSON.stringify(evt), { sandbox });
   assertEq(r.code, 0, 'exit code');
   // No PROFILE should be written when there are no snapshots
-  assertAbsent(path.join(sandbox, '.claude', 'pipeline', 'PROFILE-testrun-none.md'),
+  assertAbsent(path.join(sandbox, '.claude', '.ohmyclaude', 'pipeline', 'PROFILE-testrun-none.md'),
     'no PROFILE without snapshots');
   cleanup(sandbox);
 });
@@ -349,7 +350,7 @@ test('Stop with a seeded snapshot writes PROFILE-<runId>.md', () => {
   const sandbox = makeSandbox();
   const runId = 'testrun-profile';
   // Seed one snapshot matching the shape cost-profiler writes on SubagentStop
-  const snapDir = path.join(sandbox, '.claude', 'metrics', 'runs', runId);
+  const snapDir = path.join(sandbox, '.claude', '.ohmyclaude', 'metrics', 'runs', runId);
   fs.mkdirSync(snapDir, { recursive: true });
   fs.writeFileSync(path.join(snapDir, 'snap-1000.json'), JSON.stringify({
     ts: 1000,
@@ -368,9 +369,9 @@ test('Stop with a seeded snapshot writes PROFILE-<runId>.md', () => {
   };
   const r = runHook('cost-profiler.js', JSON.stringify(evt), { sandbox });
   assertEq(r.code, 0, 'exit code');
-  assertExists(path.join(sandbox, '.claude', 'pipeline', `PROFILE-${runId}.md`),
+  assertExists(path.join(sandbox, '.claude', '.ohmyclaude', 'pipeline', `PROFILE-${runId}.md`),
     'PROFILE artifact written');
-  assertExists(path.join(sandbox, '.claude', 'metrics', 'baseline.json'),
+  assertExists(path.join(sandbox, '.claude', '.ohmyclaude', 'metrics', 'baseline.json'),
     'baseline.json updated');
   cleanup(sandbox);
 });
@@ -486,7 +487,7 @@ test('updates stages.json when session exists', () => {
   fs.writeFileSync(path.join(sidDir, 'meta.json'),
     JSON.stringify({ session_id: 'sidB', start_ts: '2026-01-01T00:00:00Z', last_touch_ts: '2026-01-01T00:00:00Z' }));
   // Seed a pipeline artifact
-  const pipelineDir = path.join(cwd, '.claude', 'pipeline');
+  const pipelineDir = path.join(cwd, '.claude', '.ohmyclaude', 'pipeline');
   fs.mkdirSync(pipelineDir, { recursive: true });
   fs.writeFileSync(path.join(pipelineDir, 'PRD-001.md'), '# PRD-001\n');
 
@@ -575,9 +576,9 @@ test('SessionStart seeds per-session state and emits session_start', () => {
   const r = runHook('usage-tracker.js', JSON.stringify(evt), { sandbox, cwd: sandbox });
   assertEq(r.code, 0, 'exit code');
   assertEq(r.stdout, JSON.stringify(evt), 'passthrough');
-  assertExists(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'events.jsonl created');
-  assertExists(path.join(sandbox, '.claude', 'usage', '.sessions', 'utest-1.json'), 'session state');
-  const line = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8').trim();
+  assertExists(path.join(sandbox, '.claude', '.ohmyclaude', 'usage', 'events.jsonl'), 'events.jsonl created');
+  assertExists(path.join(sandbox, '.claude', '.ohmyclaude', 'usage', '.sessions', 'utest-1.json'), 'session state');
+  const line = fs.readFileSync(path.join(sandbox, '.claude', '.ohmyclaude', 'usage', 'events.jsonl'), 'utf8').trim();
   const ev = JSON.parse(line);
   assertEq(ev.event, 'session_start', 'event type');
   assertEq(ev.session_id, 'utest-1', 'session_id');
@@ -599,7 +600,7 @@ test('UserPromptSubmit logs metadata only, detects /forge command', () => {
   };
   const r = runHook('usage-tracker.js', JSON.stringify(evt), { sandbox, cwd: sandbox });
   assertEq(r.code, 0, 'exit code');
-  const lines = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8').trim().split('\n');
+  const lines = fs.readFileSync(path.join(sandbox, '.claude', '.ohmyclaude', 'usage', 'events.jsonl'), 'utf8').trim().split('\n');
   const prompt = JSON.parse(lines[lines.length - 1]);
   assertEq(prompt.event, 'user_prompt', 'event type');
   assertEq(prompt.is_slash_command, true, 'slash command detected');
@@ -627,7 +628,7 @@ test('UserPromptSubmit detects correction signal', () => {
   };
   const r = runHook('usage-tracker.js', JSON.stringify(evt), { sandbox, cwd: sandbox });
   assertEq(r.code, 0, 'exit code');
-  const lines = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8').trim().split('\n');
+  const lines = fs.readFileSync(path.join(sandbox, '.claude', '.ohmyclaude', 'usage', 'events.jsonl'), 'utf8').trim().split('\n');
   const prompt = JSON.parse(lines[lines.length - 1]);
   assertEq(prompt.correction_signal, true, 'correction detected');
   cleanup(sandbox);
@@ -647,7 +648,7 @@ test('PreToolUse(Task) emits agent_spawn with subagent_type', () => {
   };
   const r = runHook('usage-tracker.js', JSON.stringify(evt), { sandbox, cwd: sandbox });
   assertEq(r.code, 0, 'exit code');
-  const lines = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8').trim().split('\n');
+  const lines = fs.readFileSync(path.join(sandbox, '.claude', '.ohmyclaude', 'usage', 'events.jsonl'), 'utf8').trim().split('\n');
   const spawn = JSON.parse(lines[lines.length - 1]);
   assertEq(spawn.event, 'agent_spawn', 'event type');
   assertEq(spawn.agent_type, 'beck-backend', 'agent_type');
@@ -682,17 +683,17 @@ test('Stop captures ★ Insight blocks from transcript, dedups by hash', () => {
   const r = runHook('usage-tracker.js', JSON.stringify(evt), { sandbox, cwd: sandbox });
   assertEq(r.code, 0, 'exit code');
 
-  const events = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8')
+  const events = fs.readFileSync(path.join(sandbox, '.claude', '.ohmyclaude', 'usage', 'events.jsonl'), 'utf8')
     .trim().split('\n').map(l => JSON.parse(l));
   const captured = events.filter(e => e.event === 'insight_captured');
   assertEq(captured.length, 1, 'one insight captured');
   assertIncludes(captured[0].text, 'Pricing reads dominate', 'insight text body');
-  assertExists(path.join(sandbox, '.claude', 'usage', 'insights.jsonl'), 'insights.jsonl sidecar');
+  assertExists(path.join(sandbox, '.claude', '.ohmyclaude', 'usage', 'insights.jsonl'), 'insights.jsonl sidecar');
 
   // Fire Stop again with same transcript — hash dedup should suppress it
   const r2 = runHook('usage-tracker.js', JSON.stringify(evt), { sandbox, cwd: sandbox });
   assertEq(r2.code, 0, 'second Stop exit code');
-  const events2 = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8')
+  const events2 = fs.readFileSync(path.join(sandbox, '.claude', '.ohmyclaude', 'usage', 'events.jsonl'), 'utf8')
     .trim().split('\n').map(l => JSON.parse(l));
   const captured2 = events2.filter(e => e.event === 'insight_captured');
   assertEq(captured2.length, 1, 'no duplicate insight event on second Stop');
@@ -705,7 +706,7 @@ test('Stop joins runs/_index.jsonl into forge_run_end when runId matches', () =>
     hook_event_name: 'SessionStart', session_id: 'utest-5', cwd: sandbox,
   }), { sandbox, cwd: sandbox });
   // Seed a run-index entry
-  const runsDir = path.join(sandbox, '.claude', 'metrics', 'runs');
+  const runsDir = path.join(sandbox, '.claude', '.ohmyclaude', 'metrics', 'runs');
   fs.mkdirSync(runsDir, { recursive: true });
   fs.writeFileSync(path.join(runsDir, '_index.jsonl'), JSON.stringify({
     runId: 'utest-5', scenario: 'feature', agents: ['paige-product'],
@@ -718,7 +719,7 @@ test('Stop joins runs/_index.jsonl into forge_run_end when runId matches', () =>
     hook_event_name: 'Stop', session_id: 'utest-5', cwd: sandbox,
   }), { sandbox, cwd: sandbox });
   assertEq(r.code, 0, 'exit code');
-  const events = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8')
+  const events = fs.readFileSync(path.join(sandbox, '.claude', '.ohmyclaude', 'usage', 'events.jsonl'), 'utf8')
     .trim().split('\n').map(l => JSON.parse(l));
   const forge = events.find(e => e.event === 'forge_run_end');
   if (!forge) throw new Error('forge_run_end event not written');
@@ -735,7 +736,7 @@ test('OHMYCLAUDE_USAGE_TRACKING=off disables all writes', () => {
     extraEnv: { OHMYCLAUDE_USAGE_TRACKING: 'off' },
   });
   assertEq(r.code, 0, 'exit code');
-  assertAbsent(path.join(sandbox, '.claude', 'usage'), 'no usage dir when disabled');
+  assertAbsent(path.join(sandbox, '.claude', '.ohmyclaude', 'usage'), 'no usage dir when disabled');
   cleanup(sandbox);
 });
 
@@ -743,7 +744,7 @@ test('malformed stdin exits 0 without writing', () => {
   const sandbox = makeSandbox();
   const r = runHook('usage-tracker.js', 'not-json-at-all', { sandbox, cwd: sandbox });
   assertEq(r.code, 0, 'exit code');
-  assertAbsent(path.join(sandbox, '.claude', 'usage'), 'no dir on malformed');
+  assertAbsent(path.join(sandbox, '.claude', '.ohmyclaude', 'usage'), 'no dir on malformed');
   cleanup(sandbox);
 });
 
@@ -759,7 +760,7 @@ test('UserPromptSubmit tags sentiment: affirmation', () => {
     prompt: 'perfect, thanks — ship it',
   }), { sandbox, cwd: sandbox });
   assertEq(r.code, 0, 'exit code');
-  const lines = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8').trim().split('\n');
+  const lines = fs.readFileSync(path.join(sandbox, '.claude', '.ohmyclaude', 'usage', 'events.jsonl'), 'utf8').trim().split('\n');
   const prompt = JSON.parse(lines[lines.length - 1]);
   assertEq(prompt.affirmation_signal, true, 'affirmation detected');
   assertEq(prompt.correction_signal, false, 'not a correction');
@@ -786,7 +787,7 @@ test('PreToolUse(Skill) stamps trigger=user_slash after matching /slash', () => 
     tool_input: { skill: 'simplify' },
   }), { sandbox, cwd: sandbox });
   assertEq(r.code, 0, 'exit code');
-  const lines = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8').trim().split('\n');
+  const lines = fs.readFileSync(path.join(sandbox, '.claude', '.ohmyclaude', 'usage', 'events.jsonl'), 'utf8').trim().split('\n');
   const invoke = JSON.parse(lines[lines.length - 1]);
   assertEq(invoke.event, 'skill_invoke', 'event type');
   assertEq(invoke.trigger, 'user_slash', 'trigger provenance');
@@ -813,7 +814,7 @@ test('PreToolUse(Skill) stamps trigger=model_auto without prior /slash', () => {
     tool_input: { skill: 'simplify' },
   }), { sandbox, cwd: sandbox });
   assertEq(r.code, 0, 'exit code');
-  const lines = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8').trim().split('\n');
+  const lines = fs.readFileSync(path.join(sandbox, '.claude', '.ohmyclaude', 'usage', 'events.jsonl'), 'utf8').trim().split('\n');
   const invoke = JSON.parse(lines[lines.length - 1]);
   assertEq(invoke.trigger, 'model_auto', 'model_auto when no matching slash');
   cleanup(sandbox);
@@ -832,7 +833,7 @@ test('PreToolUse(Skill) splits plugin prefix on colon', () => {
     tool_input: { skill: 'sc:sc-analyze' },
   }), { sandbox, cwd: sandbox });
   assertEq(r.code, 0, 'exit code');
-  const lines = fs.readFileSync(path.join(sandbox, '.claude', 'usage', 'events.jsonl'), 'utf8').trim().split('\n');
+  const lines = fs.readFileSync(path.join(sandbox, '.claude', '.ohmyclaude', 'usage', 'events.jsonl'), 'utf8').trim().split('\n');
   const invoke = JSON.parse(lines[lines.length - 1]);
   assertEq(invoke.skill_plugin, 'sc', 'plugin prefix');
   assertEq(invoke.skill_local_name, 'sc-analyze', 'local name');
@@ -848,7 +849,7 @@ test('exits 0 on malformed stdin without writing state', () => {
   const r = runHook('code-review-graph-setup.js', 'not-json', { sandbox, cwd: sandbox });
   assertEq(r.code, 0, 'exit code');
   assertEq(r.stdout, 'not-json', 'passthrough');
-  assertAbsent(path.join(sandbox, '.claude', 'ohmyclaude.local.yaml'), 'no state on malformed');
+  assertAbsent(path.join(sandbox, '.claude', '.ohmyclaude', 'local.yaml'), 'no state on malformed');
   cleanup(sandbox);
 });
 
@@ -867,7 +868,7 @@ test('self-gates to no-op when .mcp.json lacks code-review-graph', () => {
     extraEnv: { CLAUDE_PLUGIN_ROOT: fakePluginRoot },
   });
   assertEq(r.code, 0, 'exit code');
-  assertAbsent(path.join(sandbox, '.claude', 'ohmyclaude.local.yaml'), 'no state when MCP undeclared');
+  assertAbsent(path.join(sandbox, '.claude', '.ohmyclaude', 'local.yaml'), 'no state when MCP undeclared');
   cleanup(sandbox);
 });
 
@@ -881,7 +882,7 @@ test('writes valid YAML state with uv-missing when uv not on PATH', () => {
     extraEnv: { PATH: '/nonexistent', CLAUDE_PLUGIN_ROOT: root },
   });
   assertEq(r.code, 0, 'exit code');
-  const stateFile = path.join(sandbox, '.claude', 'ohmyclaude.local.yaml');
+  const stateFile = path.join(sandbox, '.claude', '.ohmyclaude', 'local.yaml');
   assertExists(stateFile, 'state file written');
   const contents = fs.readFileSync(stateFile, 'utf8');
   assertIncludes(contents, 'version: 1', 'version line');

@@ -3,7 +3,7 @@
  * backlog-tracker.js
  *
  * PostToolUse hook triggered on Write tool calls.
- * Watches .claude/backlog/issues/*.md for new/modified ISS-*.md files.
+ * Watches .claude/.ohmyclaude/backlog/issues/*.md for new/modified ISS-*.md files.
  * Rebuilds BACKLOG.md index — sorted by priority, grouped by route.
  *
  * Hook input (stdin): JSON { tool_name, tool_input: { file_path, content } }
@@ -26,14 +26,14 @@ try {
 const filePath = input?.tool_input?.file_path || '';
 
 // Only activate for writes to the backlog issues directory
-if (!filePath.includes('.claude/backlog/issues/') || !filePath.endsWith('.md')) {
+if (!filePath.includes('.claude/.ohmyclaude/backlog/issues/') || !filePath.endsWith('.md')) {
   process.exit(0);
 }
 
 // ── Locate backlog directory ───────────────────────────────────────────────────
 const repoRoot    = findRepoRoot(process.cwd());
-const backlogDir  = path.join(repoRoot, '.claude', 'backlog', 'issues');
-const backlogFile = path.join(repoRoot, 'BACKLOG.md');
+const backlogDir  = path.join(repoRoot, '.claude', '.ohmyclaude', 'backlog', 'issues');
+const backlogFile = path.join(repoRoot, '.claude', '.ohmyclaude', 'backlog', 'BACKLOG.md');
 
 if (!fs.existsSync(backlogDir)) {
   process.exit(0);
@@ -115,6 +115,7 @@ for (const [route, label] of Object.entries(ROUTE_LABELS)) {
   lines.push('');
 }
 
+fs.mkdirSync(path.dirname(backlogFile), { recursive: true });
 fs.writeFileSync(backlogFile, lines.join('\n'), 'utf8');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

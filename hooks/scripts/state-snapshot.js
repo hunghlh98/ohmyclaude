@@ -18,7 +18,7 @@
  *
  * The hook updates:
  *   ~/.claude/ohmyclaude/sessions/<session-id>/stages.json
- *     by reading the current cwd's .claude/pipeline/ and recording
+ *     by reading the current cwd's .claude/.ohmyclaude/pipeline/ and recording
  *     which artifacts are present.
  *   ~/.claude/ohmyclaude/sessions/<session-id>/meta.json
  *     bumps last_touch_ts so session-load.js reports fresh "compacted
@@ -43,7 +43,7 @@ function readJsonSafe(p) {
 }
 
 function listPipelineArtifacts(cwd) {
-  const dir = path.join(cwd, '.claude', 'pipeline');
+  const dir = path.join(cwd, '.claude', '.ohmyclaude', 'pipeline');
   if (!fs.existsSync(dir)) return [];
   const out = [];
   for (const file of fs.readdirSync(dir)) {
@@ -54,7 +54,7 @@ function listPipelineArtifacts(cwd) {
     const stat = fs.statSync(abs);
     out.push({
       artifact: file.replace(/\.md$/, ''),
-      path:     path.join('.claude', 'pipeline', file),
+      path:     path.join('.claude', '.ohmyclaude', 'pipeline', file),
       mtime:    stat.mtimeMs,
       size:     stat.size,
     });

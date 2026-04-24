@@ -2,17 +2,17 @@
 /**
  * usage-report.js
  *
- * Reads <project>/.claude/usage/events.jsonl and produces an
+ * Reads <project>/.claude/.ohmyclaude/usage/events.jsonl and produces an
  * insight report. Run from any project root (or pass --cwd):
  *
- *   node scripts/usage-report.js             # reads ./.claude/usage
- *   node scripts/usage-report.js --cwd /abs  # reads /abs/.claude/usage
+ *   node scripts/usage-report.js             # reads ./.claude/.ohmyclaude/usage
+ *   node scripts/usage-report.js --cwd /abs  # reads /abs/.claude/.ohmyclaude/usage
  *   node scripts/usage-report.js --json      # machine-readable summary
  *   node scripts/usage-report.js --since 7d  # only last N days (1h, 30d)
  *
  * Writes:
- *   <cwd>/.claude/usage/insights.md          human-readable report
- *   <cwd>/.claude/usage/aggregate.json       machine-readable rollup
+ *   <cwd>/.claude/.ohmyclaude/usage/insights.md          human-readable report
+ *   <cwd>/.claude/.ohmyclaude/usage/aggregate.json       machine-readable rollup
  *
  * Pure Node. No dependencies. Designed to be reran after every session
  * so insights drift with real usage — no manual curation.
@@ -64,7 +64,7 @@ function parseSinceMs(spec) {
 }
 
 function loadEvents(cwd, sinceMs) {
-  const p = path.join(cwd, '.claude', 'usage', 'events.jsonl');
+  const p = path.join(cwd, '.claude', '.ohmyclaude', 'usage', 'events.jsonl');
   if (!fs.existsSync(p)) return [];
   const cutoff = sinceMs ? Date.now() - sinceMs : 0;
   const out = [];
@@ -515,7 +515,7 @@ function renderMd(summary) {
         lines.push('');
       }
     }
-    lines.push(`Full log: \`.claude/usage/insights.jsonl\``);
+    lines.push(`Full log: \`.claude/.ohmyclaude/usage/insights.jsonl\``);
     lines.push('');
   }
 
@@ -641,7 +641,7 @@ function renderTerm(summary) {
 function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) {
-    console.log('usage-report — read .claude/usage/events.jsonl, write insights.md + aggregate.json');
+    console.log('usage-report — read .claude/.ohmyclaude/usage/events.jsonl, write insights.md + aggregate.json');
     console.log('  --cwd <path>   project root (default: cwd)');
     console.log('  --since <spec> 1h, 24h, 7d, 30d');
     console.log('  --json         print machine-readable summary');
@@ -654,7 +654,7 @@ function main() {
   if (!events.length) {
     const hint = sinceMs
       ? `No events in the last ${args.since}. Widen the window or run /forge.`
-      : `No events yet at ${path.join(args.cwd, '.claude', 'usage', 'events.jsonl')}. Use Claude Code with the usage-tracker hook installed.`;
+      : `No events yet at ${path.join(args.cwd, '.claude', '.ohmyclaude', 'usage', 'events.jsonl')}. Use Claude Code with the usage-tracker hook installed.`;
     if (args.json) process.stdout.write(JSON.stringify({ empty: true, hint }, null, 2) + '\n');
     else process.stdout.write(hint + '\n');
     process.exit(0);
@@ -662,7 +662,7 @@ function main() {
 
   const summary = compute(events);
 
-  const usageDir = path.join(args.cwd, '.claude', 'usage');
+  const usageDir = path.join(args.cwd, '.claude', '.ohmyclaude', 'usage');
   fs.mkdirSync(usageDir, { recursive: true });
   fs.writeFileSync(path.join(usageDir, 'aggregate.json'), JSON.stringify(summary, null, 2));
   fs.writeFileSync(path.join(usageDir, 'insights.md'),    renderMd(summary));

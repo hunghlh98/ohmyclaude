@@ -7,7 +7,7 @@
  * which commands get typed, how often the user course-corrects — so the
  * plugin author can improve based on evidence, not guesses.
  *
- * Writes only local files under <cwd>/.claude/usage/:
+ * Writes only local files under <cwd>/.claude/.ohmyclaude/usage/:
  *   events.jsonl              append-only event log (one JSON per line)
  *   insights.jsonl            sidecar of just `insight_captured` records
  *   .sessions/<sid>.json      running per-session aggregate state
@@ -75,7 +75,7 @@ function isDisabled() {
 }
 
 function usageDir(cwd) {
-  const d = path.join(cwd, '.claude', 'usage');
+  const d = path.join(cwd, '.claude', '.ohmyclaude', 'usage');
   fs.mkdirSync(d, { recursive: true });
   return d;
 }
@@ -356,7 +356,7 @@ function extractInsights(transcript) {
 }
 
 function findRunIndexEntry(cwd, runId) {
-  const p = path.join(cwd, '.claude', 'metrics', 'runs', '_index.jsonl');
+  const p = path.join(cwd, '.claude', '.ohmyclaude', 'metrics', 'runs', '_index.jsonl');
   if (!fs.existsSync(p)) return null;
   const lines = fs.readFileSync(p, 'utf8').split('\n').filter(Boolean);
   for (let i = lines.length - 1; i >= 0; i--) {

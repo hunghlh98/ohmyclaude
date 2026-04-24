@@ -141,9 +141,9 @@ Path-activated language rules:
 | `backlog-tracker` | PostToolUse Write | Rebuilds BACKLOG.md when ISS-*.md written |
 | `session-summary` | Stop | Writes per-response JSONL log to `~/.claude/ohmyclaude/sessions/YYYY-MM-DD.jsonl` |
 | `team-cleanup` | Stop | Cleans orphaned teams older than 24h |
-| `cost-profiler` | SubagentStop + Stop | Writes `.claude/pipeline/PROFILE-<runId>.md` and rolling `baseline.json`; pair with `skills/profile-run` |
-| `usage-tracker` | PreToolUse + UserPromptSubmit + Stop + SessionStart | Per-project usage telemetry to `<cwd>/.claude/usage/events.jsonl` (v2.3+) |
-| `project-init` | SessionStart | On first launch in a git repo root, scaffolds `.claude/{ohmyclaude,usage,backlog/issues}/`, `BACKLOG.md`, and `CLAUDE.md` (missing-only). Sentinel-gated, idempotent, silent no-op outside git roots or in the ohmyclaude repo itself (v2.4.5) |
+| `cost-profiler` | SubagentStop + Stop | Writes `.claude/.ohmyclaude/pipeline/PROFILE-<runId>.md` and rolling `baseline.json`; pair with `skills/profile-run` |
+| `usage-tracker` | PreToolUse + UserPromptSubmit + Stop + SessionStart | Per-project usage telemetry to `<cwd>/.claude/.ohmyclaude/usage/events.jsonl` (v2.3+) |
+| `project-init` | SessionStart | On first launch in a git repo root, scaffolds `.claude/.ohmyclaude/{local.yaml, usage/, backlog/{BACKLOG.md, issues/}, pipeline/, metrics/}` and adds a marker-delimited `## ohmyclaude` section to `.claude/CLAUDE.md` (creates the file if missing; appends the section if it exists without the marker; skips if marker already present). Sentinel via `features.project_init.setup_complete` in `local.yaml` (shared with `code-review-graph-setup`). Silent no-op outside git roots or in the ohmyclaude repo itself (v2.4.6) |
 | `session-load` | SessionStart | On fresh-startup only, emits a one-line hint when a saved session exists for this cwd (v2.2.0) |
 | `state-snapshot` | PreCompact | Snapshots pipeline artifact inventory to the active session's `stages.json` before compaction (v2.2.0) |
 | `subagent-trace` | SubagentStart | Appends one JSONL line per subagent spawn to `traces.jsonl`; pairs with `cost-profiler` for full per-agent lifecycle (v2.2.0) |
@@ -171,7 +171,7 @@ The plugin ships md/js files only. Exploration uses `tree` CLI plus native Read/
 | 2 | `tree` CLI | Directory structure | No (standard on macOS/Linux) |
 | 3 | Glob / Grep | File-level search | Always available |
 
-> **`code-review-graph` (MIT, Python 3.10+ via `uv`) is re-adopted as of v2.4.2** as the optional graph backend — install via the `full` profile or the `mcp-code-review-graph` module. Skills in `java-source-intel` continue to expose text-based query patterns; graph tools are additive. Consumer setup: on first SessionStart after install, a hook detects `uv` and writes `.claude/ohmyclaude.local.yaml` (YAML, human-inspectable) with status. If `uv` is missing, the file's comment header carries install instructions.
+> **`code-review-graph` (MIT, Python 3.10+ via `uv`) is re-adopted as of v2.4.2** as the optional graph backend — install via the `full` profile or the `mcp-code-review-graph` module. Skills in `java-source-intel` continue to expose text-based query patterns; graph tools are additive. Consumer setup: on first SessionStart after install, a hook detects `uv` and writes `.claude/.ohmyclaude/local.yaml` (YAML, human-inspectable) with status. If `uv` is missing, the file's comment header carries install instructions.
 
 ### Adding External Tools / Skills
 
@@ -203,7 +203,7 @@ Opt-in via the `full` profile or by adding `hooks-session` / `skills-session` / 
 
 ## Per-project state file (v2.4.2+)
 
-Per-project ohmyclaude configuration and setup state live at `<project>/.claude/ohmyclaude.local.yaml`. Pure YAML by design (no frontmatter-in-markdown) so grep/ripgrep search it cleanly and hooks can parse it in a single mode. Extensible schema: today it only tracks `features.code_review_graph.*`, but additional `features.<name>.*` blocks slot in without breaking existing consumers.
+Per-project ohmyclaude configuration and setup state live at `<project>/.claude/.ohmyclaude/local.yaml` (moved from `.claude/ohmyclaude.local.yaml` in v2.4.6 as part of consolidating all plugin-generated output under `.claude/.ohmyclaude/`). Pure YAML by design (no frontmatter-in-markdown) so grep/ripgrep search it cleanly and hooks can parse it in a single mode. Extensible schema: `features.code_review_graph.*` for the graph backend, `features.project_init.*` as the setup sentinel, and additional `features.<name>.*` blocks slot in without breaking existing consumers. Hooks merge-preserve other features' blocks on write so concurrent SessionStart hooks don't clobber each other's state.
 
 The file is written by the `code-review-graph-setup` SessionStart hook on first run — see the `uv` detection flow above. It's safe to hand-edit (e.g., set `enabled: false` under a feature to silence the setup hook); changes take effect on next Claude Code restart.
 
@@ -224,7 +224,7 @@ features:
 
 | Component | Count | Detail |
 |-----------|------:|--------|
-| Version | 2.4.5 | VERSION, package.json, plugin.json, marketplace.json |
+| Version | 2.4.6 | VERSION, package.json, plugin.json, marketplace.json |
 | Agents | 10 | sonnet: 8, opus: 1, haiku: 1 |
 | Skills | 36 | engineering: 12, java: 5, pipeline: 4, specialized: 8, superclaude: 5, session: 2 |
 | Commands | 3 | forge, load, save |

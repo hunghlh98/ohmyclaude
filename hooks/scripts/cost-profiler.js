@@ -5,15 +5,15 @@
  * Transcript-based measurement hook for the /forge Agent Teams pipeline.
  *
  * SubagentStop: snapshot cumulative token totals + tool-use counts into
- *   .claude/metrics/runs/<runId>/snap-<ts>.json
+ *   .claude/.ohmyclaude/metrics/runs/<runId>/snap-<ts>.json
  *   Fields: ts, agent, wall_ms_since_last, cumulative {in,out,cacheR,
  *   cacheW,usd,turns,model,tool_calls}.
  *   Agent is resolved from evt.subagent_type → evt.agent_name → the
  *   most recent Task tool_use in the transcript → "unknown".
  * Stop: diff consecutive snapshots into per-agent deltas, write
- *   .claude/pipeline/PROFILE-<runId>.md, update
- *   .claude/metrics/baseline.json (rolling N=20), and upsert one
- *   summary line per runId into .claude/metrics/runs/_index.jsonl
+ *   .claude/.ohmyclaude/pipeline/PROFILE-<runId>.md, update
+ *   .claude/.ohmyclaude/metrics/baseline.json (rolling N=20), and upsert
+ *   one summary line per runId into .claude/.ohmyclaude/metrics/runs/_index.jsonl
  *   for dashboard consumption (started_at, ended_at, wall_ms, agents,
  *   total_usd, tokens, cache_hit_rate, model_mix, tool_mix).
  *
@@ -33,7 +33,7 @@ const PRICING = {
 };
 
 // Day-zero priors; overridden per-scenario/per-agent by rolling history in
-// `.claude/metrics/baseline.json` once real runs accumulate.
+// `.claude/.ohmyclaude/metrics/baseline.json` once real runs accumulate.
 const SEED_BASELINE = {
   scenarios: {
     'full-app': { n: 0, mean_usd: 1.43, p95_usd: 2.10, recent: [] },
@@ -56,7 +56,7 @@ const SEED_BASELINE = {
 };
 
 function readBaselineMerged(cwd) {
-  const file = path.join(cwd, '.claude', 'metrics', 'baseline.json');
+  const file = path.join(cwd, '.claude', '.ohmyclaude', 'metrics', 'baseline.json');
   let live = {};
   if (fs.existsSync(file)) {
     try { live = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { live = {}; }
@@ -215,7 +215,7 @@ function percentile(a, p) {
 }
 
 function runDir(cwd, runId) {
-  const d = path.join(cwd, '.claude', 'metrics', 'runs', runId);
+  const d = path.join(cwd, '.claude', '.ohmyclaude', 'metrics', 'runs', runId);
   fs.mkdirSync(d, { recursive: true });
   return d;
 }
@@ -375,13 +375,13 @@ function writeProfile(cwd, runId, scenario, perAgent, baseline) {
       lines.push('- `opus_budget_breach` — Opus output >5K tokens. Tighten SDD contract.');
   }
 
-  const out = path.join(cwd, '.claude', 'pipeline', `PROFILE-${runId}.md`);
+  const out = path.join(cwd, '.claude', '.ohmyclaude', 'pipeline', `PROFILE-${runId}.md`);
   fs.mkdirSync(path.dirname(out), { recursive: true });
   fs.writeFileSync(out, lines.join('\n'));
 }
 
 function updateBaseline(cwd, scenario, perAgent, totalUsd) {
-  const file = path.join(cwd, '.claude', 'metrics', 'baseline.json');
+  const file = path.join(cwd, '.claude', '.ohmyclaude', 'metrics', 'baseline.json');
   let bl = {};
   if (fs.existsSync(file)) {
     try { bl = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { bl = {}; }
@@ -417,7 +417,7 @@ function updateBaseline(cwd, scenario, perAgent, totalUsd) {
 }
 
 function upsertRunIndex(cwd, entry) {
-  const p = path.join(cwd, '.claude', 'metrics', 'runs', '_index.jsonl');
+  const p = path.join(cwd, '.claude', '.ohmyclaude', 'metrics', 'runs', '_index.jsonl');
   fs.mkdirSync(path.dirname(p), { recursive: true });
   let kept = [];
   if (fs.existsSync(p)) {
@@ -432,7 +432,7 @@ function upsertRunIndex(cwd, entry) {
 function onStop(evt) {
   const cwd   = evt.cwd || process.cwd();
   const runId = evt.session_id || 'unknown';
-  const dir   = path.join(cwd, '.claude', 'metrics', 'runs', runId);
+  const dir   = path.join(cwd, '.claude', '.ohmyclaude', 'metrics', 'runs', runId);
   if (!fs.existsSync(dir)) return;
 
   const snaps = fs.readdirSync(dir)

@@ -4,7 +4,7 @@
  *
  * SessionStart hook (async): detects whether the `uv` runtime prereq
  * for the code-review-graph MCP server is present, and writes the
- * detection outcome to <cwd>/.claude/ohmyclaude.local.yaml.
+ * detection outcome to <cwd>/.claude/.ohmyclaude/local.yaml.
  *
  * Why this exists: ohmyclaude declares `code-review-graph` in
  * .claude-plugin/.mcp.json, but the server is spawned lazily by
@@ -73,8 +73,8 @@ function main(rawInput) {
   if (!mcpDeclared) return;
 
   // Read any existing state file for fast-path + user-override checks.
-  const stateDir  = path.join(cwd, '.claude');
-  const stateFile = path.join(stateDir, 'ohmyclaude.local.yaml');
+  const stateDir  = path.join(cwd, '.claude', '.ohmyclaude');
+  const stateFile = path.join(stateDir, 'local.yaml');
   const existing  = readState(stateFile);
   const current   = existing && existing.features && existing.features.code_review_graph;
 
@@ -95,38 +95,37 @@ function main(rawInput) {
   try {
     if (!fs.existsSync(stateDir)) fs.mkdirSync(stateDir, { recursive: true });
     const now = new Date().toISOString();
+    // Merge-preserving: keep any existing features.* (e.g. project_init)
+    // so concurrent SessionStart hooks don't clobber each other's state.
+    const mergeInto = (block) => ({
+      version: (existing && existing.version) || 1,
+      features: {
+        ...((existing && existing.features) || {}),
+        code_review_graph: block,
+      },
+    });
     if (uvAvailable) {
-      writeState(stateFile, buildHealthyYaml({
-        version: 1,
-        features: {
-          code_review_graph: {
-            enabled: true,
-            setup_complete: true,
-            uv_version: uvVersion,
-            installed_at: now,
-            reason: null,
-          },
-        },
-      }));
+      writeState(stateFile, buildHealthyYaml(mergeInto({
+        enabled: true,
+        setup_complete: true,
+        uv_version: uvVersion,
+        installed_at: now,
+        reason: null,
+      })));
       process.stderr.write(
         `[ohmyclaude] code-review-graph MCP ready (uv ${uvVersion}). ` +
         `First call may be slow while uv caches the package.\n`
       );
     } else {
-      writeState(stateFile, buildMissingUvYaml({
-        version: 1,
-        features: {
-          code_review_graph: {
-            enabled: false,
-            setup_complete: false,
-            reason: 'uv-missing',
-            detected_at: now,
-          },
-        },
-      }));
+      writeState(stateFile, buildMissingUvYaml(mergeInto({
+        enabled: false,
+        setup_complete: false,
+        reason: 'uv-missing',
+        detected_at: now,
+      })));
       process.stderr.write(
         `[ohmyclaude] code-review-graph MCP needs 'uv'. ` +
-        `See .claude/ohmyclaude.local.yaml for install instructions.\n`
+        `See .claude/.ohmyclaude/local.yaml for install instructions.\n`
       );
     }
   } catch (_) { /* best-effort; never fail the session */ }
@@ -137,7 +136,7 @@ function buildHealthyYaml(doc) {
   const lines = [
     '# ohmyclaude · per-project host-local state',
     '# Edit by hand is safe; changes take effect on next Claude Code restart.',
-    '# Never commit — .claude/*.local.* is gitignored.',
+    '# Never commit — .claude/.ohmyclaude/ is machine-managed.',
     '',
   ];
   lines.push(...emitDoc(doc));
