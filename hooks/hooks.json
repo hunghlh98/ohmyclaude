@@ -122,6 +122,18 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/project-init.js\"",
+            "async": false,
+            "timeout": 5
+          }
+        ],
+        "description": "Bootstrap ohmyclaude scaffolding on first launch in a git repo root (.claude/ohmyclaude/.initialised sentinel + .claude/{usage,backlog/issues}/, BACKLOG.md, CLAUDE.md if missing). Idempotent; silent no-op when guardrails fail or sentinel exists."
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-load.js\"",
             "async": true,
             "timeout": 5

@@ -132,7 +132,7 @@ Path-activated language rules:
 | `rules/java/` | Coding style, patterns, security, testing (activates on `**/*.java`) |
 | `rules/typescript/` | Coding style, patterns, security, testing (activates on `**/*.ts` and `**/*.tsx`) |
 
-## Hooks (10)
+## Hooks (11)
 
 | Hook | Trigger | What it does |
 |------|---------|--------------|
@@ -143,6 +143,7 @@ Path-activated language rules:
 | `team-cleanup` | Stop | Cleans orphaned teams older than 24h |
 | `cost-profiler` | SubagentStop + Stop | Writes `.claude/pipeline/PROFILE-<runId>.md` and rolling `baseline.json`; pair with `skills/profile-run` |
 | `usage-tracker` | PreToolUse + UserPromptSubmit + Stop + SessionStart | Per-project usage telemetry to `<cwd>/.claude/usage/events.jsonl` (v2.3+) |
+| `project-init` | SessionStart | On first launch in a git repo root, scaffolds `.claude/{ohmyclaude,usage,backlog/issues}/`, `BACKLOG.md`, and `CLAUDE.md` (missing-only). Sentinel-gated, idempotent, silent no-op outside git roots or in the ohmyclaude repo itself (v2.4.5) |
 | `session-load` | SessionStart | On fresh-startup only, emits a one-line hint when a saved session exists for this cwd (v2.2.0) |
 | `state-snapshot` | PreCompact | Snapshots pipeline artifact inventory to the active session's `stages.json` before compaction (v2.2.0) |
 | `subagent-trace` | SubagentStart | Appends one JSONL line per subagent spawn to `traces.jsonl`; pairs with `cost-profiler` for full per-agent lifecycle (v2.2.0) |
@@ -223,12 +224,12 @@ features:
 
 | Component | Count | Detail |
 |-----------|------:|--------|
-| Version | 2.4.4 | VERSION, package.json, plugin.json, marketplace.json |
+| Version | 2.4.5 | VERSION, package.json, plugin.json, marketplace.json |
 | Agents | 10 | sonnet: 8, opus: 1, haiku: 1 |
 | Skills | 36 | engineering: 12, java: 5, pipeline: 4, specialized: 8, superclaude: 5, session: 2 |
 | Commands | 3 | forge, load, save |
 | Rules | 9 | common: 1, java: 4, typescript: 4 |
-| Hooks | 11 | backlog-tracker, code-review-graph-setup, cost-profiler, post-bash-lint, pre-write-check, session-load, session-summary, state-snapshot, subagent-trace, team-cleanup, usage-tracker |
+| Hooks | 12 | backlog-tracker, code-review-graph-setup, cost-profiler, post-bash-lint, pre-write-check, project-init, session-load, session-summary, state-snapshot, subagent-trace, team-cleanup, usage-tracker |
 | Profiles | 3 | minimal, standard (default), full |
 | Modules | 22 | agents: 4, skills: 6, rules: 3, commands: 2, mcp: 2, hooks: 5 |
 
