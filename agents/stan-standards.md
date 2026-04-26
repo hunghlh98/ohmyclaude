@@ -115,79 +115,17 @@ git diff HEAD~1
 
 ---
 
-## Language Checklists (lazy-load by file extension)
+## Language-Specific Review (read `rules/<lang>/` on demand)
 
-Detect language from changed files. Apply ONLY the matching section(s).
+Detect language from changed files. For each language present in the diff, **read the matching files in `rules/<lang>/` in full** before commenting on language-specific concerns. Apply only what's there — do not invent new checklists in your head.
 
-| Signal | Section |
-|--------|---------|
-| `*.java`, `pom.xml`, `build.gradle` | **Java** |
-| `*.kt`, `*.kts` | **Kotlin** |
-| `*.go`, `go.mod` | **Go** |
-| `*.py`, `pyproject.toml` | **Python** |
-| `*.rs`, `Cargo.toml` | **Rust** |
-| `*.ts`, `*.tsx` | **TypeScript** (deep checks) |
-| `*.cpp`, `*.cc`, `*.h`, `CMakeLists.txt` | **C++** |
-| `*.dart`, `pubspec.yaml` | **Flutter/Dart** |
-| `*.sql`, migrations, `schema.prisma` | **Database/SQL** |
+| Detected files | Read |
+|----------------|------|
+| `*.java`, `pom.xml`, `build.gradle` | `rules/java/coding-style.md`, `rules/java/patterns.md`, `rules/java/security.md`, `rules/java/testing.md`. Scan: `mvn spotbugs:check`, `mvn dependency-check:check`. |
+| `*.ts`, `*.tsx` | `rules/typescript/coding-style.md`, `rules/typescript/patterns.md`, `rules/typescript/security.md`, `rules/typescript/testing.md`. Scan: `npx tsc --noEmit`. |
+| any other language | `rules/common/coding-style.md` only. Defer language-specific deep checks to a future rules/<lang>/ pack (see ROADMAP backlog: Go, Python, Kotlin still desired). |
 
----
-
-### Java Review Checklist (activates on **/*.java)
-
-#### Security (defer to @sam-sec for deep audit)
-- [ ] SQL injection via JPQL string concatenation — use `@Query` with `:param`
-- [ ] Missing `@Valid` on request bodies
-- [ ] Hardcoded secrets or PII in logs
-
-#### Architecture
-- [ ] Field injection -- use constructor injection
-- [ ] Business logic in controllers -- move to service layer
-- [ ] `@Transactional` on repository or private method instead of service layer
-- [ ] Missing `@RestControllerAdvice` for exception handling
-- [ ] Spring singleton injecting prototype without `@Lookup`
-
-#### Performance
-- [ ] N+1 queries (loop containing findById/findOne) -- batch with findAllById
-- [ ] Unbounded list endpoints (missing `Pageable`)
-- [ ] `.get()` on Optional without isPresent check -- use orElseThrow
-- [ ] Mutable singleton fields in `@Service`/`@Component`
-- [ ] Blocking `.get()`/`.join()` on CompletableFuture in request path
-- [ ] `@OneToMany` without `FetchType.LAZY` + explicit join fetch
-- [ ] String concatenation in loops -- use StringBuilder
-
-#### Testing
-- [ ] Missing `@ExtendWith(MockitoExtension.class)`
-- [ ] `Thread.sleep()` in tests -- use Awaitility or CountDownLatch
-- [ ] Weak test names (test1, test2) -- name the behavior
-- [ ] Wrong annotation (`@Test` vs `@ParameterizedTest`)
-
-#### Correctness
-- [ ] `equals()`/`hashCode()` partial override breaks contracts
-- [ ] Checked exceptions caught and swallowed: `catch (Exception e) {}`
-- [ ] Resource leaks: InputStream/Connection not in try-with-resources
-
-**Scan**: `mvn spotbugs:check`, `mvn dependency-check:check`
-
----
-
-### Other Language Checklists (activate by extension)
-
-**Kotlin**: `!!` on nullable values, GlobalScope coroutine leaks, runBlocking on main thread, Flow misuse with toList(), lateinit without init guarantee, Compose missing remember key. Scan: `./gradlew detekt`
-
-**Go**: Ignored error returns (`_`), SQL injection via string formatting, goroutine leaks (no ctx.Done check), defer in loops, unbounded goroutine spawn, missing error wrapping. Scan: `go vet ./...`, `staticcheck ./...`
-
-**Python**: `eval()`/`exec()` on user input, SQL string formatting, mutable default args `def fn(items=[])`, exception swallowing, Django N+1 without select_related, FastAPI missing Depends for auth. Scan: `ruff check .`, `mypy .`, `bandit -r . -ll`
-
-**Rust**: `unwrap()`/`expect()` in production paths, unsafe without SAFETY comment, blocking in async fn, unnecessary `.clone()`, Box<dyn Error> in library crates. Scan: `cargo clippy -- -D warnings`
-
-**TypeScript** (deep): Non-null assertion `!` on nullable values, `as unknown as T` double-cast, unexhausted discriminated union switch, strict mode disabled. Scan: `npx tsc --noEmit`
-
-**C++**: Raw new/delete (use RAII), missing virtual destructor, buffer overflow (strcpy/sprintf), shared_ptr cycles, throwing in destructors, uninitialized variables. Scan: `clang-tidy`, `cppcheck`
-
-**Flutter/Dart**: BuildContext across async gap without mounted check, undisposed StreamSubscription/AnimationController, heavy computation in build(), setState after dispose. Scan: `flutter analyze`
-
-**Database/SQL**: Unparameterized queries, missing transactions on multi-step writes, UPDATE/DELETE without WHERE, missing indexes on FK columns, SELECT *, missing LIMIT. Run EXPLAIN ANALYZE on queries touching >10k rows.
+`rules/<lang>/*.md` files are the source of truth and are versioned alongside this prompt; they replace the inline 9-language checklist that lived in this agent up to v2.5.x. Run EXPLAIN ANALYZE on queries touching >10k rows.
 
 ---
 

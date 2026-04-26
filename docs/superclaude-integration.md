@@ -1,33 +1,29 @@
 # SuperClaude Integration
 
-ohmyclaude ships with **5 SuperClaude knowledge-skills inlined** (MIT, from [SuperClaude_Plugin](https://github.com/SuperClaude-Org/SuperClaude_Plugin) v4.3.0). Agents that reference `sc-<skill>` can rely on those skills being present — no peer dependency on SuperClaude itself.
+ohmyclaude ships with **3 SuperClaude knowledge-skills inlined** (MIT, from [SuperClaude_Plugin](https://github.com/SuperClaude-Org/SuperClaude_Plugin) v4.3.0). Agents that reference `sc-<skill>` can rely on those skills being present — no peer dependency on SuperClaude itself.
 
 This doc explains which skill each agent invokes, when, and why ohmyclaude kept a deliberately small SuperClaude surface.
 
 ---
 
-## v2.0.0 Change — Subtract the Verb-Wrappers
-
-Between v1.1.0 (full 13-skill inline) and v2.0.0, ohmyclaude removed 8 verb-wrapper skills:
+## Surface Evolution — Subtract Twice
 
 ```
-Removed in v2.0.0: sc-analyze, sc-build, sc-design, sc-document,
-                   sc-implement, sc-improve, sc-test, sc-troubleshoot
-
-Kept in v2.0.0:   sc-spec-panel, sc-brainstorm, sc-pm,
-                   sc-research, sc-estimate
+v1.1.0 (full inline, 13 skills) →
+v2.0.0 (removed 8 verb-wrappers, kept 5) →
+v2.6.0 (removed 2 more duplicates, kept 3)
 ```
 
-**Why remove them**: the 8 removed skills were verb-wrappers — they described "how to analyze / build / test / implement" as reference material that duplicated what ohmyclaude agents already describe in their own instructions. Each one was ~150 lines of MIT-drift surface with no unique knowledge. Agents handle those verbs inline.
+**v2.0.0 — removed 8 verb-wrappers**: `sc-analyze`, `sc-build`, `sc-design`, `sc-document`, `sc-implement`, `sc-improve`, `sc-test`, `sc-troubleshoot`. These described "how to analyze / build / test / implement" as reference material that duplicated what agents already describe in their own instructions. Each one was ~150 lines of MIT-drift surface with no unique knowledge.
 
-**Why keep the 5**: the kept skills each encode a genuine named methodology:
+**v2.6.0 — removed 2 internal duplicates**: `sc-pm` (Paige's inline Step 5 orchestration covers wave scheduling and parallel-safe assignment) and `sc-estimate` (the `task-breakdown` skill's Decision Matrix already provides Uncertainty × Complexity × Effort scoring). Both were re-statements of content already authoritative elsewhere in ohmyclaude.
+
+**Why keep the 3 survivors**: each encodes a genuine named methodology that's not duplicated elsewhere:
 - `sc-spec-panel` — 10 named software-engineering experts (Fowler, Newman, Nygard, Wiegers, Adzic, Cockburn, Hohpe, Crispin, Gregory, Hightower) with distinct critique styles.
 - `sc-brainstorm` — Socratic-method requirements discovery protocol.
-- `sc-pm` — project-manager orchestration patterns for multi-wave sprints.
 - `sc-research` — adaptive research strategy (breadth → depth → synthesis).
-- `sc-estimate` — structured estimation frames (story points, complexity axes, risk-weighted).
 
-The difference is *knowledge worth loading on-demand* vs. *procedure already captured in the agent*.
+The remaining filter: *knowledge worth loading on-demand* vs. *procedure already captured in the agent or another skill*.
 
 ---
 
@@ -44,7 +40,7 @@ ohmyclaude agents invoke SC skills inside their prompts at well-defined triggers
 
 | Agent | SC skills | Canonical invocation point |
 |---|---|---|
-| `@paige-product` | `sc-brainstorm`, `sc-pm`, `sc-estimate` | Confidence=LOW → brainstorm. Wave scheduling → pm. Task sizing → estimate. |
+| `@paige-product` | `sc-brainstorm` | Confidence=LOW → brainstorm Socratic clarifying questions. (Wave scheduling and SP sizing are now inline — see `agents/paige-product.md` Step 5 + `skills/task-breakdown/`.) |
 | `@artie-arch` | `sc-research`, `sc-spec-panel` | Unfamiliar pattern → research. Before finalizing SDD → spec-panel (architecture focus, critique mode). |
 | `@una-ux` | `sc-spec-panel` | Before finalizing UX-SPEC → spec-panel (requirements focus, Cockburn + Adzic). |
 | `@sam-sec` | `sc-spec-panel` | Before verdict → spec-panel (compliance focus, Wiegers + Nygard). |
@@ -83,10 +79,10 @@ Two properties make this work:
 
 ## Version Pinning
 
-Inlined from SuperClaude **v4.3.0** (MIT). The stable subset:
+Inlined from SuperClaude **v4.3.0** (MIT). The stable subset (after v2.6.0 dedup pass):
 
 ```
-sc-spec-panel    sc-brainstorm    sc-pm    sc-research    sc-estimate
+sc-spec-panel    sc-brainstorm    sc-research
 ```
 
 Upstream updates are pulled deliberately, not automatically:
@@ -103,8 +99,8 @@ Upstream updates are pulled deliberately, not automatically:
 `scripts/test-sc-fallback.js` enforces the inlining contract:
 
 - No agent, command, or operating doc references `sc:sc-<skill>` (the old external form) — references must be bare `sc-<skill>`.
-- Every `sc-<skill>` reference names a skill in the stable 5-skill subset above.
-- No removed verb-wrappers survive (the script maintains an explicit removed-names list for v2.0.0: `sc-analyze`, `sc-build`, `sc-design`, `sc-document`, `sc-implement`, `sc-improve`, `sc-test`, `sc-troubleshoot`).
+- Every `sc-<skill>` reference names a skill in the stable 3-skill subset above.
+- No removed skills survive: v2.0.0 verb-wrappers (`sc-analyze`, `sc-build`, `sc-design`, `sc-document`, `sc-implement`, `sc-improve`, `sc-test`, `sc-troubleshoot`) plus v2.6.0 duplicates (`sc-pm`, `sc-estimate`).
 
 Run locally with `npm run test:sc-fallback`. CI runs it too.
 

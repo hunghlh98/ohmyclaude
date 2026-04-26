@@ -1,6 +1,6 @@
 # ohmyclaude
 
-10-agent OSS pipeline for Claude Code -- harness engineering framework with Agent Teams coordination, document-driven artifacts for human review, Java-first skills, and source graph integration.
+11-agent OSS pipeline for Claude Code — harness engineering framework with structural generator/evaluator separation (Anthropic Labs harness paper), sprint contract gate before code, runtime probes via MCP, Agent Teams coordination, document-driven artifacts for human review, and Java-first skills.
 
 ## Install
 
@@ -31,7 +31,7 @@ One command. The pipeline figures out the rest.
 | `/forge release` | Cut release |
 | `/forge commit` | Generate semantic commit message |
 | `/forge help` | Show help |
-| `/save` | Snapshot the current session state to `~/.claude/ohmyclaude/sessions/` (v2.2.0 — opt-in via `full` profile) |
+| `/save` | Snapshot the current session state to `~/.claude/ohmyclaude/sessions/` (v2.2.0 — opt-in; commands and skills retained in repo, not in any profile after v2.6.0) |
 | `/load` | Resume a saved session — `/load`, `/load <session_id>`, or `/load --list` (v2.2.0) |
 
 ## How It Works
@@ -59,7 +59,7 @@ Never more than 3 questions. Circuit breaker: 3 rejection rounds triggers human 
 
 ## Agents
 
-10 agents with corporate Slack personas — Lead, Design, Execution, Governance, Ship, Utility tiers. Full per-agent reference (purpose, model, tools, boundaries, examples) lives in [`docs/OPERATING.md`](./docs/OPERATING.md#part-1--agents-10). Model distribution: 8 sonnet, 1 opus (`@artie-arch`), 1 haiku (`@devon-ops`).
+11 agents with corporate Slack personas — Lead, Design, Execution, Evaluation, Governance, Ship, Utility tiers. Full per-agent reference (purpose, model, tools, boundaries, examples) lives in [`docs/OPERATING.md`](./docs/OPERATING.md#part-1--agents-11). Model distribution: 9 sonnet, 1 opus (`@artie-arch`), 1 haiku (`@devon-ops`). The **Evaluation** tier (added v3.0.0) is `@val-evaluator` — read-only verdict authority that runs tests and probes the live app, structurally separated from the generators that author code and tests (per Anthropic Labs' [harness paper](https://www.anthropic.com/engineering/harness-design-long-running-apps), 2026).
 
 ## Dynamic Routing
 
@@ -83,7 +83,7 @@ Never more than 3 questions. Circuit breaker: 3 rejection rounds triggers human 
 | Release vs stability | @devon-ops (ultimate trump card) |
 | UX vs velocity | @una-ux on WCAG failures |
 
-## Skills (21)
+## Skills (15)
 
 All SKILL.md files are capped at ≤400 lines (enforced by `validate.js` since v2.0.0). Depth lives in each skill's `references/` directory, loaded on-demand.
 
@@ -95,19 +95,23 @@ All SKILL.md files are capped at ≤400 lines (enforced by `validate.js` since v
 
 `java-source-intel`
 
-### Pipeline Artifact Writers (4)
-
-`write-sdd` `write-code-review` `write-security-review` `write-ux-spec`
-
 ### Specialized (6)
 
 `task-breakdown` `project-discovery` `post-deploy-analytics` `qa-test-planner` `reducing-entropy` `profile-run`
 
-### SuperClaude Knowledge Skills (5)
+### SuperClaude Knowledge Skills (3)
 
-Inlined from [SuperClaude_Plugin](https://github.com/SuperClaude-Org/SuperClaude_Plugin) v4.3.0 (MIT). v2.0.0 removed 8 verb-wrapper skills that duplicated agent docstrings; only the named-methodology skills remain.
+Inlined from [SuperClaude_Plugin](https://github.com/SuperClaude-Org/SuperClaude_Plugin) v4.3.0 (MIT). v2.0.0 removed 8 verb-wrappers; v2.6.0 dropped `sc-pm` (Paige's inline Step 5 orchestration covers it) and `sc-estimate` (`task-breakdown`'s SP matrix duplicates it). The 3 named-methodology survivors:
 
-`sc-spec-panel` (10 expert review panel) · `sc-brainstorm` (Socratic discovery) · `sc-pm` (project orchestration) · `sc-research` (adaptive research) · `sc-estimate` (structured estimation)
+`sc-spec-panel` (10 expert review panel) · `sc-brainstorm` (Socratic discovery) · `sc-research` (adaptive research)
+
+### Session lifecycle (2, opt-in via custom hooks)
+
+`save` · `load` — host-local session snapshots; deregistered from default profile in v2.6.0.
+
+### Pipeline Artifact Schemas (inline since v2.6.0)
+
+The four `write-*` skills (write-sdd, write-code-review, write-security-review, write-ux-spec) were retired in v2.6.0 — their schemas already lived in the consuming agent's prompt. Schemas are now versioned alongside agents at `agents/{artie-arch,stan-standards,sam-sec,una-ux}.md`.
 
 ## Rules System
 
@@ -119,9 +123,9 @@ Path-activated language rules:
 | `rules/java/` | Coding style, patterns, security, testing (activates on `**/*.java`) |
 | `rules/typescript/` | Coding style, patterns, security, testing (activates on `**/*.ts` and `**/*.tsx`) |
 
-## Hooks (12)
+## Hooks
 
-12 hooks across 5 install modules — `hooks-quality` (2, default-on), `hooks-tracking` (3), `hooks-profiler` (1), `hooks-usage` (1), `hooks-session` (5). Per-hook detail (trigger, timeout, failure mode, disable path) and tier overview in [`docs/OPERATING.md` → Part 2](./docs/OPERATING.md#part-2--hooks-12). Any individual hook can be disabled with `OHMYCLAUDE_HOOK_<NAME>=off` (v2.5.1+).
+13 scripts on disk; **6 active registrations** in `hooks/hooks.json` after v2.6.0's ablation. Default profile loads only `hooks-quality` (`pre-write-check.js` + `post-bash-lint.js`); `power` profile adds `hooks-profiler` (`cost-profiler.js`). Other scripts (`backlog-tracker`, `session-summary`, `team-cleanup`, `usage-tracker`, `session-load`, `state-snapshot`, `subagent-trace`) are retained in the repo and re-enabled via custom settings.json registrations — they were observability-only and never changed agent behavior. Per-hook detail in [`docs/OPERATING.md` → Part 2](./docs/OPERATING.md#part-2--hooks). Any active hook can be disabled with `OHMYCLAUDE_HOOK_<NAME>=off` (v2.5.1+).
 
 ## Cost Profiler (harness observability)
 
@@ -135,11 +139,11 @@ The plugin ships md/js files only. Exploration uses `tree` CLI plus native Read/
 
 | Priority | Tool | Type | Required? |
 |----------|------|------|-----------|
-| 1 | `code-review-graph` MCP | Structural graph (callers, impact radius, semantic search) | Opt-in (full profile, requires `uv`) |
+| 1 | `code-review-graph` MCP | Structural graph (callers, impact radius, semantic search) | Opt-in (power profile, requires `uv`) |
 | 2 | `tree` CLI | Directory structure | No (standard on macOS/Linux) |
 | 3 | Glob / Grep | File-level search | Always available |
 
-> **`code-review-graph` (MIT, Python 3.10+ via `uv`) is re-adopted as of v2.4.2** as the optional graph backend — install via the `full` profile or the `mcp-code-review-graph` module. Skills in `java-source-intel` continue to expose text-based query patterns; graph tools are additive. Consumer setup: on first SessionStart after install, a hook detects `uv` and writes `.claude/.ohmyclaude/local.yaml` (YAML, human-inspectable) with status. If `uv` is missing, the file's comment header carries install instructions.
+> **`code-review-graph` (MIT, Python 3.10+ via `uv`) is re-adopted as of v2.4.2** as the optional graph backend — install via the `power` profile or the `mcp-code-review-graph` module. Skills in `java-source-intel` continue to expose text-based query patterns; graph tools are additive. Consumer setup: on first SessionStart after install, a hook detects `uv` and writes `.claude/.ohmyclaude/local.yaml` (YAML, human-inspectable) with status. If `uv` is missing, the file's comment header carries install instructions.
 
 ### Adding External Tools / Skills
 
@@ -155,9 +159,9 @@ The v2.4.0 cleanup (see `.claude/plans/pure-shimmying-leaf.md`) is the case stud
 
 | Profile | Contents |
 |---------|----------|
-| Minimal | 10 agents + /forge |
-| Standard (default) | + 21 skills + Java + TypeScript rules + quality hooks |
-| Full | + tracking hooks + cost profiler + session intelligence (`/save`, `/load`, SessionStart/PreCompact/SubagentStart hooks) + optional `code-review-graph` MCP (requires `uv`) |
+| Minimal | 11 agents + /forge |
+| Default (recommended) | + 17 skills + Java + TypeScript rules + quality hooks (pre-write-check + post-bash-lint) + plugin MCPs (`ohmyclaude-fs` for `tree`, `ohmyclaude-probe` for `http_probe` / `db_state`) |
+| Power | Default + cost-profiler hook (PROFILE-<runId>.md + baseline.json drift) + optional `code-review-graph` MCP (requires `uv`). For plugin contributors and users running ablation campaigns. |
 
 ## Session Intelligence (opt-in, v2.2.0)
 
@@ -167,7 +171,7 @@ Resumable per-cwd session state for "picked up where I left off" workflows.
 - `/load` reads it and reports which pipeline artifacts are intact, modified-since-save, or missing.
 - Three companion hooks keep the snapshot fresh: `session-load` (discoverability on startup), `state-snapshot` (PreCompact checkpoint), `subagent-trace` (per-subagent telemetry pairing with `cost-profiler`).
 
-Opt-in via the `full` profile or by adding `hooks-session` / `skills-session` / `commands-session` modules individually. Host-local, never committed, no secrets.
+Opt-in via custom settings.json (modules `hooks-session` / `skills-session` / `commands-session` are no longer assigned to any profile after v2.6.0; scripts and skills remain in the repo for re-enable). Host-local, never committed, no secrets.
 
 ## Per-project state file (v2.4.2+)
 
@@ -192,14 +196,14 @@ features:
 
 | Component | Count | Detail |
 |-----------|------:|--------|
-| Version | 2.5.1 | VERSION, package.json, plugin.json, marketplace.json |
-| Agents | 10 | sonnet: 8, opus: 1, haiku: 1 |
-| Skills | 21 | engineering: 3, java: 1, pipeline: 4, specialized: 6, superclaude: 5, session: 2 |
+| Version | 3.0.0 | VERSION, package.json, plugin.json, marketplace.json |
+| Agents | 11 | sonnet: 9, opus: 1, haiku: 1 |
+| Skills | 17 | engineering: 3, java: 1, specialized: 6, superclaude: 3, contract: 2, session: 2 |
 | Commands | 3 | forge, load, save |
 | Rules | 9 | common: 1, java: 4, typescript: 4 |
 | Hooks | 13 | _toggle, backlog-tracker, code-review-graph-setup, cost-profiler, post-bash-lint, pre-write-check, project-init, session-load, session-summary, state-snapshot, subagent-trace, team-cleanup, usage-tracker |
-| Profiles | 3 | minimal, standard (default), full |
-| Modules | 22 | agents: 4, skills: 6, rules: 3, commands: 2, mcp: 2, hooks: 5 |
+| Profiles | 3 | minimal, default (default), power |
+| Modules | 23 | agents: 5, skills: 6, rules: 3, commands: 2, mcp: 2, hooks: 5 |
 
 Run `node scripts/validate.js` to see the live inventory with per-agent detail.
 

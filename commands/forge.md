@@ -1,6 +1,6 @@
 ---
 name: forge
-description: Single entry point for the ohmyclaude pipeline. Routes work through 10 agents via Agent Teams. Subcommands — sprint, release, commit, help.
+description: Single entry point for the ohmyclaude pipeline. Routes work through 11 agents via Agent Teams (incl. @val-evaluator for v3.0.0+ generator/evaluator separation). Subcommands — sprint, release, commit, help.
 ---
 
 # /forge
@@ -62,9 +62,26 @@ Spawn `@paige-product` as team lead. Pass the full request plus discovery contex
 - **LOW** — Ask 2-3 questions in a single AskUserQuestion.
 - Never more than 3 questions. Never ask what will not change the plan.
 
+### Step 4.5 — Sprint Contract Negotiation *(v3.0.0+)*
+
+Between task decomposition and code implementation, @paige-product and @val-evaluator co-sign a `CONTRACT-<id>.md` artifact that encodes weighted criteria with runnable probe specs. **No code starts until `signed: true` is on the CONTRACT.**
+
+Process:
+
+1. @paige-product drafts `CONTRACT-<id>.md` using the `write-contract` skill — frontmatter (`signed: false`), weighted criteria table (sums to 100), critical failure conditions, non-goals.
+2. @val-evaluator validates: weights sum to 100, every row has a runnable Probe (`http_probe` / `db_state` / `playwright` / shell), no compound criteria, no aspirational language. Either signs (sets `signed: true`, appends signature block) OR returns `## Revision Requests`.
+3. If revisions: @paige-product revises ONCE; round-2 revision triggers the circuit breaker (`AskUserQuestion` to human oracle).
+4. Once signed: pipeline advances to Step 5.
+
+Gate purpose (from Anthropic Labs harness paper, Rajasekaran 2026):
+
+> Before each sprint, generator and evaluator negotiate agreement on what "done" means — implementation detail + testable behaviors — before any code is written.
+
+**Skip when**: Docs-only routes (no code = no contract needed) and `@heracles`-only debug routes (diagnosis without commit). All other routes require a CONTRACT.
+
 ### Step 5 — Spawn specialists and assign tasks
 
-Lead spawns only the agents needed. Agents work their tasks, write artifacts, communicate progress via SendMessage to the lead.
+Lead spawns only the agents needed. Agents work their tasks, write artifacts, communicate progress via SendMessage to the lead. **Generators (@beck-backend, @effie-frontend, @quinn-qa) cannot grade their own work** — verdict authority belongs to @val-evaluator.
 
 ### Step 6 — Lead reports progress
 
@@ -135,9 +152,9 @@ Five named-methodology skills are inlined from SuperClaude v4.3.0 (MIT) and ship
 |---|---|---|
 | `sc-spec-panel` | @artie-arch, @una-ux, @sam-sec | 10-expert review before finalizing SDD / UX-SPEC / REVIEW |
 | `sc-brainstorm` | @paige-product | Socratic requirements discovery on LOW-confidence requests |
-| `sc-pm` | @paige-product | Project-manager orchestration patterns for multi-wave sprints |
 | `sc-research` | @artie-arch | Evidence-based research when SDD proposes an unfamiliar pattern |
-| `sc-estimate` | @paige-product | Structured estimation frames when task-breakdown needs SP numbers |
+
+v2.6.0 dropped `sc-pm` (Paige's inline Step 5 orchestration covers it) and `sc-estimate` (the `task-breakdown` skill's SP matrix duplicates it).
 
 Full mapping, attribution, and versioning: see `docs/superclaude-integration.md`.
 
@@ -253,17 +270,18 @@ Agents:
 
 ---
 
-## Agents (10)
+## Agents (11)
 
 | Agent | Role | Model |
 |-------|------|-------|
-| @paige-product | Team lead, router, planner | sonnet |
+| @paige-product | Team lead, router, planner, CONTRACT drafter | sonnet |
 | @artie-arch | Architecture, C4 diagrams | opus |
 | @una-ux | UX spec, WCAG review | sonnet |
 | @sam-sec | Security audit | sonnet |
 | @beck-backend | Backend implementation | sonnet |
 | @effie-frontend | Frontend implementation | sonnet |
-| @quinn-qa | Testing, fuzz data | sonnet |
+| @quinn-qa | Test authoring, fuzz inputs (no longer issues verdict) | sonnet |
+| @val-evaluator *(v3.0.0+)* | Test execution, runtime probes, verdict authority — read-only, no Write/Edit | sonnet |
 | @stan-standards | Code review — logic, performance, language | sonnet |
 | @devon-ops | Docs, release, announcement | haiku |
 | @heracles | Debugging, root cause analysis | sonnet |
@@ -277,10 +295,8 @@ Agents:
 - `project-discovery` — Detect project scope, language, framework
 - `java-source-intel` — Java semantic queries (callers, impact, annotations) using text-based tools (grep, find, ast-grep). Graph-backed implementation deferred to a future release.
 - `post-deploy-analytics` — Post-deploy telemetry analysis
-- `write-code-review` — Structured code review output
-- `write-sdd` — System design document generation
-- `write-ux-spec` — UX specification format
-- `write-security-review` — Security audit output
 - `c4-architecture` — C4 diagram generation
 - `qa-test-planner` — Test plan and coverage strategy
 - `reducing-entropy` — Bias toward deletion and simplification
+
+Pipeline-artifact schemas (SDD, CODE-REVIEW, REVIEW, UX-SPEC) live inline in each consuming agent's prompt as of v2.6.0 — the four `write-*` skills that previously held them have been retired. Schemas are versioned with the agents.

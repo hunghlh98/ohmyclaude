@@ -9,16 +9,19 @@ Agents write artifacts to `.claude/pipeline/` so humans can review them between 
 | Artifact | Producer agent | Producer skill | Stage type |
 |---|---|---|---|
 | `PRD-<id>.md` | @paige-product | — | **Gate** — human review required |
-| `UX-SPEC-<id>.md` | @una-ux (pre-dev) | `write-ux-spec` | **Gate** |
-| `SDD-<id>.md` | @artie-arch | `write-sdd` | **Gate** |
+| `UX-SPEC-<id>.md` | @una-ux (pre-dev) | inline schema in agent | **Gate** |
+| `SDD-<id>.md` | @artie-arch | inline schema in agent | **Gate** |
+| `CONTRACT-<id>.md` *(v3.0.0+)* | @paige-product (drafts) + @val-evaluator (co-signs) | `write-contract` | **Gate** — `signed: true` required before any IMPL artifact |
 | `CODE-DESIGN-BE-<id>.md` | @beck-backend | — | Informational |
 | `CODE-DESIGN-FE-<id>.md` | @effie-frontend | — | Informational |
 | `IMPL-BE-<id>.md` | @beck-backend | — | Informational |
 | `IMPL-FE-<id>.md` | @effie-frontend | — | Informational |
-| `TEST-<id>.md` | @quinn-qa | — | **Gate** (FAIL blocks release) |
-| `REVIEW-<id>.md` | @sam-sec | `write-security-review` | **Gate** (REVISE blocks release) |
+| `TEST-<id>.md` plan section | @quinn-qa (test plan + cases + fuzz inputs) | — | Informational (plan only) |
+| `TEST-<id>.md` verdict section *(v3.0.0+)* | @val-evaluator (runs tests + probes; writes verdict, criteria grades, weighted score) | — | **Gate** (FAIL blocks release) |
+| `REVIEW-<id>.md` | @sam-sec | inline schema in agent | **Gate** (REVISE blocks release) |
 | `UX-REVIEW-<id>.md` | @una-ux (post-dev) | — | **Gate** (REQUEST_CHANGES blocks release) |
-| `CODE-REVIEW-<id>.md` | @stan-standards | `write-code-review` | **Gate** (REQUEST_CHANGES blocks release) |
+| `CODE-REVIEW-<id>.md` | @stan-standards | inline schema in agent | **Gate** (REQUEST_CHANGES blocks release) |
+| `HUMAN-VERDICT-<id>.md` *(v3.0.0+, optional)* | human reviewer | `evaluator-tuning` (consumed by) | Informational — feeds the evaluator-tuning loop |
 | `DOC-<id>.md` | @devon-ops | — | Informational |
 | `RELEASE-vX.Y.Z.md` | @devon-ops | `release-cut` | **Gate** |
 | `ANNOUNCEMENT-<id>.md` | @devon-ops | — | Informational |

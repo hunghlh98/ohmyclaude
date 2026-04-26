@@ -8,6 +8,48 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [3.0.0] — 2026-04-27
+
+**Breaking workflow change**: structural generator/evaluator separation. `@val-evaluator` is the verdict authority on every /forge run; `@quinn-qa` no longer issues PASS/FAIL on her own tests; `@beck-backend` and `@effie-frontend` cannot interpret a green build as success.
+
+### Added
+- **`@val-evaluator` agent** (`agents/val-evaluator.md`, sonnet, read-only — Read+Bash+Grep+Glob, no Write/Edit). Co-signs `CONTRACT-<id>.md`, runs tests, runs probes, issues PASS/FAIL. Cannot patch failing tests by design. Module: `agents-evaluator` (default profile).
+- **Sprint contract artifact** `CONTRACT-<id>.md` written to `.claude/pipeline/`. Weighted criteria table (sums to 100) where each row has a runnable probe spec. Co-signed by Paige + Val before any code starts.
+- **`write-contract` skill** (`skills/write-contract/SKILL.md` + `references/calibration-examples.md`). Schema spec + Probe DSL (http_probe / db_state / playwright / shell) + one PASS and one FAIL worked example for few-shot evaluator calibration.
+- **`evaluator-tuning` skill** (`skills/evaluator-tuning/SKILL.md`). Documents the read-logs → find-divergence → update-prompt loop. Operational practice; runs on user clock, not in /forge.
+- **`ohmyclaude-probe` MCP server** (`scripts/mcp-servers/probe.js`, stdlib-only Node ~470L). Two tools: `http_probe` (full implementation — assert on status / JSON-path / headers) and `db_state` (v3.0.0 stub — validates SELECT-only queries, returns not_configured with re-routing instructions; real backend lands in v3.x).
+- **`/forge` Step 4.5 — Sprint Contract Negotiation**. Inserted between Step 4 (Classify and decompose) and Step 5 (Spawn specialists). No code starts until `signed: true` on CONTRACT.
+
+### Changed
+- `@quinn-qa` tools: dropped `Bash`. Quinn writes tests; Val runs them. Quinn's TEST-<id>.md schema reduced to plan + cases section; verdict + Fuzz Results owned by Val.
+- `@beck-backend` and `@effie-frontend` prompts: explicit "do not interpret a green build as success — Val's verdict is success" guidance.
+- `@paige-product` Step 4.5 added: drafts CONTRACT, awaits Val's signature, then proceeds to Step 5.
+- 11 agents (was 10), 17 skills (was 15), 21 install modules (was 21 — `skills-contract` + `agents-evaluator` added; counts stayed flat because `mcp-servers` paths were extended in-place rather than splitting into a new module).
+
+### Rationale
+- Applied the GAN-inspired Planner → Generator ⇄ Evaluator pattern from Anthropic Labs' [Harness Design for Long-Running Application Development](https://www.anthropic.com/engineering/harness-design-long-running-apps) (Rajasekaran 2026). The paper's central finding: *"Out of the box, Claude is a poor QA agent... agents praise their own work."* Self-evaluation blindness was structurally embedded in v2.x — Quinn writing AND grading tests, Beck/Effie self-checking before review. v3.0.0 makes the separation structural rather than aspirational.
+- Cost discipline: ≈ +$0.18 per /forge feature run vs v2.5.1 baseline ($0.68 → ~$0.86, +26%). The `evaluator-tuning` skill's loop measures whether rework reduction recovers that cost. If `cost-profiler.js` reports `cost_over_p95` repeatedly with no observed defect-prevention lift, env-var disable path is one line away.
+- See `.claude/plans/from-knowledge-from-recall-foamy-yeti.md` for full design justification.
+
+## [2.6.0] — 2026-04-27
+
+### Removed
+- 6 skills deleted (21 → 15): `write-sdd`, `write-code-review`, `write-security-review`, `write-ux-spec` (schemas already inlined in consuming agents); `sc-pm` (duplicate of Paige's inline Step 5 orchestration); `sc-estimate` (duplicate of `task-breakdown` SP matrix).
+- 7 hook registrations removed from `hooks/hooks.json` (×4 events: PreToolUse + Stop + SessionStart + UserPromptSubmit for `usage-tracker.js`; PostToolUse for `backlog-tracker.js`; Stop for `session-summary.js` and `team-cleanup.js`). Scripts retained in repo for re-enable via custom settings.json.
+- 3 hook registrations removed from `hooks/hooks.json` (`session-load.js` SessionStart, `state-snapshot.js` PreCompact, `subagent-trace.js` SubagentStart). Scripts retained.
+- 70 lines of inlined per-language review checklists from `agents/stan-standards.md` (280L → 218L); Stan now reads `rules/<lang>/*.md` on-demand.
+- `MultiEdit` tool from `agents/beck-backend.md` and `agents/effie-frontend.md` (Vault Pattern 8: progressive tool disclosure).
+- Routing-heuristic table from `agents/paige-product.md` (the authoritative copy lives in `commands/forge.md`; drift risk eliminated).
+- `full` install profile (collapsed; `power` replaces it). `skills-pipeline` install module entirely.
+
+### Changed
+- Install profiles: `minimal` + `default` (was `standard`) + `power` (was `full`). Two distinct tiers instead of three.
+- `hooks-tracking` and `hooks-usage` modules marked `stability: experimental`; both already `defaultInstall: false`.
+- `manifests/install-modules.json` 22 → 21 entries (`skills-pipeline` removed).
+
+### Rationale
+- Applied harness paper "ablate one component at a time" methodology (Anthropic Labs, Rajasekaran 2026) under Opus 4.7 / 1M context. Components encoding model-capability assumptions from the Sonnet 4.5 / Opus 4.6 era no longer load-bearing. See `.claude/plans/from-knowledge-from-recall-foamy-yeti.md` for full justification per cut.
+
 ## [2.5.1] — 2026-04-25
 
 ### Added

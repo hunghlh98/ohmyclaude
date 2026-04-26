@@ -1,7 +1,7 @@
 {
   "name": "ohmyclaude",
-  "version": "2.5.1",
-  "description": "10-agent OSS pipeline for Claude Code — Agent Teams coordination, single /forge entry point, Java-first skills, source graph integration.",
+  "version": "3.0.0",
+  "description": "11-agent OSS pipeline for Claude Code — generator/evaluator separation (Anthropic Labs harness paper), sprint contract gate, single /forge entry point, Agent Teams coordination, Java-first skills.",
   "author": "ohmyclaude contributors",
   "license": "MIT",
   "homepage": "https://github.com/hunghlh98/ohmyclaude",

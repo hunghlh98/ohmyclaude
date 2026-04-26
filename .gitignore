@@ -26,3 +26,4 @@ scripts/dashboard/logs/
 # Allow-list — adding a new shipped MCP requires an explicit exception here.
 scripts/mcp-servers/*
 !scripts/mcp-servers/fs.js
+!scripts/mcp-servers/probe.js

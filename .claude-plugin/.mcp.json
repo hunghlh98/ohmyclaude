@@ -6,6 +6,12 @@
       "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/mcp-servers/fs.js"],
       "description": "Plugin-owned filesystem helpers. Currently exposes one tool: `tree` (trackable, named MCP tool that replaces anonymous Bash `tree` invocations). Stdlib-only Node implementation — no external dependencies."
     },
+    "ohmyclaude-probe": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/mcp-servers/probe.js"],
+      "description": "Runtime probes for @val-evaluator (sprint contract grading). Two tools: `http_probe` (full implementation — assert on status / JSON-path / headers, stdlib http/https), `db_state` (v3.0.0 stub — validates SELECT-only queries against mutation keyword denylist; real backend lands in v3.x). Stdlib-only Node — no external dependencies. Used by ohmyclaude pipeline Step 6 (test execution + verdict)."
+    },
     "code-review-graph": {
       "type": "stdio",
       "command": "uvx",

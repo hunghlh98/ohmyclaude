@@ -1,7 +1,7 @@
 {
   "name": "ohmyclaude",
-  "version": "2.5.1",
-  "description": "10-agent OSS pipeline for Claude Code — Agent Teams coordination, single /forge entry point, Java-first skills, source graph integration.",
+  "version": "3.0.0",
+  "description": "11-agent OSS pipeline for Claude Code — generator/evaluator separation (Anthropic Labs harness paper), single /forge entry point with sprint contract gate, Agent Teams coordination, Java-first skills.",
   "author": {
     "name": "ohmyclaude contributors"
   },
@@ -25,6 +25,7 @@
     "./agents/beck-backend.md",
     "./agents/effie-frontend.md",
     "./agents/quinn-qa.md",
+    "./agents/val-evaluator.md",
     "./agents/stan-standards.md",
     "./agents/devon-ops.md",
     "./agents/heracles.md"

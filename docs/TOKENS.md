@@ -31,7 +31,7 @@ Every run loads at least:
 | README.md (when referenced) | 180 lines | ~1,100 |
 | Codebase context (discovery + file reads) | — | ~5–30 K |
 
-A **complex-feature** run spawns all 10 agents across waves. At 2,300 tokens per agent × 10 = **23 K tokens of system-prompt surface** if every agent is active in the team. Prompt caching (5-min TTL) drops re-reads to ~10% of that; the first load still pays full.
+A **complex-feature** run spawns all 11 agents across waves (10 pre-v3.0.0 + @val-evaluator). At ~2,300 tokens per agent × 11 = **~25 K tokens of system-prompt surface** if every agent is active in the team. Prompt caching (5-min TTL) drops re-reads to ~10% of that; the first load still pays full. The +1 agent (@val-evaluator, ~250L prompt) is the cost the harness paper's GAN pattern accepts in exchange for structural separation of generator and verdict — see `agents/val-evaluator.md` "Cost Posture".
 
 ---
 
@@ -41,17 +41,17 @@ A **complex-feature** run spawns all 10 agents across waves. At 2,300 tokens per
 |---|---|---:|---:|---:|
 | **A. `/forge commit`** (inline, no team) | 0 | ~5 K | ~0.3 K | **~$0.02** |
 | **B. Fast-track** ("add rate limit") | paige + beck + quinn + stan (4 sonnet) | ~40–60 K | ~5–10 K | **~$0.25–$0.40** |
-| **C. Complex feature** (full chain) | all 10, inc. artie-arch on opus | ~80–120 K | ~10–15 K | **~$0.70–$1.20** |
+| **C. Complex feature** (full chain) | all 11, inc. artie-arch on opus + val-evaluator on sonnet | ~85–130 K | ~12–17 K | **~$0.85–$1.40** |
 | **D. Sprint `--size 3`** | ~3 × Scenario C, partial cache reuse | ~200–280 K | ~25–40 K | **~$1.50–$3.00** |
 
 ### Worked example: Scenario C (complex feature, $0.90 typical)
 
-- Sonnet agents (8 agents): ~60 K input × $3/M + ~12 K output × $15/M → $0.18 + $0.18 = **$0.36**
+- Sonnet agents (9 agents incl. @val-evaluator): ~65 K input × $3/M + ~13 K output × $15/M → $0.20 + $0.20 = **$0.40**
 - Opus @artie-arch: ~15 K input × $15/M + ~5 K output × $75/M → $0.23 + $0.38 = **$0.61**  ← the expensive one
 - Haiku @devon-ops: ~4 K input × $1/M + ~1 K output × $5/M → ~**$0.01**
-- Total: **~$0.98**
+- Total: **~$1.02** (vs ~$0.98 pre-v3.0.0; +$0.04 incremental for @val-evaluator's contract-sign + grading invocations)
 
-Without Opus on @artie-arch (running it on Sonnet for simple features): total drops to ~**$0.40–0.60**. That's the single biggest lever.
+Without Opus on @artie-arch (running it on Sonnet for simple features): total drops to ~**$0.45–0.65**. That's the single biggest lever — bigger than the +$0.04 GAN-pattern cost.
 
 ---
 
@@ -60,7 +60,7 @@ Without Opus on @artie-arch (running it on Sonnet for simple features): total dr
 | # | Driver | Why it matters | Lever |
 |---|---|---|---|
 | 1 | `@artie-arch` on **Opus** | 5× the price of Sonnet agents; every complex-feature path hits it. | Gate Opus to truly architectural work; default to Sonnet for simple designs. Planned in `PLAN-001` Phase 6 (task 37). |
-| 2 | **Agent system-prompt** tokens | 10 agents × ~2,300 tokens = 23 K of resident system surface at peak. | Caching helps; trimming helps more. Planned cuts in Phase 6 (tasks 35, 36). |
+| 2 | **Agent system-prompt** tokens | 11 agents × ~2,300 tokens = ~25 K of resident system surface at peak. | Caching helps; trimming helps more. v2.6.0 pruned stan-standards (-62L) and dedup'd routing tables; future passes can target Beck/Effie/Una. |
 | 3 | **Exploration fallback** to Glob/Grep | Without `code-review-graph`, agents re-scan the tree. | Install `code-review-graph`. Zero-config fallback, but pays off. |
 | 4 | **Artifact writes** (PRD + SDD + CODE-REVIEW) | 6–12 K output tokens per feature × $15/M on Sonnet = $0.09–$0.18 of output cost. | Keep artifacts lean; defer verbose reference material to skill `references/` instead of inlining. |
 | 5 | **Hooks** | Zero token cost (they run local Node) but add wall-clock (5–30 s timeouts). | Keep `async: true` where possible. |

@@ -53,6 +53,17 @@
       "stability": "stable"
     },
     {
+      "id": "agents-evaluator",
+      "kind": "agents",
+      "description": "Runtime evaluator: Val (test runner + live-app prober + verdict authority, separated from generator agents per Anthropic Labs harness paper 2026). Read-only — no Write/Edit. Cannot patch failing tests by design.",
+      "paths": [
+        "agents/val-evaluator.md"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "experimental"
+    },
+    {
       "id": "skills-engineering",
       "kind": "skills",
       "description": "General engineering skills: c4-architecture, code-review, commit-work",
@@ -77,20 +88,6 @@
       "stability": "stable"
     },
     {
-      "id": "skills-pipeline",
-      "kind": "skills",
-      "description": "Pipeline artifact writers — define format/schema for review artifacts (SDD, CODE-REVIEW, REVIEW, UX-SPEC)",
-      "paths": [
-        "skills/write-code-review/",
-        "skills/write-sdd/",
-        "skills/write-security-review/",
-        "skills/write-ux-spec/"
-      ],
-      "targets": ["claude"],
-      "defaultInstall": true,
-      "stability": "stable"
-    },
-    {
       "id": "skills-specialized",
       "kind": "skills",
       "description": "Specialized pipeline skills: task breakdown, project discovery, post-deploy analytics, QA planning, entropy reduction, run profiling",
@@ -109,17 +106,27 @@
     {
       "id": "skills-superclaude",
       "kind": "skills",
-      "description": "SuperClaude knowledge-skills inlined from SuperClaude_Plugin v4.3.0 (MIT). Named-methodology skills only: spec-panel (10 expert personas), brainstorm (Socratic), pm (orchestration), research (adaptive), estimate (structured frames). Verb-wrappers (analyze/build/design/document/implement/improve/test/troubleshoot) removed in v2.0.0 — agents handle those inline. Ships with ohmyclaude — no external dependency.",
+      "description": "SuperClaude knowledge-skills inlined from SuperClaude_Plugin v4.3.0 (MIT). Named-methodology skills only: spec-panel (10 expert personas), brainstorm (Socratic), research (adaptive). v2.6.0 dropped sc-pm (Paige's inline orchestration covers it) and sc-estimate (task-breakdown SP matrix duplicates it). Ships with ohmyclaude — no external dependency.",
       "paths": [
         "skills/sc-brainstorm/",
         "skills/sc-research/",
-        "skills/sc-spec-panel/",
-        "skills/sc-pm/",
-        "skills/sc-estimate/"
+        "skills/sc-spec-panel/"
       ],
       "targets": ["claude"],
       "defaultInstall": true,
       "stability": "stable"
+    },
+    {
+      "id": "skills-contract",
+      "kind": "skills",
+      "description": "Sprint contracts (v3.0.0): write-contract format spec + calibration-examples + evaluator-tuning operational loop. Implements the negotiate-DOD-before-code pattern from Anthropic Labs' harness paper.",
+      "paths": [
+        "skills/write-contract/",
+        "skills/evaluator-tuning/"
+      ],
+      "targets": ["claude"],
+      "defaultInstall": true,
+      "stability": "experimental"
     },
     {
       "id": "rules-common",
@@ -174,10 +181,11 @@
     {
       "id": "mcp-servers",
       "kind": "mcp",
-      "description": "Plugin-owned MCP servers declared in `.claude-plugin/.mcp.json`. Currently: `ohmyclaude-fs` (filesystem helpers — exposes `tree` as a named, trackable MCP tool so it appears distinctly in dashboard tool_mix instead of being lost under Bash). Stdlib-only Node — no external dependencies. Approval prompt appears on first install.",
+      "description": "Plugin-owned MCP servers declared in `.claude-plugin/.mcp.json`. Two servers: `ohmyclaude-fs` (filesystem helpers — exposes `tree` as a named, trackable MCP tool) and `ohmyclaude-probe` (runtime probes for @val-evaluator: http_probe full impl, db_state v3.0.0 stub). Both stdlib-only Node — no external dependencies. Approval prompt appears on first install.",
       "paths": [
         ".claude-plugin/.mcp.json",
-        "scripts/mcp-servers/fs.js"
+        "scripts/mcp-servers/fs.js",
+        "scripts/mcp-servers/probe.js"
       ],
       "targets": ["claude"],
       "defaultInstall": true,
@@ -211,7 +219,7 @@
     {
       "id": "hooks-tracking",
       "kind": "hooks",
-      "description": "Tracking hooks: backlog index rebuild, session summary, team cleanup",
+      "description": "Tracking hooks (deregistered in v2.6.0 — scripts retained, registrations removed from hooks.json): backlog index rebuild, session summary, team cleanup. Pure observability; never changed agent behavior. Re-enable via custom settings.json registrations.",
       "paths": [
         "hooks/scripts/backlog-tracker.js",
         "hooks/scripts/session-summary.js",
@@ -219,7 +227,7 @@
       ],
       "targets": ["claude"],
       "defaultInstall": false,
-      "stability": "stable"
+      "stability": "experimental"
     },
     {
       "id": "hooks-profiler",
@@ -235,7 +243,7 @@
     {
       "id": "hooks-usage",
       "kind": "hooks",
-      "description": "Per-project usage telemetry (v2.3+): on SessionStart/UserPromptSubmit/PreToolUse/Stop, appends metadata events to <cwd>/.claude/usage/events.jsonl (prompt bodies never logged). Pairs with scripts/usage-report.js for insight rollups. Set OHMYCLAUDE_USAGE_TRACKING=off to disable.",
+      "description": "Per-project usage telemetry (deregistered in v2.6.0 — script retained for ablation campaigns, hooks.json registrations removed). Re-enable via custom settings.json. Was: SessionStart/UserPromptSubmit/PreToolUse/Stop registrations appending metadata events to <cwd>/.claude/usage/events.jsonl. Prompt bodies never logged. Pairs with scripts/usage-report.js for insight rollups.",
       "paths": [
         "hooks/scripts/usage-tracker.js"
       ],
@@ -246,7 +254,7 @@
     {
       "id": "hooks-session",
       "kind": "hooks",
-      "description": "Session intelligence hooks (v2.2.0): SessionStart hints at saved sessions via /load; PreCompact snapshots pipeline artifacts to the active session's stages.json; SubagentStart appends telemetry to traces.jsonl. Works with /save and /load skills. Opt-in (not in defaultInstall) — session state is a per-user preference, not a default.",
+      "description": "Session intelligence hooks (deregistered in v2.6.0 — scripts retained, hooks.json registrations removed): was SessionStart /load hint, PreCompact stages.json snapshot, SubagentStart traces.jsonl. Pairs with /save and /load skills. Re-enable via custom settings.json registrations. Per-user preference; no longer in any profile.",
       "paths": [
         "hooks/scripts/session-load.js",
         "hooks/scripts/state-snapshot.js",

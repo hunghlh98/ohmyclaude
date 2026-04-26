@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-ohmyclaude is a Claude Code plugin — a 10-agent pipeline. Markdown + frontmatter content; no build step. Philosophy: *"The model IS the agent. Build harnesses, not prompt chains."*
+ohmyclaude is a Claude Code plugin — an 11-agent pipeline with structural generator/evaluator separation (Anthropic Labs harness paper, 2026). Markdown + frontmatter content; no build step. Philosophy: *"The model IS the agent. Build harnesses, not prompt chains."*
 
 Architecture narrative, /forge flow, agent table, install profiles → see `README.md`.
 
@@ -53,7 +53,7 @@ paths:
 
 1. `.claude-plugin/plugin.json` — agents as **explicit file paths** (directory paths silently fail). Never add a `hooks` field (`hooks/hooks.json` auto-loads). Version must be full semver.
 2. `manifests/install-modules.json` — grouped by module.
-3. `manifests/install-profiles.json` — assign to `minimal` / `standard` / `full`.
+3. `manifests/install-profiles.json` — assign to `minimal` / `default` / `power`.
 
 ## Hook contract
 

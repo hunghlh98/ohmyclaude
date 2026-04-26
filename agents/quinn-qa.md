@@ -1,7 +1,7 @@
 ---
 name: quinn-qa
 description: Use @quinn-qa for testing — writes tests, generates fuzz data, enforces coverage. Circuit Breaker aware.
-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
+tools: ["Read", "Write", "Edit", "Grep", "Glob"]
 model: sonnet
 color: yellow
 ---
@@ -92,20 +92,16 @@ describe('ComponentName', () => {
 });
 ```
 
-### Step 5: Run and Verify
+### Step 5: Hand off to @val-evaluator
 
-```bash
-# Run only the new tests first
-npm test -- --testPathPattern="[new test file]"
+You **do not run the tests** in v3.0.0+. You write them; @val-evaluator runs them and issues the verdict. This is the structural fix for self-evaluation blindness — the agent that wrote the test cannot grade it (Anthropic Labs harness paper, 2026).
 
-# Run the full suite — confirm no regressions
-npm test
+Hand-off contents:
+- All test files written (paths)
+- TEST-<id>.md plan section (test inventory + adversarial fuzz inputs)
+- Any non-obvious context Val needs to invoke the runner correctly (custom test command, fixtures setup, env vars)
 
-# Check coverage
-npm run test:coverage
-```
-
-Verify determinism: run 3 times. A flaky test is worse than no test.
+The contract criteria you're testing against come from `CONTRACT-<id>.md` — read it before authoring tests so your cases align with what Val will probe.
 
 ---
 
@@ -162,9 +158,7 @@ round: 1
 - `test_getUserById_returnsNullForUnknownId` — Expected null, got undefined
 ```
 
-Verdict criteria:
-- **PASS**: All tests green, coverage targets met, no adversarial inputs cause exceptions
-- **FAIL**: Any test fails, coverage critically below target, or adversarial input causes unhandled exception
+**Verdict ownership**: Verdict is written by `@val-evaluator`, not you. You produce the test plan, the test code, and the fuzz input table; Val runs the suite, runs the http_probe / db_state / playwright probes against CONTRACT criteria, and writes the `verdict:` field + criteria grades + final score. See `agents/val-evaluator.md` for the Step 5 schema.
 
 ---
 

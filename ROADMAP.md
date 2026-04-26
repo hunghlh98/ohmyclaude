@@ -19,13 +19,15 @@
 
 ## Shipped History
 
-Authoritative release log: **[CHANGELOG.md](CHANGELOG.md)**. It records every v1.0 → v2.5 release with its actual diff.
+Authoritative release log: **[CHANGELOG.md](CHANGELOG.md)**. It records every v1.0 → v2.6 release with its actual diff.
 
 Context on milestones not obvious from a diff:
 
 - **v1.0.0 — harness-engineering overhaul** (2026-04-08): 17 agents consolidated to 10, single `/forge` entry, document-driven pipeline, install profiles simplified to 3. Full notes: CHANGELOG `## [1.0.0]`.
 - **v2.0.0 — subtractive refactor** (2026-04-22): addressed drift between stated invariants and shipped state. Three findings drove the work — (1) roadmap fiction across v1.1/v1.2/v1.3, (2) three SKILL.md files over the 400-line cap, (3) 8 SuperClaude verb-wrappers duplicating agent docstrings. No new capabilities; only enforcement + honest documentation. Full notes: CHANGELOG `## [2.0.0]`.
 - **v2.2.0 — session intelligence** (2026-04-22): `/save`, `/load`, three new SessionStart/PreCompact/SubagentStart hooks. Opt-in bundle (`full` profile only). Full notes: CHANGELOG `## [2.2.0]`.
+- **v2.6.0 — load-bearing ablation under Opus 4.7** (2026-04-27): re-applied the harness-paper methodology (Anthropic Labs, Rajasekaran 2026) — *every harness component encodes an assumption about what the model can't do alone; those assumptions go stale as models improve*. Cut 6 skills (21→15) where Opus 4.7 produces native output, dropped 10 hook registrations from `hooks.json` whose telemetry never changed agent behavior, collapsed 3 install profiles to 2, removed inline language checklists in stan-standards (now consults `rules/<lang>/`), removed routing-table duplication between Paige and forge.md. Subtractive only — no new capabilities. Full notes: CHANGELOG `## [2.6.0]`.
+- **v3.0.0 — generator/evaluator separation** (2026-04-27): structural fix for self-evaluation blindness identified in the same harness paper — *"agents praise their own work."* Added `@val-evaluator` (read-only verdict authority), `CONTRACT-<id>.md` sprint contracts (weighted criteria + runnable probe specs, co-signed before code starts), `ohmyclaude-probe` MCP (`http_probe` full impl, `db_state` v3.0.0 stub). Quinn dropped Bash (writes tests but doesn't run them); Beck/Effie cannot interpret green builds as success. /forge inserted Step 4.5 (Contract Negotiation). Major bump: breaking workflow. Full notes: CHANGELOG `## [3.0.0]`.
 
 For any release not called out above, read the CHANGELOG entry directly — this file does not mirror it.
 
@@ -71,6 +73,26 @@ Each follows the `rules/java/` template: 4 files (coding-style, patterns, securi
 - [ ] **HOOKS.md consolidated reference** — directory-entry index for hooks, one section per hook script.
 - [ ] **`install.sh`** — cross-shell POSIX install script mirroring the 3 install profiles. Tested on macOS (zsh + bash), Ubuntu 22.04, Windows WSL2.
 - [ ] **`install.ps1`** — PowerShell parity for `install.sh`. Lower priority than the shell version.
+
+### Harness Audit Gaps (raised by `/recall harness` audit, 2026-04-27)
+
+Items where v2.6.0 + v3.0.0 documented a vault principle but didn't fully implement it. Tracked as honest debt rather than silently skipped. Source: [[knowledge/harness-design-long-running-apps]] + [[research/agentic-harness-patterns]] + [[research/claude-code-harness-engineering]].
+
+**Methodology debt** (highest priority — the harness paper's central practice):
+- [ ] **Empirical ablation loop unexecuted.** v2.6.0's plan documented a baseline-corpus → per-cut measurement procedure (`hooks-profiler` + `hooks-usage` enabled, 6 scenarios × 3 reps as decision gate). Cuts landed reasoning-first. Run the baseline against current v3.0.0 surface and validate or revert each cut + the +26% v3.0.0 cost claim. Cite: harness paper, "Methodology for simplification: Remove one component at a time, measure impact."
+- [ ] **Evaluator tuning enforcement.** `skills/evaluator-tuning/SKILL.md` documents the read-logs → find-divergence → patch loop, but no schedule or trigger wires it in. Currently aspirational practice. Options: a `/forge tune-eval` subcommand, a SessionStart hint after N runs, or a calendar-driven reminder.
+- [ ] **Calibration-read enforcement.** `@val-evaluator`'s prompt says "read `references/calibration-examples.md` before scoring, every run." No enforcement — Val could skip it silently. A pre-grade hook or a validate.js check on TEST artifacts could close this.
+
+**Runtime tooling debt** (the `db_state` + Playwright gaps from harness paper Section "Give evaluators runtime tools, not static artifacts"):
+- [ ] **`db_state` real backend.** v3.0.0 ships the schema + safety check (mutation-keyword denylist) but returns `not_configured` at runtime. Implement DSN-based dispatch to `sqlite3` / `psql` / `mysql` CLI. Likely wants a small empirical-usage window first to see what schemes consumers actually use.
+- [ ] **Playwright MCP shipped (not just companion).** Currently documented as opt-in companion via `npx @playwright/mcp`. FE behavioral probes fall to Bash. Options: bundle `@playwright/mcp` as a power-profile module, or write a thin stdlib-only wrapper following `fs.js` / `probe.js` pattern.
+- [ ] **HUMAN-VERDICT UX.** The artifact format is documented in `evaluator-tuning` skill but no /forge surface prompts humans to write it. Without uptake, the tuning loop has no input. Options: `/forge disagree <id>` subcommand, or a Stop hook that checks for verdict disagreements.
+
+**Structural debt** (vault patterns documented but not implemented):
+- [ ] **Pattern 8 — Parallel worktrees** ([[research/agentic-harness-patterns]] + [[research/claude-code-harness-engineering]]). ohmyclaude uses in-process `TeamCreate`, not git worktrees. True parallel feature dev across module boundaries with file conflicts is constrained. Multi-feature `/forge sprint --size 3` would benefit most.
+- [ ] **Pattern 3 + 4 — Tiered Memory + Memory Consolidation** ([[research/agentic-harness-patterns]]). Cross-`/forge` memory remains absent. Each run starts fresh; `post-deploy-analytics` is the only cross-run signal and it's informal. A `consolidator` agent reading recent PROFILE-* + SUMMARY-* and writing `MEMORY-<cwd>.md` for Paige to consult at Step 1 would close this.
+- [ ] **Mid-flight checkpoint over end-to-end /forge** ([[research/claude-code-harness-engineering]]). /forge runs end-to-end; partial-failure recovery requires re-running from scratch. The retired session-intelligence bundle was the closest mechanism — re-evaluate whether a focused checkpoint hook earns its spot.
+- [ ] **Builder Bash strip (Option 2 from v3.0.0 plan).** Beck/Effie can still self-execute via `Bash` (`npm test`, `mvn verify`). Option 1 (prompt-level "do not interpret green build as success") shipped in v3.0.0; Option 2 (strip `Bash` from builders so only Val executes) would close the structural fix completely. Cost: every Beck commit triggers a Val spawn. Worth measuring after the empirical loop runs.
 
 ---
 

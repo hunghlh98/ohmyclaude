@@ -8,9 +8,9 @@
   "plugins": [
     {
       "name": "ohmyclaude",
-      "version": "2.5.1",
+      "version": "3.0.0",
       "source": "./",
-      "description": "10-agent OSS pipeline for Claude Code with Agent Teams coordination. Single /forge entry point, smart UX with clarification, Java-first skills, source graph integration, document-driven artifacts for human review, and task dependency graphs for parallel execution.",
+      "description": "11-agent OSS pipeline for Claude Code with structural generator/evaluator separation (per Anthropic Labs' harness paper). Sprint contract gate before code, runtime probes via http_probe MCP, single /forge entry point, Agent Teams coordination, Java-first skills, document-driven artifacts for human review.",
       "category": "workflow",
       "author": {
         "name": "hunghlh"

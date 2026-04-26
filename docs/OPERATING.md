@@ -6,7 +6,7 @@ Inventory is authoritative at install time — run `node scripts/validate.js` fo
 
 ---
 
-## Part 1 — Agents (10)
+## Part 1 — Agents (11)
 
 Each agent has a corporate-Slack persona with a clear lane. The pattern for every entry below:
 
@@ -144,7 +144,7 @@ Each agent has a corporate-Slack persona with a clear lane. The pattern for ever
 
 ---
 
-## Part 2 — Hooks (12)
+## Part 2 — Hooks (13 scripts on disk; 6 active registrations after v2.6.0 ablation)
 
 Hooks are shell-invoked Node scripts wired via `hooks/hooks.json`. The harness, not the model, executes them. Every hook follows the stdin-passthrough pattern: it reads JSON on stdin, reasons about it, writes stdin back to stdout, and exits 0 (or exits 2 to **block** — PreToolUse only).
 
@@ -154,13 +154,15 @@ Hooks are grouped into 5 install modules. Profile membership follows the module'
 
 | Module | Hooks | `defaultInstall` | Profiles including it |
 |---|---|---|---|
-| `hooks-quality` | `pre-write-check`, `post-bash-lint` | **true** | minimal, standard, full |
-| `hooks-tracking` | `backlog-tracker`, `session-summary`, `team-cleanup` | false | standard, full |
-| `hooks-profiler` | `cost-profiler` | false | full |
-| `hooks-usage` | `usage-tracker` | false | full |
-| `hooks-session` | `code-review-graph-setup`, `project-init`, `session-load`, `state-snapshot`, `subagent-trace` | false | full |
+| `hooks-quality` | `pre-write-check`, `post-bash-lint` | **true** | default, power |
+| `hooks-profiler` | `cost-profiler` | false | power |
+| `hooks-tracking` | `backlog-tracker`, `session-summary`, `team-cleanup` | false (deregistered v2.6.0) | none — re-enable via custom settings.json |
+| `hooks-usage` | `usage-tracker` | false (deregistered v2.6.0) | none — re-enable via custom settings.json |
+| `hooks-session` | `session-load`, `state-snapshot`, `subagent-trace` | false (deregistered v2.6.0) | none — re-enable via custom settings.json |
 
-The `minimal` profile keeps only quality hooks (secret-blocking + opportunistic linter). `standard` adds tracking. `full` adds profiler, usage telemetry, and session intelligence.
+(SessionStart hooks `code-review-graph-setup` and `project-init` remain registered in `hooks/hooks.json` regardless of profile — they are bootstrap UX, not module-gated.)
+
+The `minimal` profile ships agents + /forge only. `default` (the recommended install) adds skills, rules, quality hooks, and the `tree`-wrapping plugin MCP. `power` adds the cost-profiler + optional `code-review-graph` MCP — for plugin contributors and users running ablation campaigns.
 
 ### Per-hook opt-out (v2.5.1+)
 
@@ -257,7 +259,7 @@ For each hook below:
 - **Trigger**: `SubagentStop` + `Stop`.
 - **Blocking**: No — `async: true`.
 - **Timeout**: 30s.
-- **Script**: `hooks/scripts/cost-profiler.js`. **Module**: `hooks-profiler` (full profile only).
+- **Script**: `hooks/scripts/cost-profiler.js`. **Module**: `hooks-profiler` (power profile only).
 - **What it does**: On `SubagentStop`, snapshots cumulative token totals + tool-use counts to `.claude/.ohmyclaude/metrics/runs/<runId>/snap-<ts>.json`. On `Stop`, diffs snapshots into per-agent deltas, writes `PROFILE-<runId>.md` to `.claude/.ohmyclaude/pipeline/`, updates rolling `baseline.json` (N=20), and upserts a one-line summary to `runs/_index.jsonl` for dashboard consumption.
 - **Env vars**: None required.
 - **Failure modes**: Any error exits 0 and passes stdin through. Never blocks `/forge`.
@@ -268,7 +270,7 @@ For each hook below:
 - **Trigger**: `PreToolUse` + `UserPromptSubmit` + `Stop` + `SessionStart`.
 - **Blocking**: No — `async: true`.
 - **Timeout**: 30s.
-- **Script**: `hooks/scripts/usage-tracker.js`. **Module**: `hooks-usage` (full profile only).
+- **Script**: `hooks/scripts/usage-tracker.js`. **Module**: `hooks-usage` (deregistered in v2.6.0; re-enable via custom settings.json).
 - **What it does**: Writes `events.jsonl`, `insights.jsonl`, and per-session aggregates under `<cwd>/.claude/.ohmyclaude/usage/`. Captures agent spawns, skill invocations, slash-command usage, correction signals, and Explanatory-style `★ Insight` blocks. Prompt bodies are never logged — only metadata (length, word count, first word, detected slash-command).
 - **Env vars**: `OHMYCLAUDE_USAGE_TRACKING=off` (legacy) or `OHMYCLAUDE_HOOK_USAGE_TRACKER=off` disables all writes.
 - **Failure modes**: Malformed stdin or write error → exit 0 silently.
@@ -279,7 +281,7 @@ For each hook below:
 - **Trigger**: `SessionStart`.
 - **Blocking**: No — `async: true`.
 - **Timeout**: 10s.
-- **Script**: `hooks/scripts/code-review-graph-setup.js`. **Module**: `hooks-session` (full profile only).
+- **Script**: `hooks/scripts/code-review-graph-setup.js`. **Module**: `hooks-session` (deregistered in v2.6.0; re-enable via custom settings.json).
 - **What it does**: Detects whether the `uv` runtime prereq for the `code-review-graph` MCP is present; writes outcome to `<cwd>/.claude/.ohmyclaude/local.yaml` with human-readable install instructions when missing. Fast path when `setup_complete=true` — skips the probe.
 - **Env vars**: None.
 - **Failure modes**:
@@ -292,7 +294,7 @@ For each hook below:
 - **Trigger**: `SessionStart`.
 - **Blocking**: No — `async: true`.
 - **Timeout**: 10s.
-- **Script**: `hooks/scripts/project-init.js`. **Module**: `hooks-session` (full profile only).
+- **Script**: `hooks/scripts/project-init.js`. **Module**: `hooks-session` (deregistered in v2.6.0; re-enable via custom settings.json).
 - **What it does**: On first launch in a git repo root, scaffolds `.claude/.ohmyclaude/{local.yaml, usage/, backlog/{BACKLOG.md, issues/}, pipeline/, metrics/}` and appends a marker-delimited `## ohmyclaude` section to `.claude/CLAUDE.md`. Sentinel via `features.project_init.setup_complete` in `local.yaml`.
 - **Env vars**: None.
 - **Failure modes**: Six guardrails — all must pass else silent no-op (source!=startup, no git root, cwd != git root, git root == $HOME, ohmyclaude repo itself, setup_complete already true).
@@ -303,7 +305,7 @@ For each hook below:
 - **Trigger**: `SessionStart` (fresh-startup only).
 - **Blocking**: No — `async: true`.
 - **Timeout**: 5s.
-- **Script**: `hooks/scripts/session-load.js`. **Module**: `hooks-session` (full profile only).
+- **Script**: `hooks/scripts/session-load.js`. **Module**: `hooks-session` (deregistered in v2.6.0; re-enable via custom settings.json).
 - **What it does**: When a saved session exists for this `cwd` (checked via `~/.claude/ohmyclaude/sessions/_index.json`), emits a one-line stderr hint so the user knows `/load` is available. Observational only — SessionStart events cannot inject model context.
 - **Env vars**: None.
 - **Failure modes**: No sessions dir, no index, or non-startup source → exit 0 silently.
@@ -314,7 +316,7 @@ For each hook below:
 - **Trigger**: `PreCompact`.
 - **Blocking**: No — `async: true`.
 - **Timeout**: 10s.
-- **Script**: `hooks/scripts/state-snapshot.js`. **Module**: `hooks-session` (full profile only).
+- **Script**: `hooks/scripts/state-snapshot.js`. **Module**: `hooks-session` (deregistered in v2.6.0; re-enable via custom settings.json).
 - **What it does**: Before Claude Code compacts the conversation, snapshots the current `cwd`'s pipeline artifact inventory to `~/.claude/ohmyclaude/sessions/<id>/stages.json` and bumps `meta.last_touch_ts`. This is the ohmyclaude-specific state compaction can't recover — Claude's own compaction handles the transcript.
 - **Env vars**: None.
 - **Failure modes**: Session directory missing (`/save` hasn't run yet) → exit 0 silently.
@@ -325,7 +327,7 @@ For each hook below:
 - **Trigger**: `SubagentStart`.
 - **Blocking**: No — `async: true`.
 - **Timeout**: 5s.
-- **Script**: `hooks/scripts/subagent-trace.js`. **Module**: `hooks-session` (full profile only).
+- **Script**: `hooks/scripts/subagent-trace.js`. **Module**: `hooks-session` (deregistered in v2.6.0; re-enable via custom settings.json).
 - **What it does**: Appends one line per subagent spawn to `~/.claude/ohmyclaude/sessions/<id>/traces.jsonl`. Pairs with `cost-profiler` for full per-agent lifecycle coverage (start/duration here, cost/usage there). Pure telemetry — `SubagentStart` is observational, so this hook cannot inject context into the subagent's prompt.
 - **Env vars**: None.
 - **Failure modes**: Session directory missing → exit 0 silently.

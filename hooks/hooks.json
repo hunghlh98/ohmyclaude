@@ -12,18 +12,6 @@
           }
         ],
         "description": "Block writes that contain hardcoded secrets (API keys, passwords, tokens)"
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/usage-tracker.js\"",
-            "async": true,
-            "timeout": 5
-          }
-        ],
-        "description": "Per-project usage telemetry: count tool calls, emit agent_spawn on Task, skill_invoke on Skill (see <cwd>/.claude/usage/)"
       }
     ],
     "PostToolUse": [
@@ -38,45 +26,9 @@
           }
         ],
         "description": "Run project linter after bash commands that modify source files"
-      },
-      {
-        "matcher": "Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/backlog-tracker.js\"",
-            "async": true,
-            "timeout": 10
-          }
-        ],
-        "description": "Rebuild BACKLOG.md index when ISS-*.md files are written to .claude/backlog/issues/"
       }
     ],
     "Stop": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-summary.js\"",
-            "async": true,
-            "timeout": 10
-          }
-        ],
-        "description": "Write a session summary to ~/.claude/ohmyclaude/sessions/ after each response"
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/team-cleanup.js\"",
-            "async": true,
-            "timeout": 5
-          }
-        ],
-        "description": "Clean up orphaned Agent Teams older than 24 hours"
-      },
       {
         "matcher": "*",
         "hooks": [
@@ -88,18 +40,6 @@
           }
         ],
         "description": "Aggregate /forge run telemetry → PROFILE-{runId}.md and baseline.json"
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/usage-tracker.js\"",
-            "async": true,
-            "timeout": 5
-          }
-        ],
-        "description": "Emit response_end + forge_run_end events to <cwd>/.claude/usage/events.jsonl"
       }
     ],
     "SubagentStop": [
@@ -134,78 +74,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-load.js\"",
-            "async": true,
-            "timeout": 5
-          }
-        ],
-        "description": "On fresh-startup sessions, emit a one-line hint if a saved session exists for this cwd (resume via /load)"
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/usage-tracker.js\"",
-            "async": true,
-            "timeout": 5
-          }
-        ],
-        "description": "Seed per-session aggregate state under <cwd>/.claude/usage/.sessions/ and emit session_start event"
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/code-review-graph-setup.js\"",
             "async": true,
             "timeout": 5
           }
         ],
         "description": "Detect `uv` prereq for code-review-graph MCP; write <cwd>/.claude/ohmyclaude.local.yaml with setup status on first run (self-gates on .mcp.json declaration)"
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/usage-tracker.js\"",
-            "async": true,
-            "timeout": 5
-          }
-        ],
-        "description": "Capture user_prompt metadata (length, first word, slash-command, correction signal — never the prompt body)"
-      }
-    ],
-    "PreCompact": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/state-snapshot.js\"",
-            "async": true,
-            "timeout": 10
-          }
-        ],
-        "description": "Before compaction, snapshot pipeline artifact inventory to the active session's stages.json"
-      }
-    ],
-    "SubagentStart": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/subagent-trace.js\"",
-            "async": true,
-            "timeout": 5
-          }
-        ],
-        "description": "Append one JSONL line per subagent spawn to the active session's traces.jsonl (pairs with cost-profiler)"
       }
     ]
   }

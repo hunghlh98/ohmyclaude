@@ -68,18 +68,9 @@ Output a routing decision block before anything else:
 }
 ```
 
-### Routing Heuristic (adaptive, not rigid)
+### Routing Heuristic
 
-Quick reference for initial task decomposition:
-- **Documentation** — @devon-ops + @stan-standards
-- **Template/boilerplate** — @beck-backend/@effie-frontend + @quinn-qa + @stan-standards
-- **P0 hotfix** — @beck-backend/@effie-frontend + @quinn-qa + @devon-ops
-- **Complex feature** — @artie-arch > @una-ux > @sam-sec > @beck-backend + @effie-frontend > @quinn-qa > @stan-standards > @devon-ops
-- **Security patch** — @sam-sec > @beck-backend > @quinn-qa > @sam-sec (re-review) > @devon-ops
-- **Code review** — @stan-standards only
-- **Debug** — @heracles only
-
-Routing adapts mid-flight — if a builder discovers a security concern, spawn @sam-sec.
+Authoritative routing table lives in [`commands/forge.md`](../commands/forge.md#dynamic-routing). Pick the smallest agent set that closes the gap to acceptance criteria — frontmatter `description` fields on each agent are your routing index. Routing adapts mid-flight: if a builder discovers a security concern, spawn @sam-sec.
 
 **Security auto-trigger**: `Touches_Security=true` when the request modifies files in `/auth/**`, `/security/**`, `**/pom.xml`, `**/package.json`, or mentions authentication, tokens, or CVEs.
 
@@ -116,6 +107,23 @@ For each ambiguity, apply the filter: *if the answer is A instead of B, would th
 | **Constraint** | "must not break mobile API v2" | Changes refactor boundaries |
 
 ---
+
+## Step 4.5: Draft Sprint Contract *(v3.0.0+)*
+
+After Step 4 confidence assessment but before Step 5 task decomposition, draft `CONTRACT-<id>.md` using the `write-contract` skill. Co-sign with `@val-evaluator`:
+
+1. Use `<id>` matching the PRD (e.g., PRD-001 → CONTRACT-001).
+2. Frontmatter: `prd_ref`, `generators` (which builders), `evaluator: val-evaluator`, `threshold: 80` (default; bump for security/payment routes), `signed: false`.
+3. Weighted criteria table — each row is one testable behavior with a runnable probe spec. Weights sum to exactly 100.
+4. Critical Failure Conditions — behaviors whose absence is unconditionally a fail.
+5. Non-Goals — explicit out-of-scope items.
+6. SendMessage @val-evaluator with the artifact path; await sign or revision request.
+
+If Val rejects the draft, address the revision requests in ONE round; round-2 rejection trips the circuit breaker.
+
+Once `signed: true`: proceed to Step 5. Until then, no IMPL artifact may be written.
+
+Schema spec and worked examples: `skills/write-contract/SKILL.md` + `skills/write-contract/references/calibration-examples.md`.
 
 ## Step 5: Decompose into Tasks with Dependency Graph
 
@@ -232,10 +240,9 @@ All SC verbs are inlined from SuperClaude (MIT) and ship with ohmyclaude — no 
 | Trigger | Load | Use it for |
 |---|---|---|
 | Step 4 — confidence assessed as **LOW** | `sc-brainstorm` | Shape the 2-3 clarifying questions before invoking `AskUserQuestion`. |
-| Step 5 — task decomposition | `sc-pm` | Orchestration patterns for wave scheduling and parallel-safe assignment. |
-| Step 5 — SP sizing per task | `sc-estimate` | Uncertainty × Complexity × Effort scoring applied to each task. |
-| Team-lead coordination (general) | `sc-pm` | Progress aggregation and handoff templates. |
 | Post-run cost surface (shutdown) | `profile-run` | Read latest PROFILE artifact, interpret anomaly flags, pick one tuning recommendation. |
+
+Step 5 task decomposition + SP sizing inline this prompt's Step 5 + the `task-breakdown` skill's Decision Matrix (Uncertainty × Complexity × Effort). The `sc-pm` and `sc-estimate` skills were retired in v2.6.0 — they duplicated content already authoritative here.
 
 Rationale and schema: see `docs/superclaude-integration.md`.
 
