@@ -83,7 +83,7 @@ Never more than 3 questions. Circuit breaker: 3 rejection rounds triggers human 
 | Release vs stability | @devon-ops (ultimate trump card) |
 | UX vs velocity | @una-ux on WCAG failures |
 
-## Skills (15)
+## Skills (17)
 
 All SKILL.md files are capped at ≤400 lines (enforced by `validate.js` since v2.0.0). Depth lives in each skill's `references/` directory, loaded on-demand.
 
@@ -98,6 +98,12 @@ All SKILL.md files are capped at ≤400 lines (enforced by `validate.js` since v
 ### Specialized (6)
 
 `task-breakdown` `project-discovery` `post-deploy-analytics` `qa-test-planner` `reducing-entropy` `profile-run`
+
+### Sprint Contracts (2, v3.0.0+)
+
+Implements the negotiate-DOD-before-code pattern from Anthropic Labs' [harness paper](https://www.anthropic.com/engineering/harness-design-long-running-apps).
+
+`write-contract` (CONTRACT-<id>.md schema + Probe DSL + PASS/FAIL calibration examples) · `evaluator-tuning` (operational read-logs → find-divergence → patch loop for keeping `@val-evaluator` aligned with human judgment)
 
 ### SuperClaude Knowledge Skills (3)
 
