@@ -102,6 +102,14 @@ Tooling debt surfaced by implementing the `db_state` real backend. Routed here p
 - [ ] **Extended secret-redaction surface.** Current redaction patterns: AWS access keys (`AKIA…`), PEM private-key blocks, GitHub PATs (`ghp_…`), OpenAI-style secret keys (`sk-…`). Misses: JWTs (`eyJ…`), generic `Bearer …` tokens, short-form OAuth tokens, basic-auth headers, Slack tokens (`xoxb-…`). Worth a single regex sweep as the surface area becomes empirically clearer.
 - [ ] **Per-call CLI process spawn cost.** `db_state` shells out fresh on every call (`spawnSync('sqlite3' | 'psql' | 'mysql', …)`). Fine for the bounded ≤5s default; could matter for postgres specifically if Val makes many calls per criterion (psql startup is ~50–100ms per spawn). A persistent-process pool is overkill today; revisit only if probe-log telemetry shows the bottleneck.
 
+### Harness Audit Gaps (raised by `/recall harness` close on Bundle C, 2026-04-27)
+
+Methodology + tooling debt surfaced by implementing the calibration enforcement hook + HUMAN-VERDICT UX. Routed here per the audit-loop convention. Source: [[knowledge/harness-design-long-running-apps]] + [[research/agentic-harness-patterns]].
+
+- [ ] **Calibration mutation contract uncertainty.** `hooks/scripts/val-calibration.js` writes a modified `tool_input.prompt` to stdout. The honest position: Claude Code's exact behavior on PreToolUse-modified `tool_input` JSON for the Task tool is not empirically validated by ohmyclaude. If the contract is honored, calibration is fully structural; if not, the hook degrades to observational (stderr only) and Val falls back to the procedural expectation at `agents/val-evaluator.md:174`. Closes when a synthetic /forge run is captured showing the calibration block actually enters Val's transcript.
+- [ ] **Hardcoded tuning threshold.** `hooks/scripts/session-load.js`'s `emitTuningReminderIfDue` triggers at exactly 3 disagreements. No env-var (`OHMYCLAUDE_TUNING_THRESHOLD`) or settings knob — users who want a different cadence must fork the script. One-line fix; deferred until empirical evidence shows 3 is wrong.
+- [ ] **Watermark fragility on fresh install.** The tuning-due check uses `agents/val-evaluator.md`'s mtime (the plugin's shipped file) as the "last patch" watermark. Edge case: a user installs ohmyclaude into a project that already has populated `HUMAN-VERDICT-*.md` files; their mtimes likely all post-date the install → false-positive nudge on first session. Better: write a `.claude/.ohmyclaude/last-val-patch.iso` sentinel from the patch step itself, fall back to plugin file mtime only when the sentinel is absent.
+
 ---
 
 Forward-looking ideas that are **not** carryover from the original v1.x backlog. Each must pass the "earn its spot" gate (*Guiding Principles*, last bullet) — i.e., show it's not duplicating an existing skill or agent capability. **None of these has a release slot**; each requires its own plan + design spec before any code lands.
