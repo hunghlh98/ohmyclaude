@@ -186,6 +186,22 @@ async function main() {
     assert('5. row cap honored (truncated)',
       scAll && scAll.truncated === true && scAll.rowCount === 1000 && scAll.totalRowCount === 1502,
       `expected truncated=true rowCount=1000 totalRowCount=1502, got ${JSON.stringify(scAll)}`);
+
+    // 5b. extended secret redaction — JWT in a column value gets redacted (Bundle D).
+    // Insert one row whose `email` column holds a JWT-shaped value, then SELECT it
+    // and confirm structuredContent.redactedSecrets > 0 + the response text shows
+    // [REDACTED] in place of the JWT.
+    const fakeJwt = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.abcdefghij1234567890';
+    const seed = spawnSync('sqlite3', [tmpDb, `INSERT INTO u(id, name, email) VALUES (9999, 'jwtuser', '${fakeJwt}')`], { encoding: 'utf8' });
+    if (seed.error || seed.status !== 0) throw new Error(`sqlite3 jwt seed failed: ${seed.stderr || seed.error}`);
+    const respJwt = await callDbState(
+      { query: "SELECT email FROM u WHERE name = 'jwtuser'" },
+      { OHMYCLAUDE_DB_DSN: `sqlite:///${tmpDb}` });
+    const scJwt = respJwt && respJwt.result && respJwt.result.structuredContent;
+    const txtJwt = respJwt && respJwt.result && respJwt.result.content && respJwt.result.content[0] && respJwt.result.content[0].text || '';
+    assert('5b. JWT in column value redacted',
+      scJwt && scJwt.redactedSecrets >= 1 && txtJwt.includes('[REDACTED]') && !txtJwt.includes(fakeJwt),
+      `expected redactedSecrets≥1 + [REDACTED] in text + JWT absent. Got redactedSecrets=${scJwt && scJwt.redactedSecrets}, JWT-in-text=${txtJwt.includes(fakeJwt)}`);
   } finally {
     teardownSqliteFixture();
   }

@@ -8,6 +8,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+### Added
+- **`OHMYCLAUDE_TUNING_THRESHOLD` env var** in `hooks/scripts/session-load.js`. Replaces the hardcoded `3` from v3.0.1's tuning-due nudge so users can set their own cadence without forking the hook. Default 3.
+- **`.claude/.ohmyclaude/last-val-patch.iso` sentinel** preferred over plugin-file mtime in `session-load.js`'s `readWatermarkMs()`. Closes the v3.0.1 fresh-install false-positive (every project HUMAN-VERDICT post-dating the plugin file mtime). The user writes this sentinel after applying a Val prompt patch via `date -u +%FT%TZ > .claude/.ohmyclaude/last-val-patch.iso` (documented in `skills/evaluator-tuning/SKILL.md` Step 3). Falls back to plugin-file mtime when the sentinel is absent or unparseable.
+- **Extended secret-redaction patterns** in `scripts/mcp-servers/probe.js`: GitHub fine-grained PATs (`github_pat_…`), Slack tokens (`xoxa/xoxb/xoxp/xoxr/xoxs-…`), JWTs (`eyJ…`. `…`. `…`), `Authorization: Bearer/Basic …` header values, Google API keys (`AIza…`). Pattern count 4 → 9.
+- `scripts/test-probe.js` assertion 5b: JWT in a SELECT column value gets redacted to `[REDACTED]` in both structuredContent.redactedSecrets count and the response text. Total assertions 6 → 7.
+
 ## [3.0.1] — 2026-04-27
 
 Polish + follow-through release closing v3.0.0 stubs and audit gaps. No breaking changes. The harness paper's central thesis ([[knowledge/harness-design-long-running-apps]]) is honored more completely: `db_state` actually probes runtime state instead of stubbing, calibration is structural rather than procedural, and HUMAN-VERDICT has a UX surface to feed the tuning loop.

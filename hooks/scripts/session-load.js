@@ -96,22 +96,55 @@ process.stdin.on('end', () => {
   process.exit(0);
 });
 
-// ── Evaluator-tuning reminder (Bundle C addition) ───────────────────────────
-// If the consumer project's .claude/pipeline/ contains ≥3 HUMAN-VERDICT-*.md
-// files marked `agreed_with_val: no | partially` since the plugin's val-evaluator
-// agent file last changed, surface a one-line nudge so the tuning loop in
+// ── Evaluator-tuning reminder (Bundle C, refined in Bundle D) ───────────────
+// If the consumer project's .claude/pipeline/ contains ≥THRESHOLD HUMAN-VERDICT
+// files marked `agreed_with_val: no | partially` newer than the last-patch
+// watermark, surface a one-line nudge so the tuning loop in
 // skills/evaluator-tuning/SKILL.md doesn't rot invisibly.
 //
-// Watermark: mtime of the SHIPPED agents/val-evaluator.md inside the plugin.
+// Threshold:  OHMYCLAUDE_TUNING_THRESHOLD env var (default 3).
+// Watermark:  preferred: ISO timestamp inside .claude/.ohmyclaude/last-val-patch.iso
+//             (the user `touch`es / writes this file when they run the manual
+//             patch step in skills/evaluator-tuning/SKILL.md). Fallback: mtime
+//             of the SHIPPED agents/val-evaluator.md inside the plugin.
+//
 // The function is best-effort — silent no-op on any IO error.
+function readWatermarkMs(cwd) {
+  // Priority 1: explicit sentinel under the consumer project. Lets the user
+  // reset the counter without modifying the plugin file. Robust to fresh
+  // installs where every HUMAN-VERDICT post-dates the plugin file mtime.
+  try {
+    const sentinelPath = path.join(cwd, '.claude', '.ohmyclaude', 'last-val-patch.iso');
+    if (fs.existsSync(sentinelPath)) {
+      const raw = fs.readFileSync(sentinelPath, 'utf8').trim();
+      const ts = Date.parse(raw);
+      if (!isNaN(ts)) return ts;
+      // Sentinel exists but content unparseable — fall back to its mtime,
+      // which is what `touch path` would set anyway.
+      return fs.statSync(sentinelPath).mtimeMs;
+    }
+  } catch (_) { /* fall through to plugin-file fallback */ }
+
+  // Priority 2: plugin's val-evaluator.md mtime — original Bundle C watermark.
+  try {
+    const valAgentPath = path.resolve(__dirname, '..', '..', 'agents', 'val-evaluator.md');
+    if (fs.existsSync(valAgentPath)) return fs.statSync(valAgentPath).mtimeMs;
+  } catch (_) { /* silent */ }
+  return null;
+}
+
 function emitTuningReminderIfDue(cwd) {
   try {
     const pipelineDir = path.join(cwd, '.claude', 'pipeline');
     if (!fs.existsSync(pipelineDir)) return;
 
-    const valAgentPath = path.resolve(__dirname, '..', '..', 'agents', 'val-evaluator.md');
-    if (!fs.existsSync(valAgentPath)) return;
-    const watermarkMs = fs.statSync(valAgentPath).mtimeMs;
+    const watermarkMs = readWatermarkMs(cwd);
+    if (watermarkMs === null) return;
+
+    const thresholdRaw = process.env.OHMYCLAUDE_TUNING_THRESHOLD;
+    const threshold = Number.isInteger(parseInt(thresholdRaw, 10)) && parseInt(thresholdRaw, 10) > 0
+      ? parseInt(thresholdRaw, 10)
+      : 3;
 
     const entries = fs.readdirSync(pipelineDir);
     let disagreements = 0;
@@ -125,11 +158,12 @@ function emitTuningReminderIfDue(cwd) {
       } catch (_) { /* skip unreadable files */ }
     }
 
-    if (disagreements >= 3) {
+    if (disagreements >= threshold) {
       process.stderr.write(
         `[ohmyclaude] 🔁 Evaluator tuning due: ${disagreements} HUMAN-VERDICT files ` +
-        `disagree with Val since last patch. Run the read-logs → find-divergence → ` +
-        `patch loop in skills/evaluator-tuning/SKILL.md.\n`
+        `disagree with Val since last patch (threshold ${threshold}). Run the read-logs → ` +
+        `find-divergence → patch loop in skills/evaluator-tuning/SKILL.md, then ` +
+        `\`date -u +%FT%TZ > .claude/.ohmyclaude/last-val-patch.iso\` to reset the counter.\n`
       );
     }
   } catch (_) { /* silent */ }

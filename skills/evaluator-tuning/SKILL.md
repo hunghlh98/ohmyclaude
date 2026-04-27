@@ -106,6 +106,15 @@ For each high-instance class, write a one-line **calibration patch** to `agents/
 
 Keep patches as a running list, never delete. They are the project's evolving knowledge of where Val's defaults misalign with the team's quality bar.
 
+**After applying the patch**, reset the tuning-due counter so `session-load.js` stops nudging on the now-resolved disagreements:
+
+```bash
+mkdir -p .claude/.ohmyclaude
+date -u +%FT%TZ > .claude/.ohmyclaude/last-val-patch.iso
+```
+
+The hook prefers this sentinel over the plugin's `agents/val-evaluator.md` mtime — robust on fresh installs where every existing HUMAN-VERDICT post-dates the plugin file. To change the nudge threshold without forking the hook: `export OHMYCLAUDE_TUNING_THRESHOLD=5` (default 3).
+
 ### Step 4 — Re-add a few-shot example
 
 For high-impact patches, add a worked example to `skills/write-contract/references/calibration-examples.md`. Per the harness paper, few-shot examples are the cheapest, most effective alignment lever — cheaper than prompt edits and more transferable across model versions.

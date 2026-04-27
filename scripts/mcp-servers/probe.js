@@ -54,8 +54,13 @@ const MUTATION_KEYWORDS = [
 const DB_OUTPUT_REDACT_PATTERNS = [
   /AKIA[0-9A-Z]{16}/g,                                                         // AWS access key id
   /-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----[\s\S]*?-----END (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----/g,
-  /ghp_[A-Za-z0-9]{36}/g,                                                      // GitHub PAT
+  /ghp_[A-Za-z0-9]{36}/g,                                                      // GitHub classic PAT
+  /github_pat_[A-Za-z0-9_]{82}/g,                                              // GitHub fine-grained PAT
   /sk-[A-Za-z0-9]{20,}/g,                                                      // OpenAI-style secret key
+  /xox[abprs]-[A-Za-z0-9-]{10,}/g,                                             // Slack tokens (xoxa/xoxb/xoxp/xoxr/xoxs)
+  /eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g,            // JWT (header.payload.signature)
+  /(?:Bearer|Basic)\s+[A-Za-z0-9._~+/=-]{16,}/gi,                              // Authorization header values
+  /AIza[0-9A-Za-z_-]{35}/g,                                                    // Google API key
 ];
 
 // ─── JSON-RPC plumbing ──────────────────────────────────────────────────────
