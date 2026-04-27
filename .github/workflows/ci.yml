@@ -24,6 +24,17 @@ jobs:
       - name: Run hook smoke tests
         run: node scripts/test-hooks.js
 
+      - name: Run agent discipline tests
+        run: node scripts/test-agents.js
+
+      - name: Install sqlite3 (for probe smoke tests)
+        run: sudo apt-get update && sudo apt-get install -y sqlite3
+
+      - name: Run probe MCP smoke tests
+        run: node scripts/test-probe.js
+        env:
+          OHMYCLAUDE_TEST_OFFLINE: '1'
+
       - name: Run SuperClaude fallback contract
         run: node scripts/test-sc-fallback.js
 

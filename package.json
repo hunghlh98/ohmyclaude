@@ -46,9 +46,10 @@
     "test:sc-fallback": "node scripts/test-sc-fallback.js",
     "test:hooks": "node scripts/test-hooks.js",
     "test:agents": "node scripts/test-agents.js",
+    "test:probe": "node scripts/test-probe.js",
     "usage-report": "node scripts/usage-report.js",
     "dashboard": "python3 scripts/dashboard/server.py",
-    "prepublishOnly": "node scripts/validate.js && node scripts/test-hooks.js && node scripts/test-agents.js"
+    "prepublishOnly": "node scripts/validate.js && node scripts/test-hooks.js && node scripts/test-agents.js && node scripts/test-probe.js"
   },
   "engines": {
     "node": ">=18"

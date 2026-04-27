@@ -102,7 +102,7 @@ For each row in the CONTRACT's weighted criteria table, invoke the probe spec ex
 | Probe DSL | Tool | When to use |
 |-----------|------|-------------|
 | `http_probe` | `mcp__ohmyclaude-probe__http_probe` | API behavior — status codes, response shape, headers |
-| `db_state` | `mcp__ohmyclaude-probe__db_state` | Persistence verification — SELECT only, parameterized, no mutation |
+| `db_state` | `mcp__ohmyclaude-probe__db_state` | Persistence verification — SELECT only, parameterized, no mutation. Backend chosen by `OHMYCLAUDE_DB_DSN` (e.g. `sqlite:///abs/path.db`, `postgres://user:pass@host/db`, `mysql://user:pass@host/db`). Returns `not_configured` if unset — fall back to Bash + the project's DB CLI. Optional: `OHMYCLAUDE_DB_TIMEOUT_MS` (default 5000), `OHMYCLAUDE_DB_MAX_ROWS` (default 1000). |
 | `playwright` | `mcp__playwright__*` | DOM-level evidence — clicks, screenshots, accessibility tree (only when contract requires) |
 | shell command | Bash | Anything else — but document the exact command in the verdict |
 

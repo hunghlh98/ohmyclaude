@@ -7,12 +7,12 @@
  *   - http_probe   Make an HTTP/HTTPS request and assert on status / JSON-path /
  *                  header values. Used by Val to grade weighted criteria from
  *                  CONTRACT-<id>.md against running implementations.
- *   - db_state     v3.0.0 STUB. Validates a SELECT-only query against the
- *                  mutation-keyword denylist and returns a structured
- *                  "not_configured" response with re-routing instructions to
- *                  Bash-based DB probes via the project's conventional CLI.
- *                  Real backend (sqlite/psql/mysql) lands in a v3.x patch
- *                  once the DSN-detection design has empirical use data.
+ *   - db_state     Run a SELECT-only query against the project database via the
+ *                  CLI named by OHMYCLAUDE_DB_DSN (sqlite3/psql/mysql). Validates
+ *                  the query against a mutation-keyword denylist before AND after
+ *                  $N parameter substitution; spawn-time timeout, row cap, and
+ *                  output redaction for known secret patterns. Falls back to a
+ *                  structured "not_configured" response when DSN is unset.
  *
  * Design notes:
  *   - Stdlib-only Node — uses `http`, `https`, `url`, `readline`. No `fetch`
@@ -26,16 +26,19 @@
 
 'use strict';
 
-const http       = require('http');
-const https      = require('https');
-const { URL }    = require('url');
-const readline   = require('readline');
+const http              = require('http');
+const https             = require('https');
+const { URL }           = require('url');
+const readline          = require('readline');
+const { spawnSync }     = require('child_process');
 
 const SERVER_NAME      = 'ohmyclaude-probe';
-const SERVER_VERSION   = '0.1.0';
+const SERVER_VERSION   = '0.2.0';
 const PROTOCOL_VERSION = '2024-11-05';
-const DEFAULT_TIMEOUT_MS = 10000;
-const MAX_BODY_BYTES     = 8 * 1024 * 1024;  // 8 MiB ceiling on response bodies
+const DEFAULT_TIMEOUT_MS    = 10000;
+const MAX_BODY_BYTES        = 8 * 1024 * 1024;  // 8 MiB ceiling on response bodies
+const DEFAULT_DB_TIMEOUT_MS = parseInt(process.env.OHMYCLAUDE_DB_TIMEOUT_MS || '5000', 10);
+const MAX_DB_ROWS           = parseInt(process.env.OHMYCLAUDE_DB_MAX_ROWS  || '1000', 10);
 
 // Mutation keywords blocked at the SQL parser level for db_state. Case-insensitive,
 // word-boundary match. Comments before keywords are stripped first.
@@ -44,6 +47,15 @@ const MUTATION_KEYWORDS = [
   'ALTER', 'CREATE', 'GRANT', 'REVOKE', 'REPLACE',
   'MERGE', 'CALL', 'EXEC', 'EXECUTE', 'COMMIT',
   'ROLLBACK', 'SAVEPOINT', 'LOCK',
+];
+
+// Patterns redacted from db_state stdout/stderr before returning to Val. Defensive
+// — a SELECT could legitimately surface a secret stored in user data.
+const DB_OUTPUT_REDACT_PATTERNS = [
+  /AKIA[0-9A-Z]{16}/g,                                                         // AWS access key id
+  /-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----[\s\S]*?-----END (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----/g,
+  /ghp_[A-Za-z0-9]{36}/g,                                                      // GitHub PAT
+  /sk-[A-Za-z0-9]{20,}/g,                                                      // OpenAI-style secret key
 ];
 
 // ─── JSON-RPC plumbing ──────────────────────────────────────────────────────
@@ -282,7 +294,7 @@ async function callHttpProbe(args) {
   };
 }
 
-// ─── Tool: db_state (v3.0.0 stub — schema validated, runtime gated) ─────────
+// ─── Tool: db_state (DSN-dispatch backend, v0.2.0+) ─────────────────────────
 
 function isSafeSelect(query) {
   // Strip line and block comments before scanning for mutation keywords
@@ -305,59 +317,308 @@ function isSafeSelect(query) {
   return { ok: true };
 }
 
+// DSN parser — tolerates the small surface we support intentionally.
+// Supported forms:
+//   sqlite:///abs/path/to.db        (third slash → empty host → absolute path)
+//   sqlite:///./relative.db         (relative path; the leading "/./" is benign)
+//   postgres://user:pass@host:port/dbname
+//   postgresql://user:pass@host:port/dbname
+//   mysql://user:pass@host:port/dbname
+//   mariadb://user:pass@host:port/dbname
+function parseDsn(dsn) {
+  const m = dsn.match(/^([a-zA-Z][a-zA-Z0-9+]*):\/\/(.*)$/);
+  if (!m) return { ok: false, reason: 'DSN missing scheme://' };
+  const scheme = m[1].toLowerCase();
+  const rest   = m[2];
+
+  if (scheme === 'sqlite' || scheme === 'sqlite3') {
+    if (!rest.startsWith('/')) {
+      return { ok: false, reason: 'sqlite DSN requires sqlite:///<path> form (note the third slash)' };
+    }
+    // Strip a single leading slash if the next char is not / and not ./, so that
+    // sqlite:///tmp/x.db → "/tmp/x.db" (absolute) and sqlite:///./relative.db
+    // → "./relative.db" (relative).
+    const path = rest.startsWith('/./') ? rest.slice(1) : rest;
+    return { ok: true, scheme: 'sqlite', path };
+  }
+
+  if (scheme === 'postgres' || scheme === 'postgresql') {
+    return { ok: true, scheme: 'postgres', dsn };
+  }
+
+  if (scheme === 'mysql' || scheme === 'mariadb') {
+    try {
+      const u = new URL(dsn);
+      return {
+        ok:   true,
+        scheme: 'mysql',
+        host: u.hostname || '127.0.0.1',
+        port: u.port     || '3306',
+        user: decodeURIComponent(u.username || ''),
+        pass: decodeURIComponent(u.password || ''),
+        db:   (u.pathname || '').replace(/^\//, ''),
+      };
+    } catch (e) {
+      return { ok: false, reason: `mysql DSN parse failed: ${e.message}` };
+    }
+  }
+
+  return { ok: false, reason: `unsupported DSN scheme: "${scheme}" (supported: sqlite, postgres, postgresql, mysql, mariadb)` };
+}
+
+// Substitute $1, $2, … placeholders with literal values. Caller MUST re-run
+// isSafeSelect on the result to catch keyword smuggling through string params.
+// Why substitute in-process: psql/mysql/sqlite3 CLIs make parameter binding
+// awkward across all three; substitution + post-validation is the simplest
+// uniform path. The denylist re-check closes the injection hole.
+function substituteParams(query, params) {
+  if (!Array.isArray(params) || params.length === 0) return query;
+  let out = query;
+  for (let i = 0; i < params.length; i++) {
+    const placeholder = `$${i + 1}`;
+    const p = params[i];
+    let escaped;
+    if (p === null || p === undefined) {
+      escaped = 'NULL';
+    } else if (typeof p === 'number' && Number.isFinite(p)) {
+      escaped = String(p);
+    } else if (typeof p === 'boolean') {
+      escaped = p ? '1' : '0';
+    } else {
+      const s = String(p).replace(/'/g, "''");
+      escaped = `'${s}'`;
+    }
+    out = out.split(placeholder).join(escaped);
+  }
+  return out;
+}
+
+function redactOutput(text) {
+  if (typeof text !== 'string') return { text: '', redactedCount: 0 };
+  let out = text;
+  let count = 0;
+  for (const re of DB_OUTPUT_REDACT_PATTERNS) {
+    out = out.replace(re, () => { count++; return '[REDACTED]'; });
+  }
+  return { text: out, redactedCount: count };
+}
+
+// Tab-separated parser for psql/mysql --batch output: header line + data lines.
+function parseTabSeparated(text) {
+  const lines = text.split('\n').filter(l => l.length > 0);
+  if (lines.length === 0) return { columns: [], rows: [] };
+  const columns = lines[0].split('\t');
+  const rows = lines.slice(1).map(line => line.split('\t'));
+  return { columns, rows };
+}
+
+function dispatchSqlite(filePath, query, timeoutMs) {
+  const r = spawnSync('sqlite3', ['-batch', '-json', filePath, query], {
+    encoding: 'utf8', timeout: timeoutMs, maxBuffer: 8 * 1024 * 1024,
+  });
+  if (r.error && r.error.code === 'ENOENT') {
+    return { ok: false, reason: 'sqlite3 CLI not found in PATH (install via brew/apt/yum/pkg)' };
+  }
+  if (r.error) return { ok: false, reason: `sqlite3 spawn error: ${r.error.message}` };
+  if (r.signal === 'SIGTERM') return { ok: false, reason: `sqlite3 timed out after ${timeoutMs}ms` };
+  if (r.status !== 0) {
+    return { ok: false, reason: `sqlite3 exit ${r.status}: ${(r.stderr || r.stdout || '').trim().slice(0, 500)}` };
+  }
+  let parsed;
+  try {
+    parsed = r.stdout.trim() ? JSON.parse(r.stdout) : [];
+  } catch (e) {
+    return { ok: false, reason: `sqlite3 -json output parse failed: ${e.message}` };
+  }
+  if (!Array.isArray(parsed)) return { ok: false, reason: 'sqlite3 -json output not a JSON array' };
+  const columns = parsed.length > 0 ? Object.keys(parsed[0]) : [];
+  const rows = parsed.map(obj => columns.map(c => obj[c]));
+  return { ok: true, columns, rows };
+}
+
+function dispatchPostgres(dsn, query, timeoutMs) {
+  const r = spawnSync('psql', ['--no-psqlrc', '-A', '-F', '\t', '-c', query, dsn], {
+    encoding: 'utf8', timeout: timeoutMs, maxBuffer: 8 * 1024 * 1024,
+    env: { ...process.env, PGCONNECT_TIMEOUT: '5' },
+  });
+  if (r.error && r.error.code === 'ENOENT') {
+    return { ok: false, reason: 'psql CLI not found in PATH' };
+  }
+  if (r.error) return { ok: false, reason: `psql spawn error: ${r.error.message}` };
+  if (r.signal === 'SIGTERM') return { ok: false, reason: `psql timed out after ${timeoutMs}ms` };
+  if (r.status !== 0) {
+    return { ok: false, reason: `psql exit ${r.status}: ${(r.stderr || r.stdout || '').trim().slice(0, 500)}` };
+  }
+  // psql -A -F'\t' emits header row + data rows + a trailing "(N rows)" summary line; strip it.
+  const cleaned = r.stdout.replace(/\n\(\d+ rows?\)\s*$/, '\n');
+  return { ok: true, ...parseTabSeparated(cleaned) };
+}
+
+function dispatchMysql(parsed, query, timeoutMs) {
+  const args = ['--batch', '--default-character-set=utf8mb4', `-h${parsed.host}`, `-P${parsed.port}`];
+  if (parsed.user) args.push(`-u${parsed.user}`);
+  if (parsed.db)   args.push(`-D${parsed.db}`);
+  args.push('-e', query);
+  // Pass password via env var so it's not visible in `ps`.
+  const env = { ...process.env };
+  if (parsed.pass) env.MYSQL_PWD = parsed.pass;
+  const r = spawnSync('mysql', args, {
+    encoding: 'utf8', timeout: timeoutMs, maxBuffer: 8 * 1024 * 1024, env,
+  });
+  if (r.error && r.error.code === 'ENOENT') {
+    return { ok: false, reason: 'mysql CLI not found in PATH' };
+  }
+  if (r.error) return { ok: false, reason: `mysql spawn error: ${r.error.message}` };
+  if (r.signal === 'SIGTERM') return { ok: false, reason: `mysql timed out after ${timeoutMs}ms` };
+  if (r.status !== 0) {
+    return { ok: false, reason: `mysql exit ${r.status}: ${(r.stderr || r.stdout || '').trim().slice(0, 500)}` };
+  }
+  return { ok: true, ...parseTabSeparated(r.stdout) };
+}
+
+function applyDbExpectations(rows, columns, expect) {
+  const results = [];
+  let pass = true;
+  if (expect && Number.isInteger(expect.rows)) {
+    const ok = rows.length === expect.rows;
+    if (!ok) pass = false;
+    results.push({ kind: 'rows', expected: expect.rows, observed: rows.length, pass: ok });
+  }
+  if (expect && expect.values && typeof expect.values === 'object') {
+    // Apply column-value assertions to the FIRST row (Val's CONTRACT DSL convention).
+    const firstRow = rows[0] || [];
+    for (const [colName, valSpec] of Object.entries(expect.values)) {
+      const idx = columns.indexOf(colName);
+      const observed = idx >= 0 ? firstRow[idx] : undefined;
+      const v = assertValue(observed, valSpec);
+      if (!v.pass) pass = false;
+      results.push({ kind: 'value', column: colName, expected: v.expected, observed, pass: v.pass, error: v.error });
+    }
+  }
+  return { pass, results };
+}
+
 function callDbState(args) {
   if (!args || typeof args !== 'object' || typeof args.query !== 'string') {
     return { isError: true, content: [{ type: 'text', text: 'db_state requires args.query (SELECT statement)' }] };
   }
   const safety = isSafeSelect(args.query);
   if (!safety.ok) {
-    return {
-      isError: true,
-      content: [{ type: 'text', text: `[ohmyclaude-probe db_state] ${safety.reason}` }],
-    };
+    return { isError: true, content: [{ type: 'text', text: `[ohmyclaude-probe db_state] ${safety.reason}` }] };
   }
+
   const dsn = process.env.OHMYCLAUDE_DB_DSN || '';
   if (!dsn) {
     return {
       content: [{ type: 'text', text:
-`[ohmyclaude-probe db_state] not_configured (v3.0.0)
+`[ohmyclaude-probe db_state] not_configured
 
-The query passed the mutation-keyword denylist, but db_state is a stub in v3.0.0.
-A real backend (sqlite/psql/mysql shell-out) lands in a v3.x patch once DSN
-detection has empirical usage data.
+OHMYCLAUDE_DB_DSN is unset. The query passed the mutation-keyword denylist but
+no backend can run it. Set the env var on the MCP server:
 
-For v3.0.0 CONTRACT criteria that need DB state verification:
+  sqlite:    OHMYCLAUDE_DB_DSN=sqlite:///abs/path/to.db
+  postgres:  OHMYCLAUDE_DB_DSN=postgres://user:pass@host:5432/db
+  mysql:     OHMYCLAUDE_DB_DSN=mysql://user:pass@host:3306/db
 
-  1. Use Bash + your project's conventional CLI (sqlite3, psql, mysql) directly.
-     Example for SQLite:
-       Bash> sqlite3 path/to/db.sqlite "SELECT count(*) FROM users WHERE email='x@y.com'"
-
-  2. Encode the safety check (read-only) at the CONTRACT level — write the
-     probe spec as 'sqlite3 ... SELECT ...' and rely on @val-evaluator's
-     prompt rules to refuse anything that isn't SELECT.
-
-  3. Or, expose state via an HTTP endpoint and use http_probe instead.
+Optional: OHMYCLAUDE_DB_TIMEOUT_MS (default ${DEFAULT_DB_TIMEOUT_MS}), OHMYCLAUDE_DB_MAX_ROWS (default ${MAX_DB_ROWS}).
 
 The query you submitted (which would have been safe) was:
 
-${args.query}
-
-Safety check result: PASS (no mutation keywords detected).` }],
-      structuredContent: {
-        pass: false,
-        reason: 'not_configured',
-        query: args.query,
-        safetyOk: true,
-      },
+${args.query}` }],
+      structuredContent: { pass: false, reason: 'not_configured', query: args.query, safetyOk: true },
     };
   }
 
-  // Configured DSN path — placeholder for v3.x. Today, refuse with a clear
-  // message rather than partial implementation; refusal is honest about scope.
+  // Substitute params in our process. Re-run isSafeSelect on the substituted
+  // query so a malicious string value can't smuggle a mutation keyword past
+  // the denylist via $N expansion.
+  const substituted = substituteParams(args.query, args.params);
+  const recheck = isSafeSelect(substituted);
+  if (!recheck.ok) {
+    return { isError: true, content: [{ type: 'text', text: `[ohmyclaude-probe db_state] post-substitution safety check failed: ${recheck.reason}` }] };
+  }
+
+  const parsedDsn = parseDsn(dsn);
+  if (!parsedDsn.ok) {
+    return { isError: true, content: [{ type: 'text', text: `[ohmyclaude-probe db_state] ${parsedDsn.reason}` }] };
+  }
+
+  const timeoutMs = DEFAULT_DB_TIMEOUT_MS;
+  const startMs = Date.now();
+  let dispatch;
+  if (parsedDsn.scheme === 'sqlite')   dispatch = dispatchSqlite(parsedDsn.path, substituted, timeoutMs);
+  else if (parsedDsn.scheme === 'postgres') dispatch = dispatchPostgres(parsedDsn.dsn, substituted, timeoutMs);
+  else if (parsedDsn.scheme === 'mysql')    dispatch = dispatchMysql(parsedDsn, substituted, timeoutMs);
+  else dispatch = { ok: false, reason: `internal: unhandled scheme ${parsedDsn.scheme}` };
+  const elapsedMs = Date.now() - startMs;
+
+  if (!dispatch.ok) {
+    return {
+      isError: true,
+      content: [{ type: 'text', text: `[ohmyclaude-probe db_state] ${dispatch.reason}` }],
+      structuredContent: { pass: false, reason: dispatch.reason, query: args.query, safetyOk: true, elapsedMs },
+    };
+  }
+
+  // Row cap.
+  const totalRows = dispatch.rows.length;
+  const truncated = totalRows > MAX_DB_ROWS;
+  const rows = truncated ? dispatch.rows.slice(0, MAX_DB_ROWS) : dispatch.rows;
+
+  // Output redaction across the entire result set.
+  let totalRedacted = 0;
+  const redactedRows = rows.map(r => r.map(cell => {
+    if (typeof cell !== 'string') return cell;
+    const { text, redactedCount } = redactOutput(cell);
+    totalRedacted += redactedCount;
+    return text;
+  }));
+
+  const expect = (args.expect && typeof args.expect === 'object') ? args.expect : {};
+  const verdict = applyDbExpectations(redactedRows, dispatch.columns, expect);
+
+  const lines = [
+    `${verdict.pass ? 'PASS' : 'FAIL'} · ${parsedDsn.scheme} · ${redactedRows.length}${truncated ? `/${totalRows} (truncated)` : ''} row(s) · ${elapsedMs}ms`,
+    '',
+  ];
+  for (const r of verdict.results) {
+    const tag = r.pass ? '  ✓' : '  ✗';
+    if (r.kind === 'rows') {
+      lines.push(`${tag} rows: expected ${r.expected}, observed ${r.observed}`);
+    } else if (r.kind === 'value') {
+      lines.push(`${tag} value[${r.column}]: expected ${JSON.stringify(r.expected)}, observed ${JSON.stringify(r.observed)}`);
+    }
+    if (r.error) lines.push(`      error: ${r.error}`);
+  }
+  if (verdict.results.length === 0) {
+    lines.push('  (no assertions specified — observed result set only)');
+  }
+  if (totalRedacted > 0) {
+    lines.push('');
+    lines.push(`  ⚠ ${totalRedacted} secret pattern match(es) redacted from output`);
+  }
+
+  // Compact preview of first 10 rows for forensic context.
+  lines.push('');
+  lines.push(`[result preview, first ${Math.min(10, redactedRows.length)} row(s)]`);
+  if (dispatch.columns.length > 0) lines.push(dispatch.columns.join('\t'));
+  for (const row of redactedRows.slice(0, 10)) {
+    lines.push(row.map(c => c === null ? '<null>' : String(c)).join('\t'));
+  }
+
   return {
-    isError: true,
-    content: [{ type: 'text', text:
-`[ohmyclaude-probe db_state] OHMYCLAUDE_DB_DSN is set but the backend dispatcher is not implemented in v3.0.0. Tracked for a v3.x patch. Use Bash + your DB CLI directly for now (see not_configured guidance above; same workaround applies).` }],
+    content: [{ type: 'text', text: lines.join('\n') }],
+    structuredContent: {
+      pass: verdict.pass,
+      scheme: parsedDsn.scheme,
+      rowCount: redactedRows.length,
+      totalRowCount: totalRows,
+      truncated,
+      columns: dispatch.columns,
+      assertions: verdict.results,
+      redactedSecrets: totalRedacted,
+      elapsedMs,
+    },
   };
 }
 
@@ -393,7 +654,7 @@ const TOOLS = [
   },
   {
     name: 'db_state',
-    description: 'Run a read-only SELECT against the project database to verify persistence state during CONTRACT grading. v3.0.0 STUB: validates the query against a mutation-keyword denylist and returns not_configured with re-routing instructions to Bash + project DB CLI. Real backend lands in a v3.x patch.',
+    description: 'Run a read-only SELECT against the project database to verify persistence state during CONTRACT grading. Dispatches via OHMYCLAUDE_DB_DSN to sqlite3/psql/mysql CLI. Validates the query against a mutation-keyword denylist; substitutes $N params then re-validates; caps rows; redacts well-known secret patterns from output. Returns not_configured if DSN is unset.',
     inputSchema: {
       type: 'object',
       properties: {

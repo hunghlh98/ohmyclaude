@@ -10,12 +10,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ### Added
 - `scripts/test-agents.js` — agent frontmatter discipline validator (description ≤30 words, tools shape, color, three-tier read-only discipline, `<example>` block presence). 11 agents × ~12 checks = 139 assertions.
-- `npm prepublishOnly` — runs `validate.js`, `test-hooks.js`, `test-agents.js` before `npm publish`. Complements CI; catches drift on local publish.
-- `npm run test:agents` script entry in `package.json`.
+- `npm prepublishOnly` — runs `validate.js`, `test-hooks.js`, `test-agents.js`, `test-probe.js` before `npm publish`. Complements CI; catches drift on local publish.
+- `npm run test:agents` and `npm run test:probe` script entries.
+- **`db_state` real backend** in `scripts/mcp-servers/probe.js` — DSN-dispatch to `sqlite3` / `psql` / `mysql` CLIs via `OHMYCLAUDE_DB_DSN`. Closes the v3.0.0 stub. Includes safety envelope: `$N` parameter substitution with post-substitution mutation re-check, configurable timeout (`OHMYCLAUDE_DB_TIMEOUT_MS`, default 5000), row cap (`OHMYCLAUDE_DB_MAX_ROWS`, default 1000), output redaction for AWS keys / PEM blocks / GitHub PATs / OpenAI-style secret keys. Probe MCP version bumped 0.1.0 → 0.2.0.
+- `scripts/test-probe.js` — 6 smoke assertions against the probe MCP (5 `db_state` paths against an ephemeral sqlite fixture + 1 `http_probe` round-trip). Network test gated by `OHMYCLAUDE_TEST_OFFLINE=1` for CI.
+- CI step: `apt-get install sqlite3` + `node scripts/test-probe.js` with `OHMYCLAUDE_TEST_OFFLINE=1` so the network assertion gracefully skips on GitHub Actions runners.
 
 ### Changed
 - `CLAUDE.md` "Read-only agents" paragraph rewritten as three explicit tool tiers (strict-readonly · implementation-restricted · implementer). The previous one-liner asserted `artie-arch` and `una-ux` were read-only despite both shipping `Write`; the rewrite resolves that drift and adds `val-evaluator` (v3.0.0) to strict-readonly.
 - `agents/artie-arch.md` description: removed misleading "Read-only" phrasing — Artie writes SDD artifacts but never edits user code.
+- `agents/val-evaluator.md` Probe DSL row for `db_state` documents the `OHMYCLAUDE_DB_DSN` contract and tunables.
 - `docs/OPERATING.md` Part 1 preface updated to the three-tier framing, replacing the "read-only agents never carry Write" generalization that contradicted the per-agent rows below it.
 
 ## [3.0.0] — 2026-04-27
