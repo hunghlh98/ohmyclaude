@@ -25,8 +25,13 @@ color: blue
 ---
 ```
 
-**Read-only agents** must NEVER list `Write` / `Edit` / `MultiEdit`:
-- `artie-arch`, `una-ux` (pre-dev), `stan-standards`, `sam-sec` (Bash-only exception)
+**Agent tool tiers** — declared in `scripts/test-agents.js`, enforced on every commit:
+
+- **Strict read-only** (NEVER list `Write` / `Edit` / `MultiEdit`): `stan-standards`, `sam-sec`, `val-evaluator`. Pure reviewers — they grade and never produce or modify code. `sam-sec` may use `Bash` for security scans.
+- **Implementation-restricted** (`Write` allowed for pipeline artifacts; NEVER list `Edit` / `MultiEdit`): `artie-arch`, `una-ux`, `paige-product`, `devon-ops`. Produce SDD / UX-SPEC / PRD / RELEASE notes but never modify user code in place.
+- **Implementer** (full write toolset): `beck-backend`, `effie-frontend`, `heracles`, `quinn-qa`.
+
+A new agent must be added to one of these tiers in `scripts/test-agents.js` or the build fails.
 
 ### Skill (`skills/<name>/SKILL.md`)
 

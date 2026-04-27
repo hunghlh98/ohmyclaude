@@ -45,8 +45,10 @@
     "version:bump": "node scripts/bump-version.js",
     "test:sc-fallback": "node scripts/test-sc-fallback.js",
     "test:hooks": "node scripts/test-hooks.js",
+    "test:agents": "node scripts/test-agents.js",
     "usage-report": "node scripts/usage-report.js",
-    "dashboard": "python3 scripts/dashboard/server.py"
+    "dashboard": "python3 scripts/dashboard/server.py",
+    "prepublishOnly": "node scripts/validate.js && node scripts/test-hooks.js && node scripts/test-agents.js"
   },
   "engines": {
     "node": ">=18"

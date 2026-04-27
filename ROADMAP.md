@@ -68,8 +68,8 @@ Each follows the `rules/java/` template: 4 files (coding-style, patterns, securi
 
 - [x] **Smoke test suite** — shipped in v2.1.0 (`scripts/test-hooks.js`, 60 contract assertions after v2.5.1's per-hook toggle additions).
 - [x] **AGENTS.md reference** — shipped in v2.1.0, later absorbed into `agents/` frontmatter docs in v2.5.0.
-- [ ] **`npm prepublishOnly`** — one-line: run `validate.js` + `test-hooks.js` before `npm publish`. Small change.
-- [ ] **Agent integration tests** (`scripts/test-agents.js`) — verify each agent's frontmatter, tools, example triggers, read-only tool-list discipline.
+- [x] **`npm prepublishOnly`** — shipped in `[Unreleased]`; chains `validate.js && test-hooks.js && test-agents.js` before `npm publish`.
+- [x] **Agent integration tests** (`scripts/test-agents.js`) — shipped in `[Unreleased]`; 139 assertions across 11 agents covering frontmatter, tools shape, three-tier read-only discipline, `<example>` block presence. The validator surfaced and resolved a documented-but-unenforced read-only contract drift in `CLAUDE.md` (artie-arch / una-ux had `Write` despite the doc declaring them read-only).
 - [ ] **HOOKS.md consolidated reference** — directory-entry index for hooks, one section per hook script.
 - [ ] **`install.sh`** — cross-shell POSIX install script mirroring the 3 install profiles. Tested on macOS (zsh + bash), Ubuntu 22.04, Windows WSL2.
 - [ ] **`install.ps1`** — PowerShell parity for `install.sh`. Lower priority than the shell version.

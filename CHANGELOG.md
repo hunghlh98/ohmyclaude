@@ -8,6 +8,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+### Added
+- `scripts/test-agents.js` — agent frontmatter discipline validator (description ≤30 words, tools shape, color, three-tier read-only discipline, `<example>` block presence). 11 agents × ~12 checks = 139 assertions.
+- `npm prepublishOnly` — runs `validate.js`, `test-hooks.js`, `test-agents.js` before `npm publish`. Complements CI; catches drift on local publish.
+- `npm run test:agents` script entry in `package.json`.
+
+### Changed
+- `CLAUDE.md` "Read-only agents" paragraph rewritten as three explicit tool tiers (strict-readonly · implementation-restricted · implementer). The previous one-liner asserted `artie-arch` and `una-ux` were read-only despite both shipping `Write`; the rewrite resolves that drift and adds `val-evaluator` (v3.0.0) to strict-readonly.
+- `agents/artie-arch.md` description: removed misleading "Read-only" phrasing — Artie writes SDD artifacts but never edits user code.
+- `docs/OPERATING.md` Part 1 preface updated to the three-tier framing, replacing the "read-only agents never carry Write" generalization that contradicted the per-agent rows below it.
+
 ## [3.0.0] — 2026-04-27
 
 **Breaking workflow change**: structural generator/evaluator separation. `@val-evaluator` is the verdict authority on every /forge run; `@quinn-qa` no longer issues PASS/FAIL on her own tests; `@beck-backend` and `@effie-frontend` cannot interpret a green build as success.

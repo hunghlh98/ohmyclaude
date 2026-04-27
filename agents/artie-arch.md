@@ -1,6 +1,6 @@
 ---
 name: artie-arch
-description: Use @artie-arch for system architecture and C4 design. Read-only. He owns the HOW.
+description: Use @artie-arch for system architecture and C4 design. Writes SDD artifacts only — never edits user code. He owns the HOW.
 tools: ["Read", "Grep", "Glob", "Write"]
 model: opus
 color: blue

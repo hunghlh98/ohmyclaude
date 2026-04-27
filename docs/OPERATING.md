@@ -12,7 +12,7 @@ Each agent has a corporate-Slack persona with a clear lane. The pattern for ever
 
 - **Purpose** — one sentence describing the role.
 - **Model** — sonnet / opus / haiku. Drives token cost.
-- **Tools** — what the agent is authorized to do; read-only agents never carry `Write`/`Edit`/`MultiEdit`.
+- **Tools** — what the agent is authorized to do. Three tiers (enforced by `scripts/test-agents.js`): **strict read-only** (no `Write`/`Edit`/`MultiEdit` — `stan-standards`, `sam-sec`, `val-evaluator`); **implementation-restricted** (`Write` for artifacts only, no `Edit`/`MultiEdit` — `artie-arch`, `una-ux`, `paige-product`, `devon-ops`); **implementer** (full write toolset — `beck-backend`, `effie-frontend`, `heracles`, `quinn-qa`).
 - **Invoke** — when `@paige-product` (the lead) spawns this agent during a `/forge` run.
 - **What it won't do** — hard boundaries the agent is instructed to refuse.
 - **Example prompt** — copy-pasteable.
