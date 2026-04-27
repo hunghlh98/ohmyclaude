@@ -15,6 +15,12 @@ Single entry point. Every task enters here. Natural language in, working softwar
 /forge release                Cut release
 /forge commit                 Generate semantic commit from diff
 /forge help                   Show help
+
+/forge-disagree <test-id>     Record a HUMAN-VERDICT-<id>.md when you
+                              disagree with @val-evaluator. Feeds the
+                              evaluator-tuning loop. (Sibling command,
+                              not a /forge subcommand — see
+                              commands/forge-disagree.md.)
 ```
 
 Bare `/forge <description>` is the primary interaction. It handles features, bugs, docs, security, review, debug — everything. The lead classifies intent from natural language.

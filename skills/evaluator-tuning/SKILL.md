@@ -148,7 +148,16 @@ The trade is acceptable if rework reduction > cost increase. If neither moved, t
 
 ## Cost discipline
 
-This loop is operational, not a /forge subroutine. It runs on the user's clock, not the agent's. There is no automated tuning hook (intentionally — the harness paper warns that auto-tuning evaluators against themselves recreates the self-evaluation blindness this whole pattern fixes).
+This loop is operational, not a /forge subroutine. It runs on the user's clock, not the agent's. There is no automated tuning *patch* hook (intentionally — the harness paper warns that auto-tuning evaluators against themselves recreates the self-evaluation blindness this whole pattern fixes).
+
+What IS automated, since v3.x `[Unreleased]`:
+
+- **`hooks/scripts/val-calibration.js`** (PreToolUse:Task) — every time `@val-evaluator` is spawned via Task, this hook prepends `references/calibration-examples.md` as a `<calibration-anchor>` block to the subagent's prompt. The "read calibration before grading" instruction is no longer a procedural expectation; it's a structural part of every val-evaluator invocation. Disable with `OHMYCLAUDE_HOOK_VAL_CALIBRATION=off`.
+- **`hooks/scripts/session-load.js`** (SessionStart) — if `.claude/pipeline/` accumulates ≥3 `HUMAN-VERDICT-*.md` files marked `agreed_with_val: no | partially` since the last modification of `agents/val-evaluator.md` (the patch watermark), the hook emits a one-line stderr nudge to run this loop.
+- **`/forge-disagree <test-id>`** (slash command) — UX surface for writing `HUMAN-VERDICT-<id>.md`. Reads Val's TEST-<id>.md, prompts via `AskUserQuestion`, writes the artifact in the format documented above.
+
+What is NOT automated, on purpose:
+- **Patching `agents/val-evaluator.md`.** That's a deliberate human review action — see Step 3 above. The harness paper's reason holds: an automated patch loop would re-introduce the self-evaluation blindness this whole pattern was built to defeat.
 
 Estimated time: ~30 min per tuning session, every 5–10 /forge runs. Less than the cost of one rework cycle if a misaligned verdict had let a real issue ship.
 

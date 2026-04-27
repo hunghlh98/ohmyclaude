@@ -47,6 +47,34 @@ function hoursSince(isoTs) {
   return (Date.now() - then) / (1000 * 60 * 60);
 }
 
+function emitSavedSessionHint(cwd) {
+  if (!fs.existsSync(SESSIONS_DIR)) return;
+  const indexPath = path.join(SESSIONS_DIR, '_index.json');
+  let index = {};
+  try {
+    if (fs.existsSync(indexPath)) {
+      index = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
+    }
+  } catch { return; }
+  const hash = cwdHash(cwd);
+  const sessionId = index[hash];
+  if (!sessionId) return;
+  const metaPath = path.join(SESSIONS_DIR, sessionId, 'meta.json');
+  if (!fs.existsSync(metaPath)) return;
+  let meta;
+  try {
+    meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+  } catch { return; }
+  const age = hoursSince(meta.last_touch_ts);
+  if (age > MAX_AGE_HOURS) return;
+  const hrs = Math.round(age);
+  const when = hrs < 1 ? 'just now' : hrs < 24 ? `${hrs}h ago` : `${Math.round(hrs / 24)}d ago`;
+  process.stderr.write(
+    `[ohmyclaude] Saved session available for this directory (last touched ${when}). ` +
+    `Run /load to resume.\n`
+  );
+}
+
 let raw = '';
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', c => raw += c);
@@ -62,36 +90,47 @@ process.stdin.on('end', () => {
 
   const cwd = evt.cwd || process.cwd();
 
-  if (!fs.existsSync(SESSIONS_DIR)) process.exit(0);
-
-  const indexPath = path.join(SESSIONS_DIR, '_index.json');
-  let index = {};
-  try {
-    if (fs.existsSync(indexPath)) {
-      index = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
-    }
-  } catch { process.exit(0); }
-
-  const hash = cwdHash(cwd);
-  const sessionId = index[hash];
-  if (!sessionId) process.exit(0);
-
-  const metaPath = path.join(SESSIONS_DIR, sessionId, 'meta.json');
-  if (!fs.existsSync(metaPath)) process.exit(0);
-
-  let meta;
-  try {
-    meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-  } catch { process.exit(0); }
-
-  const age = hoursSince(meta.last_touch_ts);
-  if (age > MAX_AGE_HOURS) process.exit(0);
-
-  const hrs = Math.round(age);
-  const when = hrs < 1 ? 'just now' : hrs < 24 ? `${hrs}h ago` : `${Math.round(hrs / 24)}d ago`;
-  process.stderr.write(
-    `[ohmyclaude] Saved session available for this directory (last touched ${when}). ` +
-    `Run /load to resume.\n`
-  );
+  // Both checks are independent — neither blocks the other on early exit.
+  emitSavedSessionHint(cwd);
+  emitTuningReminderIfDue(cwd);
   process.exit(0);
 });
+
+// ── Evaluator-tuning reminder (Bundle C addition) ───────────────────────────
+// If the consumer project's .claude/pipeline/ contains ≥3 HUMAN-VERDICT-*.md
+// files marked `agreed_with_val: no | partially` since the plugin's val-evaluator
+// agent file last changed, surface a one-line nudge so the tuning loop in
+// skills/evaluator-tuning/SKILL.md doesn't rot invisibly.
+//
+// Watermark: mtime of the SHIPPED agents/val-evaluator.md inside the plugin.
+// The function is best-effort — silent no-op on any IO error.
+function emitTuningReminderIfDue(cwd) {
+  try {
+    const pipelineDir = path.join(cwd, '.claude', 'pipeline');
+    if (!fs.existsSync(pipelineDir)) return;
+
+    const valAgentPath = path.resolve(__dirname, '..', '..', 'agents', 'val-evaluator.md');
+    if (!fs.existsSync(valAgentPath)) return;
+    const watermarkMs = fs.statSync(valAgentPath).mtimeMs;
+
+    const entries = fs.readdirSync(pipelineDir);
+    let disagreements = 0;
+    for (const name of entries) {
+      if (!/^HUMAN-VERDICT-.+\.md$/.test(name)) continue;
+      const full = path.join(pipelineDir, name);
+      try {
+        if (fs.statSync(full).mtimeMs < watermarkMs) continue;
+        const text = fs.readFileSync(full, 'utf8');
+        if (/^agreed_with_val:\s*(no|partially)\b/m.test(text)) disagreements++;
+      } catch (_) { /* skip unreadable files */ }
+    }
+
+    if (disagreements >= 3) {
+      process.stderr.write(
+        `[ohmyclaude] 🔁 Evaluator tuning due: ${disagreements} HUMAN-VERDICT files ` +
+        `disagree with Val since last patch. Run the read-logs → find-divergence → ` +
+        `patch loop in skills/evaluator-tuning/SKILL.md.\n`
+      );
+    }
+  } catch (_) { /* silent */ }
+}

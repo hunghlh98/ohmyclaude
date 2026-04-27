@@ -205,9 +205,9 @@ features:
 | Version | 3.0.0 | VERSION, package.json, plugin.json, marketplace.json |
 | Agents | 11 | sonnet: 9, opus: 1, haiku: 1 |
 | Skills | 17 | engineering: 3, java: 1, specialized: 6, superclaude: 3, contract: 2, session: 2 |
-| Commands | 3 | forge, load, save |
+| Commands | 4 | forge-disagree, forge, load, save |
 | Rules | 9 | common: 1, java: 4, typescript: 4 |
-| Hooks | 13 | _toggle, backlog-tracker, code-review-graph-setup, cost-profiler, post-bash-lint, pre-write-check, project-init, session-load, session-summary, state-snapshot, subagent-trace, team-cleanup, usage-tracker |
+| Hooks | 14 | _toggle, backlog-tracker, code-review-graph-setup, cost-profiler, post-bash-lint, pre-write-check, project-init, session-load, session-summary, state-snapshot, subagent-trace, team-cleanup, usage-tracker, val-calibration |
 | Profiles | 3 | minimal, default (default), power |
 | Modules | 23 | agents: 5, skills: 6, rules: 3, commands: 2, mcp: 2, hooks: 5 |
 

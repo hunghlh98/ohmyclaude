@@ -206,11 +206,12 @@
     {
       "id": "hooks-quality",
       "kind": "hooks",
-      "description": "Quality hooks: block writes with secrets (PreToolUse), run linter after bash (PostToolUse)",
+      "description": "Quality hooks: block writes with secrets (PreToolUse:Write|Edit|MultiEdit), run linter after bash (PostToolUse:Bash), inject calibration-examples.md anchor into val-evaluator Task spawns (PreToolUse:Task)",
       "paths": [
         "hooks/hooks.json",
         "hooks/scripts/pre-write-check.js",
-        "hooks/scripts/post-bash-lint.js"
+        "hooks/scripts/post-bash-lint.js",
+        "hooks/scripts/val-calibration.js"
       ],
       "targets": ["claude"],
       "defaultInstall": true,
