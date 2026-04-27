@@ -94,6 +94,14 @@ Items where v2.6.0 + v3.0.0 documented a vault principle but didn't fully implem
 - [ ] **Mid-flight checkpoint over end-to-end /forge** ([[research/claude-code-harness-engineering]]). /forge runs end-to-end; partial-failure recovery requires re-running from scratch. The retired session-intelligence bundle was the closest mechanism — re-evaluate whether a focused checkpoint hook earns its spot.
 - [ ] **Builder Bash strip (Option 2 from v3.0.0 plan).** Beck/Effie can still self-execute via `Bash` (`npm test`, `mvn verify`). Option 1 (prompt-level "do not interpret green build as success") shipped in v3.0.0; Option 2 (strip `Bash` from builders so only Val executes) would close the structural fix completely. Cost: every Beck commit triggers a Val spawn. Worth measuring after the empirical loop runs.
 
+### Harness Audit Gaps (raised by `/recall harness` close on Bundle B, 2026-04-27)
+
+Tooling debt surfaced by implementing the `db_state` real backend. Routed here per the audit-loop convention — chat findings evaporate, ROADMAP entries hold future iterations accountable. Source: [[knowledge/harness-design-long-running-apps]] + [[research/agentic-harness-patterns]].
+
+- [ ] **`db_state` query observability.** Every `db_state` call is invisible after the response is delivered. No JSONL ledger of `(timestamp, scheme, query, rowCount, elapsedMs, redactedSecrets)` exists. The evaluator-tuning loop in `skills/evaluator-tuning/SKILL.md` would benefit from a forensic record of what Val actually asked the database. Likely surfaces as a small append-only log under `.claude/pipeline/probe-log-<date>.jsonl`, written from `callDbState` after redaction.
+- [ ] **Extended secret-redaction surface.** Current redaction patterns: AWS access keys (`AKIA…`), PEM private-key blocks, GitHub PATs (`ghp_…`), OpenAI-style secret keys (`sk-…`). Misses: JWTs (`eyJ…`), generic `Bearer …` tokens, short-form OAuth tokens, basic-auth headers, Slack tokens (`xoxb-…`). Worth a single regex sweep as the surface area becomes empirically clearer.
+- [ ] **Per-call CLI process spawn cost.** `db_state` shells out fresh on every call (`spawnSync('sqlite3' | 'psql' | 'mysql', …)`). Fine for the bounded ≤5s default; could matter for postgres specifically if Val makes many calls per criterion (psql startup is ~50–100ms per spawn). A persistent-process pool is overkill today; revisit only if probe-log telemetry shows the bottleneck.
+
 ---
 
 Forward-looking ideas that are **not** carryover from the original v1.x backlog. Each must pass the "earn its spot" gate (*Guiding Principles*, last bullet) — i.e., show it's not duplicating an existing skill or agent capability. **None of these has a release slot**; each requires its own plan + design spec before any code lands.
