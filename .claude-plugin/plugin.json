@@ -1,6 +1,6 @@
 {
   "name": "ohmyclaude",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "11-agent OSS pipeline for Claude Code — generator/evaluator separation (Anthropic Labs harness paper), single /forge entry point with sprint contract gate, Agent Teams coordination, Java-first skills.",
   "author": {
     "name": "ohmyclaude contributors"

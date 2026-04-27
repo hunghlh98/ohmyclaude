@@ -202,7 +202,7 @@ features:
 
 | Component | Count | Detail |
 |-----------|------:|--------|
-| Version | 3.0.0 | VERSION, package.json, plugin.json, marketplace.json |
+| Version | 3.0.1 | VERSION, package.json, plugin.json, marketplace.json |
 | Agents | 11 | sonnet: 9, opus: 1, haiku: 1 |
 | Skills | 17 | engineering: 3, java: 1, specialized: 6, superclaude: 3, contract: 2, session: 2 |
 | Commands | 4 | forge-disagree, forge, load, save |

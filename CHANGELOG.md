@@ -8,6 +8,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Versioning: [S
 
 ## [Unreleased]
 
+## [3.0.1] — 2026-04-27
+
+Polish + follow-through release closing v3.0.0 stubs and audit gaps. No breaking changes. The harness paper's central thesis ([[knowledge/harness-design-long-running-apps]]) is honored more completely: `db_state` actually probes runtime state instead of stubbing, calibration is structural rather than procedural, and HUMAN-VERDICT has a UX surface to feed the tuning loop.
+
+7 ROADMAP backlog items closed across three sequential bundles:
+- **Distribution & Discipline**: `npm prepublishOnly`, `scripts/test-agents.js`, three-tier read-only contract clarification.
+- **Runtime tooling**: `db_state` real backend (sqlite/postgres/mysql DSN dispatch).
+- **Methodology debt**: calibration-read enforcement hook, `/forge-disagree` UX, tuning-due session-load nudge.
+
+6 audit-derived debt entries recorded under two new ROADMAP "Harness Audit Gaps" subsections (one per bundle close, dated 2026-04-27) — honest record of seams worth tightening as the harness gets exercised in real runs.
+
 ### Added
 - `scripts/test-agents.js` — agent frontmatter discipline validator (description ≤30 words, tools shape, color, three-tier read-only discipline, `<example>` block presence). 11 agents × ~12 checks = 139 assertions.
 - `npm prepublishOnly` — runs `validate.js`, `test-hooks.js`, `test-agents.js`, `test-probe.js` before `npm publish`. Complements CI; catches drift on local publish.
